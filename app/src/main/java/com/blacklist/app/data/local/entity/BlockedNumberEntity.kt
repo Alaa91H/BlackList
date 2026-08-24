@@ -13,5 +13,6 @@ data class BlockedNumberEntity(
     val rawNumber: String,
     val normalizedNumber: String,
     val displayName: String? = null,
-    val createdAt: Long = System.currentTimeMillis()
+    val createdAt: Long = System.currentTimeMillis(),
+    val showNotification: Boolean = true
 )

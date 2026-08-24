@@ -29,4 +29,7 @@ interface BlockedNumberDao {
 
     @Query("DELETE FROM blocked_numbers")
     suspend fun clearAll()
+
+    @Query("UPDATE blocked_numbers SET showNotification = :enabled WHERE id = :id")
+    suspend fun setNotificationEnabled(id: Long, enabled: Boolean)
 }

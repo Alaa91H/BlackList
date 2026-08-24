@@ -25,4 +25,5 @@ class BlacklistViewModel(private val repo: BlackListRepository): ViewModel() {
     }
     fun remove(id: Long) = viewModelScope.launch { repo.removeBlockedNumber(id) }
     fun clearError() { _error.value = null }
+    fun toggleNotification(id: Long, enabled: Boolean) = viewModelScope.launch { repo.setBlockedNotificationEnabled(id, enabled) }
 }

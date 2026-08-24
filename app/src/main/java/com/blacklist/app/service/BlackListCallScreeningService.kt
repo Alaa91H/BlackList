@@ -44,7 +44,15 @@ class BlackListCallScreeningService : CallScreeningService() {
                                 )
                             )
                             val settings = db.appSettingsDao().get()
-                            if (settings?.showBlockedNotification != false) {
+                            val globalEnabled = settings?.showBlockedNotification != false
+                            var perNumberEnabled = true
+                            if (shouldBlock.second == "BLACKLIST" && !rawNumber.isNullOrBlank()) {
+                                try {
+                                    val matched = ServiceLocator.provideRepository(applicationContext).findBlockedMatches(rawNumber)
+                                    perNumberEnabled = matched?.showNotification ?: true
+                                } catch (_: Exception) {}
+                            }
+                            if (globalEnabled && perNumberEnabled) {
                                 showBlockedNotification(rawNumber, shouldBlock.second)
                             }
                         } catch (_: Exception) {}

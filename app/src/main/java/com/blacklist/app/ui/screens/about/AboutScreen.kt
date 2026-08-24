@@ -23,6 +23,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.blacklist.app.R
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.OpenInNew
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -35,7 +37,7 @@ fun AboutScreen(nav: NavController) {
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(R.string.about_title), fontWeight = FontWeight.Bold) },
-                navigationIcon = { IconButton(onClick = { nav.popBackStack() }) { Icon(Icons.Filled.ArrowBack, null) } }
+                navigationIcon = { IconButton(onClick = { nav.popBackStack() }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null) } }
             )
         }
     ) { pad ->
@@ -54,7 +56,7 @@ fun AboutScreen(nav: NavController) {
                     }
                     Text("BlackList", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
                     Text(stringResource(R.string.home_subtitle), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
-                    AssistChip(onClick = {}, label = { Text("v1.0.0 • 100% Offline") }, leadingIcon = { Icon(Icons.Filled.Verified, null, modifier = Modifier.size(16.dp)) })
+                    AssistChip(onClick = {}, label = { Text(stringResource(R.string.about_offline_badge, "1.0.3")) }, leadingIcon = { Icon(Icons.Filled.Verified, null, modifier = Modifier.size(16.dp)) })
                     Text(stringResource(R.string.about_app_desc), style = MaterialTheme.typography.bodyMedium, textAlign = TextAlign.Center, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
@@ -89,10 +91,10 @@ fun AboutScreen(nav: NavController) {
                         Row(Modifier.padding(16.dp).fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                             Icon(Icons.Filled.Code, null, tint = MaterialTheme.colorScheme.onPrimaryContainer)
                             Column(Modifier.weight(1f)) {
-                                Text("GitHub", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
-                                Text("github.com/Alaa91H/Alaa91H", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f))
+                                Text(stringResource(R.string.about_github_label), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                                Text(stringResource(R.string.about_github_handle), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f))
                             }
-                            Icon(Icons.Filled.OpenInNew, null)
+                            Icon(Icons.AutoMirrored.Filled.OpenInNew, null)
                         }
                     }
                     OutlinedButton(
@@ -125,9 +127,9 @@ fun AboutScreen(nav: NavController) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                         Text(stringResource(R.string.about_version), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Text("1.0.0", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
+                        Text("1.0.3", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
                     }
-                    Divider()
+                    HorizontalDivider()
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                         Text(stringResource(R.string.about_license), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Text("MIT", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
@@ -136,7 +138,7 @@ fun AboutScreen(nav: NavController) {
                 }
             }
 
-            Text("Made with ♥ by Alaa — Offline First, Privacy First", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp))
+            Text(stringResource(R.string.about_made_with), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp))
             Spacer(Modifier.height(16.dp))
         }
     }

@@ -5,6 +5,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -27,28 +28,40 @@ fun SettingsScreen(nav: NavController) {
     val repo = remember { ServiceLocator.provideRepository(ctx) }
     val vm: SettingsViewModel = viewModel(factory = ViewModelFactory(repo))
     val s by vm.settings.collectAsState()
-    Scaffold(topBar = { TopAppBar(title = { Text(stringResource(R.string.settings_title), fontWeight = FontWeight.Bold) }, navigationIcon = { IconButton(onClick = { nav.popBackStack() }) { Icon(Icons.Filled.ArrowBack, null) } }) }) { pad ->
+    Scaffold(topBar = { TopAppBar(title = { Text(stringResource(R.string.settings_title), fontWeight = FontWeight.Bold) }, navigationIcon = { IconButton(onClick = { nav.popBackStack() }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null) } }) }) { pad ->
         Column(Modifier.padding(pad).verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
             Text(stringResource(R.string.settings_general), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
             ElevatedCard(shape = RoundedCornerShape(20.dp)) {
                 Column {
-                    SettingSwitch("Block Unknown Numbers", stringResource(R.string.settings_block_unknown_desc), Icons.Filled.PersonOff, s?.blockUnknown ?: false) { vm.setBlockUnknown(it) }
+                    SettingSwitch(stringResource(R.string.home_block_unknown), stringResource(R.string.settings_block_unknown_desc), Icons.Filled.PersonOff, s?.blockUnknown ?: false) { vm.setBlockUnknown(it) }
                     HorizontalDivider()
-                    SettingSwitch("Block Private / Hidden", stringResource(R.string.settings_block_private_desc), Icons.Filled.VisibilityOff, s?.blockPrivate ?: true) { vm.setBlockPrivate(it) }
+                    SettingSwitch(stringResource(R.string.home_block_private), stringResource(R.string.settings_block_private_desc), Icons.Filled.VisibilityOff, s?.blockPrivate ?: true) { vm.setBlockPrivate(it) }
                     HorizontalDivider()
-                    SettingSwitch("Block All Except Whitelist", "When enabled, only whitelisted numbers ring", Icons.Filled.DoNotDisturbOn, s?.blockAllExceptWhitelist ?: false) { vm.setBlockAllExcept(it) }
+                    SettingSwitch(stringResource(R.string.home_block_all_except_whitelist), stringResource(R.string.settings_block_all_except_desc), Icons.Filled.DoNotDisturbOn, s?.blockAllExceptWhitelist ?: false) { vm.setBlockAllExcept(it) }
+                }
+            }
+            Text(stringResource(R.string.settings_notifications), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
+            ElevatedCard(shape = RoundedCornerShape(20.dp)) {
+                Column {
+                    SettingSwitch(stringResource(R.string.settings_notifications_global), stringResource(R.string.settings_notifications_global_desc), Icons.Filled.NotificationsActive, s?.showBlockedNotification ?: true) { vm.setNotifications(it) }
                     HorizontalDivider()
-                    SettingSwitch(stringResource(R.string.settings_notifications), "Show low-priority notification for blocked calls", Icons.Filled.Notifications, s?.showBlockedNotification ?: true) { vm.setNotifications(it) }
+                    Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Icon(Icons.Filled.Tune, null, tint = MaterialTheme.colorScheme.primary)
+                        Column(Modifier.weight(1f)) {
+                            Text(stringResource(R.string.settings_notifications_per_number), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Medium)
+                            Text(stringResource(R.string.settings_notifications_per_number_desc), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    }
                 }
             }
             Text(stringResource(R.string.settings_theme), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
             ElevatedCard(shape = RoundedCornerShape(20.dp)) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("Choose how BlackList looks. System Default follows your phone.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.settings_theme_desc), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        ThemeChip("System", s?.themeMode == "SYSTEM" || s?.themeMode == null) { vm.setTheme("SYSTEM") }
-                        ThemeChip("Light", s?.themeMode == "LIGHT") { vm.setTheme("LIGHT") }
-                        ThemeChip("Dark", s?.themeMode == "DARK") { vm.setTheme("DARK") }
+                        ThemeChip(stringResource(R.string.settings_theme_system), s?.themeMode == "SYSTEM" || s?.themeMode == null) { vm.setTheme("SYSTEM") }
+                        ThemeChip(stringResource(R.string.settings_theme_light), s?.themeMode == "LIGHT") { vm.setTheme("LIGHT") }
+                        ThemeChip(stringResource(R.string.settings_theme_dark), s?.themeMode == "DARK") { vm.setTheme("DARK") }
                     }
                 }
             }

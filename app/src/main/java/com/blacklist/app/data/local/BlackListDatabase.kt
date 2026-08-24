@@ -13,7 +13,7 @@ import com.blacklist.app.data.local.entity.*
         ScheduleRuleEntity::class,
         AppSettingsEntity::class
     ],
-    version = 1,
+    version = 2,
     exportSchema = true
 )
 abstract class BlackListDatabase : RoomDatabase() {

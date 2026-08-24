@@ -8,7 +8,6 @@ import android.telecom.TelecomManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.*
-import androidx.compose.animation.core.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -83,7 +82,7 @@ fun HomeScreen(navController: NavController) {
                             Text(if (isRoleHeld.value) stringResource(R.string.home_protection_enabled) else stringResource(R.string.home_protection_disabled), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                             Text(stringResource(R.string.home_subtitle), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
-                        if (isRoleHeld.value) Badge(containerColor = MaterialTheme.colorScheme.primary) { Text("ON", modifier = Modifier.padding(horizontal = 6.dp)) }
+                        if (isRoleHeld.value) Badge(containerColor = MaterialTheme.colorScheme.primary) { Text(stringResource(R.string.home_on), modifier = Modifier.padding(horizontal = 6.dp)) }
                     }
                     AnimatedVisibility(visible = !isRoleHeld.value, enter = fadeIn()+expandVertically(), exit = fadeOut()+shrinkVertically()) {
                         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -116,8 +115,8 @@ fun HomeScreen(navController: NavController) {
             Text(stringResource(R.string.home_quick_actions), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
             QuickToggleCard(title = stringResource(R.string.home_block_unknown), desc = stringResource(R.string.settings_block_unknown_desc), icon = Icons.Filled.PersonOff, checked = settings?.blockUnknown ?: false, onChecked = { vm.toggleBlockUnknown(it) })
             QuickToggleCard(title = stringResource(R.string.home_block_private), desc = stringResource(R.string.settings_block_private_desc), icon = Icons.Filled.VisibilityOff, checked = settings?.blockPrivate ?: true, onChecked = { vm.toggleBlockPrivate(it) })
-            QuickToggleCard(title = stringResource(R.string.home_block_all_except_whitelist), desc = "Whitelist bypasses this", icon = Icons.Filled.DoNotDisturbOn, checked = settings?.blockAllExceptWhitelist ?: false, onChecked = { vm.toggleBlockAllExceptWhitelist(it) })
-            Text("Manage", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+            QuickToggleCard(title = stringResource(R.string.home_block_all_except_whitelist), desc = stringResource(R.string.home_whitelist_bypass), icon = Icons.Filled.DoNotDisturbOn, checked = settings?.blockAllExceptWhitelist ?: false, onChecked = { vm.toggleBlockAllExceptWhitelist(it) })
+            Text(stringResource(R.string.home_manage), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
             GridNav(navController)
             Spacer(Modifier.height(24.dp))
         }
@@ -143,7 +142,12 @@ fun HomeScreen(navController: NavController) {
     }
 }
 @Composable private fun GridNav(nav: NavController) {
-    val items = listOf(Triple("Blacklist", Icons.Filled.Block, Routes.BLACKLIST), Triple("Whitelist", Icons.Filled.VerifiedUser, Routes.WHITELIST), Triple("Blocked Log", Icons.Filled.ListAlt, Routes.BLOCKED_LOG), Triple("Schedule", Icons.Filled.Schedule, Routes.SCHEDULE))
+    val items = listOf(
+        Triple(stringResource(R.string.nav_blacklist), Icons.Filled.Block, Routes.BLACKLIST),
+        Triple(stringResource(R.string.nav_whitelist), Icons.Filled.VerifiedUser, Routes.WHITELIST),
+        Triple(stringResource(R.string.nav_blocked_log), Icons.Filled.ListAlt, Routes.BLOCKED_LOG),
+        Triple(stringResource(R.string.nav_schedule), Icons.Filled.Schedule, Routes.SCHEDULE)
+    )
     LazyVerticalGrid(columns = GridCells.Fixed(2), modifier = Modifier.height(220.dp), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalArrangement = Arrangement.spacedBy(12.dp), userScrollEnabled = false) {
         items(items.size) { idx ->
             val (label, icon, route) = items[idx]

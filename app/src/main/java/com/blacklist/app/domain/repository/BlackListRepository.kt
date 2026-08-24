@@ -10,6 +10,7 @@ interface BlackListRepository {
     suspend fun removeBlockedNumber(id: Long)
     suspend fun isBlocked(normalized: String): Boolean
     suspend fun findBlockedMatches(phone: String): BlockedNumberEntity?
+    suspend fun setBlockedNotificationEnabled(id: Long, enabled: Boolean)
 
     // Whitelist
     fun observeWhitelisted(): Flow<List<WhitelistedNumberEntity>>

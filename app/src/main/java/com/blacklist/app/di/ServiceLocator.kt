@@ -15,6 +15,7 @@ object ServiceLocator {
     fun provideDatabase(context: Context): BlackListDatabase =
         db ?: synchronized(this) {
             db ?: Room.databaseBuilder(context.applicationContext, BlackListDatabase::class.java, "blacklist.db")
+                .fallbackToDestructiveMigrationOnDowngrade()
                 .fallbackToDestructiveMigration()
                 .build().also { db = it }
         }

@@ -25,6 +25,10 @@
     <string name="home_block_unknown">Block Unknown Numbers</string>
     <string name="home_block_private">Block Private / Hidden</string>
     <string name="home_block_all_except_whitelist">Block All Except Whitelist</string>
+    <string name="home_manage">Manage</string>
+    <string name="home_manage_desc">Manage your lists and rules</string>
+    <string name="home_whitelist_bypass">Whitelist bypasses this</string>
+    <string name="home_on">ON</string>
 
     <!-- Blacklist -->
     <string name="blacklist_title">Blacklist</string>
@@ -35,30 +39,52 @@
     <string name="blacklist_add_name_hint">Name (optional)</string>
     <string name="blacklist_add_from_contacts">Pick from contacts</string>
     <string name="blacklist_add_from_log">Pick from call log</string>
+    <string name="blacklist_add_from_messages">Pick from messages</string>
     <string name="blacklist_delete">Delete</string>
     <string name="blacklist_search_hint">Search numbers…</string>
+    <string name="blacklist_added">Added to blacklist</string>
+    <string name="blacklist_removed">Removed from blacklist</string>
+    <string name="blacklist_pick_title">Select a number</string>
+    <string name="blacklist_pick_contacts">Contacts</string>
+    <string name="blacklist_pick_call_log">Call log</string>
+    <string name="blacklist_pick_messages">Messages</string>
+    <string name="blacklist_no_contacts">No contacts found</string>
+    <string name="blacklist_no_call_log">No call log found</string>
+    <string name="blacklist_no_messages">No messages found</string>
+    <string name="blacklist_notify_enabled">Notify for this number</string>
+    <string name="blacklist_notify_disabled">Muted for this number</string>
 
     <!-- Whitelist -->
     <string name="whitelist_title">Whitelist</string>
     <string name="whitelist_empty">No whitelisted numbers</string>
     <string name="whitelist_empty_desc">Numbers here will always bypass any blocking</string>
     <string name="whitelist_add">Add to Whitelist</string>
+    <string name="whitelist_added">Added to whitelist</string>
+    <string name="whitelist_removed">Removed from whitelist</string>
 
     <!-- Blocked Log -->
     <string name="blocked_log_title">Blocked Calls</string>
     <string name="blocked_log_empty">No blocked calls yet</string>
+    <string name="blocked_log_empty_desc">All blocked calls will appear here with time and reason</string>
     <string name="blocked_log_clear">Clear Log</string>
+    <string name="blocked_log_clear_confirm">Clear all blocked call history? This cannot be undone.</string>
     <string name="blocked_log_reason_blacklist">Blacklist</string>
     <string name="blocked_log_reason_unknown">Unknown Number</string>
     <string name="blocked_log_reason_private">Private Number</string>
     <string name="blocked_log_reason_schedule">Schedule Rule</string>
     <string name="blocked_log_reason_all_except_whitelist">All Except Whitelist</string>
+    <string name="blocked_log_private_hidden">Private / Hidden</string>
+    <string name="blocked_log_scheduled">Schedule rule</string>
+    <string name="blocked_log_all_except_whitelist">All except whitelist</string>
+    <string name="blocked_log_unknown">Unknown number</string>
+    <string name="blocked_log_private">Private / Hidden</string>
 
     <!-- Schedule -->
     <string name="schedule_title">Advanced Schedule</string>
     <string name="schedule_desc">Create time-based blocking rules. Example: block all except whitelist from 10 PM to 6 AM.</string>
     <string name="schedule_add_rule">Add Rule</string>
     <string name="schedule_no_rules">No schedule rules</string>
+    <string name="schedule_no_rules_desc">Create your first time-based blocking rule</string>
     <string name="schedule_enabled">Enabled</string>
     <string name="schedule_disabled">Disabled</string>
     <string name="schedule_start_time">Start Time</string>
@@ -71,6 +97,19 @@
     <string name="schedule_mode_blacklist">Blacklist Only</string>
     <string name="schedule_save">Save Rule</string>
     <string name="schedule_delete">Delete Rule</string>
+    <string name="schedule_start_h">Start H</string>
+    <string name="schedule_start_m">Start M</string>
+    <string name="schedule_end_h">End H</string>
+    <string name="schedule_end_m">End M</string>
+    <string name="schedule_chip_all">All</string>
+    <string name="schedule_chip_weekdays">Weekdays</string>
+    <string name="schedule_chip_weekend">Weekend</string>
+    <string name="schedule_block_all">Block All</string>
+    <string name="schedule_block_all_except_whitelist">Block All Except Whitelist</string>
+    <string name="schedule_block_unknown_private">Block Unknown &amp; Private</string>
+    <string name="schedule_every_day">Every day</string>
+    <string name="schedule_weekdays">Weekdays</string>
+    <string name="schedule_weekend">Weekend</string>
     <string name="day_mon">Mon</string>
     <string name="day_tue">Tue</string>
     <string name="day_wed">Wed</string>
@@ -85,10 +124,17 @@
     <string name="settings_block_unknown_desc">Silently reject calls from numbers not in contacts</string>
     <string name="settings_block_private_desc">Reject hidden / private numbers</string>
     <string name="settings_notifications">Show notification for blocked calls</string>
+    <string name="settings_notifications_desc">Show low-priority notification for blocked calls</string>
+    <string name="settings_notifications_global">Global notifications</string>
+    <string name="settings_notifications_global_desc">Master switch for all blocked-call notifications</string>
+    <string name="settings_notifications_per_number">Per-number control</string>
+    <string name="settings_notifications_per_number_desc">Mute individual numbers from the Blacklist list (bell icon)</string>
+    <string name="settings_block_all_except_desc">When enabled, only whitelisted numbers ring</string>
     <string name="settings_theme">Theme</string>
     <string name="settings_theme_system">System Default</string>
     <string name="settings_theme_light">Light</string>
     <string name="settings_theme_dark">Dark</string>
+    <string name="settings_theme_desc">Choose how BlackList looks. System Default follows your phone.</string>
     <string name="settings_language">Language</string>
     <string name="settings_language_system">System Language</string>
     <string name="settings_privacy">Privacy</string>
@@ -108,6 +154,30 @@
     <string name="about_license_value">MIT License — Free and Open Source</string>
     <string name="about_privacy_title">Privacy Commitment</string>
     <string name="about_privacy_text">BlackList never sends your data anywhere. All blocking logic and database are local using Room. CallScreeningService runs silently before your phone even rings.</string>
+    <string name="about_made_with">Made with ♥ by Alaa — Offline First, Privacy First</string>
+    <string name="about_github_handle">github.com/Alaa91H/Alaa91H</string>
+    <string name="about_offline_badge">v%1$s • 100%% Offline</string>
+    <string name="about_github_label">GitHub</string>
+
+    <!-- Picker -->
+    <string name="picker_title">Choose a number</string>
+    <string name="picker_contacts">Contacts</string>
+    <string name="picker_call_log">Call log</string>
+    <string name="picker_messages">Messages</string>
+    <string name="picker_search">Search…</string>
+    <string name="picker_no_results">No results</string>
+    <string name="picker_permission_contacts">Contacts permission required</string>
+    <string name="picker_permission_call_log">Call log permission required</string>
+    <string name="picker_permission_messages">Messages permission required</string>
+    <string name="picker_grant">Grant</string>
+    <string name="picker_incoming">Incoming</string>
+    <string name="picker_outgoing">Outgoing</string>
+    <string name="picker_missed">Missed</string>
+    <string name="picker_blocked">Blocked</string>
+    <string name="picker_mobile">Mobile</string>
+    <string name="picker_home">Home</string>
+    <string name="picker_work">Work</string>
+    <string name="picker_sms">SMS</string>
 
     <!-- Common -->
     <string name="action_cancel">Cancel</string>
@@ -120,8 +190,12 @@
     <string name="error_invalid_number">Invalid phone number</string>
     <string name="error_already_exists">Number already exists</string>
     <string name="permission_required">Permission required</string>
+    <string name="permission_denied">Permission denied</string>
+    <string name="permission_request">Request permission</string>
     <string name="notification_blocked_title">Call Blocked</string>
     <string name="notification_blocked_text">Blocked %1$s — %2$s</string>
     <string name="notification_channel_blocked">Blocked Calls</string>
     <string name="notification_channel_blocked_desc">Notifications for silently blocked calls</string>
+    <string name="notification_muted_global">Notifications muted globally</string>
+    <string name="notification_muted_number">Notifications muted for this number</string>
 </resources>

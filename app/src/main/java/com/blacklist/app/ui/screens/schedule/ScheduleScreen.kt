@@ -5,6 +5,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -34,7 +35,7 @@ fun ScheduleScreen(nav: NavController) {
 
     Scaffold(
         topBar = {
-            TopAppBar(title = { Text(stringResource(R.string.schedule_title), fontWeight = FontWeight.Bold) }, navigationIcon = { IconButton(onClick = { nav.popBackStack() }) { Icon(Icons.Filled.ArrowBack, null) } }, actions = { IconButton(onClick = { showAdd = true }) { Icon(Icons.Filled.Add, null) } })
+            TopAppBar(title = { Text(stringResource(R.string.schedule_title), fontWeight = FontWeight.Bold) }, navigationIcon = { IconButton(onClick = { nav.popBackStack() }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null) } }, actions = { IconButton(onClick = { showAdd = true }) { Icon(Icons.Filled.Add, null) } })
         },
         floatingActionButton = { FloatingActionButton(onClick = { showAdd = true }) { Icon(Icons.Filled.Add, null) } }
     ) { pad ->
@@ -45,7 +46,7 @@ fun ScheduleScreen(nav: NavController) {
                     Text(stringResource(R.string.schedule_desc), style = MaterialTheme.typography.bodySmall)
                 }
             }
-            if (rules.isEmpty()) EmptyState(Icons.Filled.Schedule, stringResource(R.string.schedule_no_rules), "Create your first time-based blocking rule")
+            if (rules.isEmpty()) EmptyState(Icons.Filled.Schedule, stringResource(R.string.schedule_no_rules), stringResource(R.string.schedule_no_rules_desc))
             else LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 items(rules, key = { it.id }) { rule ->
                     ElevatedCard(shape = RoundedCornerShape(20.dp), modifier = Modifier.fillMaxWidth().animateItem()) {
@@ -57,7 +58,14 @@ fun ScheduleScreen(nav: NavController) {
                                 }
                                 Switch(checked = rule.isEnabled, onCheckedChange = { vm.toggle(rule) })
                             }
-                            Text(ScheduleEvaluator.formatDays(rule.daysOfWeek), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+                            Text(
+                                when (rule.daysOfWeek) {
+                                    ScheduleRuleEntity.ALL_DAYS -> stringResource(R.string.schedule_every_day)
+                                    ScheduleRuleEntity.WEEKDAYS -> stringResource(R.string.schedule_weekdays)
+                                    ScheduleRuleEntity.WEEKEND -> stringResource(R.string.schedule_weekend)
+                                    else -> ScheduleEvaluator.formatDays(rule.daysOfWeek)
+                                }, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary
+                            )
                             AssistChip(onClick = {}, label = { Text(modeLabel(rule.mode)) }, leadingIcon = { Icon(Icons.Filled.Shield, null, modifier = Modifier.size(16.dp)) })
                             Row(horizontalArrangement = Arrangement.End, modifier = Modifier.fillMaxWidth()) { TextButton(onClick = { vm.delete(rule) }) { Icon(Icons.Filled.Delete, null, modifier = Modifier.size(16.dp)); Spacer(Modifier.width(4.dp)); Text(stringResource(R.string.schedule_delete)) } }
                         }
@@ -68,6 +76,7 @@ fun ScheduleScreen(nav: NavController) {
     }
     if (showAdd) ScheduleAddDialog(onDismiss = { showAdd = false }, onSave = { vm.add(it); showAdd = false })
 }
+@Composable
 private fun modeLabel(m: String) = when (m) {
     ScheduleRuleEntity.MODE_ALL -> "Block All Calls"
     ScheduleRuleEntity.MODE_ALL_EXCEPT_WHITELIST -> "Block All Except Whitelist"
@@ -77,12 +86,18 @@ private fun modeLabel(m: String) = when (m) {
 }
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
+private fun modeLabelLocalized(m: String): String {
+    // This is for chips display - will be replaced via stringResource in caller if needed
+    return m
+}
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
 private fun ScheduleAddDialog(onDismiss: () -> Unit, onSave: (ScheduleRuleEntity)->Unit) {
-    var startH by remember { mutableStateOf(22) }
-    var startM by remember { mutableStateOf(0) }
-    var endH by remember { mutableStateOf(6) }
-    var endM by remember { mutableStateOf(0) }
-    var days by remember { mutableStateOf(ScheduleRuleEntity.ALL_DAYS) }
+    var startH by remember { mutableIntStateOf(22) }
+    var startM by remember { mutableIntStateOf(0) }
+    var endH by remember { mutableIntStateOf(6) }
+    var endM by remember { mutableIntStateOf(0) }
+    var days by remember { mutableIntStateOf(ScheduleRuleEntity.ALL_DAYS) }
     var mode by remember { mutableStateOf(ScheduleRuleEntity.MODE_ALL_EXCEPT_WHITELIST) }
     var expanded by remember { mutableStateOf(false) }
     AlertDialog(
@@ -90,37 +105,45 @@ private fun ScheduleAddDialog(onDismiss: () -> Unit, onSave: (ScheduleRuleEntity
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    OutlinedTextField(value = startH.toString(), onValueChange = { startH = it.toIntOrNull()?.coerceIn(0,23) ?: startH }, label = { Text("Start H") }, modifier = Modifier.weight(1f), singleLine = true)
-                    OutlinedTextField(value = startM.toString(), onValueChange = { startM = it.toIntOrNull()?.coerceIn(0,59) ?: startM }, label = { Text("Start M") }, modifier = Modifier.weight(1f), singleLine = true)
+                    OutlinedTextField(value = startH.toString(), onValueChange = { startH = it.toIntOrNull()?.coerceIn(0,23) ?: startH }, label = { Text(stringResource(R.string.schedule_start_h)) }, modifier = Modifier.weight(1f), singleLine = true)
+                    OutlinedTextField(value = startM.toString(), onValueChange = { startM = it.toIntOrNull()?.coerceIn(0,59) ?: startM }, label = { Text(stringResource(R.string.schedule_start_m)) }, modifier = Modifier.weight(1f), singleLine = true)
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    OutlinedTextField(value = endH.toString(), onValueChange = { endH = it.toIntOrNull()?.coerceIn(0,23) ?: endH }, label = { Text("End H") }, modifier = Modifier.weight(1f), singleLine = true)
-                    OutlinedTextField(value = endM.toString(), onValueChange = { endM = it.toIntOrNull()?.coerceIn(0,59) ?: endM }, label = { Text("End M") }, modifier = Modifier.weight(1f), singleLine = true)
+                    OutlinedTextField(value = endH.toString(), onValueChange = { endH = it.toIntOrNull()?.coerceIn(0,23) ?: endH }, label = { Text(stringResource(R.string.schedule_end_h)) }, modifier = Modifier.weight(1f), singleLine = true)
+                    OutlinedTextField(value = endM.toString(), onValueChange = { endM = it.toIntOrNull()?.coerceIn(0,59) ?: endM }, label = { Text(stringResource(R.string.schedule_end_m)) }, modifier = Modifier.weight(1f), singleLine = true)
                 }
                 Text(stringResource(R.string.schedule_days), style = MaterialTheme.typography.labelLarge)
                 Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    DayChip("Mon", days and ScheduleRuleEntity.MON !=0) { days = days xor ScheduleRuleEntity.MON }
-                    DayChip("Tue", days and ScheduleRuleEntity.TUE !=0) { days = days xor ScheduleRuleEntity.TUE }
-                    DayChip("Wed", days and ScheduleRuleEntity.WED !=0) { days = days xor ScheduleRuleEntity.WED }
-                    DayChip("Thu", days and ScheduleRuleEntity.THU !=0) { days = days xor ScheduleRuleEntity.THU }
+                    DayChip(stringResource(R.string.day_mon), days and ScheduleRuleEntity.MON !=0) { days = days xor ScheduleRuleEntity.MON }
+                    DayChip(stringResource(R.string.day_tue), days and ScheduleRuleEntity.TUE !=0) { days = days xor ScheduleRuleEntity.TUE }
+                    DayChip(stringResource(R.string.day_wed), days and ScheduleRuleEntity.WED !=0) { days = days xor ScheduleRuleEntity.WED }
+                    DayChip(stringResource(R.string.day_thu), days and ScheduleRuleEntity.THU !=0) { days = days xor ScheduleRuleEntity.THU }
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    DayChip("Fri", days and ScheduleRuleEntity.FRI !=0) { days = days xor ScheduleRuleEntity.FRI }
-                    DayChip("Sat", days and ScheduleRuleEntity.SAT !=0) { days = days xor ScheduleRuleEntity.SAT }
-                    DayChip("Sun", days and ScheduleRuleEntity.SUN !=0) { days = days xor ScheduleRuleEntity.SUN }
+                    DayChip(stringResource(R.string.day_fri), days and ScheduleRuleEntity.FRI !=0) { days = days xor ScheduleRuleEntity.FRI }
+                    DayChip(stringResource(R.string.day_sat), days and ScheduleRuleEntity.SAT !=0) { days = days xor ScheduleRuleEntity.SAT }
+                    DayChip(stringResource(R.string.day_sun), days and ScheduleRuleEntity.SUN !=0) { days = days xor ScheduleRuleEntity.SUN }
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    AssistChip(onClick = { days = ScheduleRuleEntity.ALL_DAYS }, label = { Text("All") })
-                    AssistChip(onClick = { days = ScheduleRuleEntity.WEEKDAYS }, label = { Text("Weekdays") })
-                    AssistChip(onClick = { days = ScheduleRuleEntity.WEEKEND }, label = { Text("Weekend") })
+                    AssistChip(onClick = { days = ScheduleRuleEntity.ALL_DAYS }, label = { Text(stringResource(R.string.schedule_chip_all)) })
+                    AssistChip(onClick = { days = ScheduleRuleEntity.WEEKDAYS }, label = { Text(stringResource(R.string.schedule_chip_weekdays)) })
+                    AssistChip(onClick = { days = ScheduleRuleEntity.WEEKEND }, label = { Text(stringResource(R.string.schedule_chip_weekend)) })
                 }
                 ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = !expanded }) {
-                    OutlinedTextField(value = modeLabel(mode), onValueChange = {}, readOnly = true, label = { Text(stringResource(R.string.schedule_mode)) }, trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) }, modifier = Modifier.menuAnchor().fillMaxWidth())
+                    OutlinedTextField(
+                        value = when(mode){
+                            ScheduleRuleEntity.MODE_ALL -> stringResource(R.string.schedule_block_all)
+                            ScheduleRuleEntity.MODE_ALL_EXCEPT_WHITELIST -> stringResource(R.string.schedule_block_all_except_whitelist)
+                            ScheduleRuleEntity.MODE_UNKNOWN_PRIVATE -> stringResource(R.string.schedule_block_unknown_private)
+                            else -> stringResource(R.string.schedule_mode_blacklist)
+                        },
+                        onValueChange = {}, readOnly = true, label = { Text(stringResource(R.string.schedule_mode)) }, trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) }, modifier = Modifier.menuAnchor().fillMaxWidth()
+                    )
                     ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-                        DropdownMenuItem(text = { Text("Block All") }, onClick = { mode = ScheduleRuleEntity.MODE_ALL; expanded=false })
-                        DropdownMenuItem(text = { Text("Block All Except Whitelist") }, onClick = { mode = ScheduleRuleEntity.MODE_ALL_EXCEPT_WHITELIST; expanded=false })
-                        DropdownMenuItem(text = { Text("Block Unknown & Private") }, onClick = { mode = ScheduleRuleEntity.MODE_UNKNOWN_PRIVATE; expanded=false })
-                        DropdownMenuItem(text = { Text("Blacklist Only") }, onClick = { mode = ScheduleRuleEntity.MODE_BLACKLIST; expanded=false })
+                        DropdownMenuItem(text = { Text(stringResource(R.string.schedule_block_all)) }, onClick = { mode = ScheduleRuleEntity.MODE_ALL; expanded=false })
+                        DropdownMenuItem(text = { Text(stringResource(R.string.schedule_block_all_except_whitelist)) }, onClick = { mode = ScheduleRuleEntity.MODE_ALL_EXCEPT_WHITELIST; expanded=false })
+                        DropdownMenuItem(text = { Text(stringResource(R.string.schedule_block_unknown_private)) }, onClick = { mode = ScheduleRuleEntity.MODE_UNKNOWN_PRIVATE; expanded=false })
+                        DropdownMenuItem(text = { Text(stringResource(R.string.schedule_mode_blacklist)) }, onClick = { mode = ScheduleRuleEntity.MODE_BLACKLIST; expanded=false })
                     }
                 }
             }
