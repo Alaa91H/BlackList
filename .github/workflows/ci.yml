@@ -73,18 +73,30 @@ jobs:
         run: ./gradlew lintDebug --stacktrace --continue
         continue-on-error: true
 
+      - name: Ensure debug keystore exists (for signed release fallback)
+        run: |
+          mkdir -p ~/.android
+          if [ ! -f ~/.android/debug.keystore ]; then
+            echo "Generating debug keystore..."
+            keytool -genkeypair -v -keystore ~/.android/debug.keystore -alias androiddebugkey -keyalg RSA -keysize 2048 -validity 9125 -storepass android -keypass android -dname "CN=Android Debug, O=Android, C=US" || true
+          fi
+          ls -lh ~/.android/debug.keystore || true
+
       - name: Assemble Debug
         run: ./gradlew assembleDebug --stacktrace --info
 
-      - name: Assemble Release (R8, unsigned)
+      - name: Assemble Release (R8, signed - installable)
         run: ./gradlew assembleRelease --stacktrace
 
-      - name: Verify APKs
+      - name: Verify APKs (must be signed & installable)
         run: |
           ls -lh app/build/outputs/apk/debug/*.apk
           ls -lh app/build/outputs/apk/release/*.apk
           sha256sum app/build/outputs/apk/*/*.apk || shasum -a 256 app/build/outputs/apk/*/*.apk
-          echo "APK verification done"
+          echo "--- Verifying APK signatures (both must be signed) ---"
+          apksigner verify --verbose app/build/outputs/apk/debug/*.apk
+          apksigner verify --verbose app/build/outputs/apk/release/*.apk
+          echo "APK verification done - both APKs are installable"
 
       - name: Upload Debug APK
         uses: actions/upload-artifact@v4
@@ -95,7 +107,7 @@ jobs:
           retention-days: 14
           compression-level: 6
 
-      - name: Upload Release APK (unsigned)
+      - name: Upload Release APK (signed)
         uses: actions/upload-artifact@v4
         with:
           name: BlackList-release-${{ github.sha }}

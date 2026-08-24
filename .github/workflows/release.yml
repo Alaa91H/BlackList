@@ -89,7 +89,16 @@ jobs:
           sdkmanager --install "platform-tools" "platforms;android-36" "build-tools;36.0.0" || true
           sdkmanager --list_installed || true
 
-      - name: Assemble Release & Debug (tag-linked version)
+      - name: Ensure keystore for signed release (installable APK)
+        run: |
+          mkdir -p ~/.android
+          if [ ! -f ~/.android/debug.keystore ]; then
+            keytool -genkeypair -v -keystore ~/.android/debug.keystore -alias androiddebugkey -keyalg RSA -keysize 2048 -validity 9125 -storepass android -keypass android -dname "CN=Android Debug, O=Android, C=US" || true
+          fi
+          ls -lh ~/.android/debug.keystore || true
+          # Also ensure CI release keystore handling - release will fallback to debug keystore if no custom keystore
+
+      - name: Assemble Release & Debug (tag-linked version, signed)
         run: |
           echo "Building versionName=${{ steps.tag.outputs.version }} versionCode=${{ steps.tag.outputs.versionCode }}"
           ./gradlew assembleRelease assembleDebug --stacktrace \
@@ -97,6 +106,9 @@ jobs:
             -PversionCode="${{ steps.tag.outputs.versionCode }}"
           ls -lh app/build/outputs/apk/release/*.apk
           ls -lh app/build/outputs/apk/debug/*.apk
+          echo "--- Verifying both APKs are signed (installable) ---"
+          apksigner verify --verbose app/build/outputs/apk/debug/*.apk
+          apksigner verify --verbose app/build/outputs/apk/release/*.apk
 
       - name: Rename & checksum APKs
         id: artifacts
@@ -141,8 +153,8 @@ jobs:
             > 100% Offline • No cloud • No AI • No trackers • Material Design 3 • Jetpack Compose
 
             ### 📦 Installation
-            Download **BlackList-${{ steps.tag.outputs.tag }}-release.apk** (R8 minified, ~1.5 MB, unsigned) or **-debug.apk** (~18 MB) below.
-            Allow “Install unknown apps”, then set as **Call Screening** app when prompted.
+            Download **BlackList-${{ steps.tag.outputs.tag }}-release.apk** (R8 minified, ~1.5 MB, **signed - installable**) or **-debug.apk** (~18 MB) below.
+            Allow “Install unknown apps”, then set as **Call Screening** app when prompted. Both APKs are signed and verified with `apksigner verify`.
 
             ### ✨ Highlights
             - Silent blocking via `CallScreeningService` (before ringing)

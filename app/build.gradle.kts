@@ -22,6 +22,30 @@ android {
         vectorDrawables { useSupportLibrary = true }
     }
 
+    signingConfigs {
+        create("release") {
+            // Priority: env-provided release keystore (CI secrets) → local release.keystore → debug keystore fallback
+            // This ensures every release APK is installable (signed) even without CI secrets.
+            val envKs = System.getenv("BLACKLIST_KEYSTORE_PATH") ?: findProperty("BLACKLIST_KEYSTORE_PATH") as String?
+            val envFile = envKs?.let { file(it) }?.takeIf { it.exists() }
+            val localFile = file(rootProject.file("release.keystore")).takeIf { it.exists() }
+            val chosen = envFile ?: localFile
+            if (chosen != null) {
+                storeFile = chosen
+                storePassword = System.getenv("BLACKLIST_KEYSTORE_PASSWORD") ?: findProperty("BLACKLIST_KEYSTORE_PASSWORD") as String? ?: "blacklist123"
+                keyAlias = System.getenv("BLACKLIST_KEY_ALIAS") ?: findProperty("BLACKLIST_KEY_ALIAS") as String? ?: "blacklist"
+                keyPassword = System.getenv("BLACKLIST_KEY_PASSWORD") ?: findProperty("BLACKLIST_KEY_PASSWORD") as String? ?: "blacklist123"
+            } else {
+                // Fallback: debug keystore (installable, verified on device). AGP will auto-create if missing.
+                val debugKs = file(System.getProperty("user.home") + "/.android/debug.keystore")
+                storeFile = debugKs
+                storePassword = "android"
+                keyAlias = "androiddebugkey"
+                keyPassword = "android"
+            }
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = true
@@ -30,10 +54,12 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            signingConfig = signingConfigs.getByName("release")
         }
         debug {
             isMinifyEnabled = false
             applicationIdSuffix = ".debug"
+            // Debug uses default debug keystore automatically
         }
     }
 

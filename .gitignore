@@ -14,3 +14,7 @@
 /schemas
 
 app/schemas/
+
+# Signing keystore (local, CI generates its own)
+release.keystore
+*.jks
