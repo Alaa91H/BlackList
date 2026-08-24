@@ -149,7 +149,8 @@ fun HomeScreen(navController: NavController) {
         Triple(stringResource(R.string.nav_schedule), Icons.Filled.Schedule, Routes.SCHEDULE),
         Triple("Diagnostics", Icons.Filled.BugReport, Routes.DIAGNOSTICS),
         Triple("Statistics", Icons.Filled.BarChart, Routes.STATISTICS),
-        Triple("Security", Icons.Filled.Security, Routes.SECURITY_EVENTS)
+        Triple("Security", Icons.Filled.Security, Routes.SECURITY_EVENTS),
+        Triple(stringResource(R.string.settings_permission_center), Icons.Filled.VerifiedUser, Routes.PERMISSIONS)
     )
     LazyVerticalGrid(columns = GridCells.Fixed(3), modifier = Modifier.height(320.dp), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalArrangement = Arrangement.spacedBy(12.dp), userScrollEnabled = false) {
         items(items.size) { idx ->

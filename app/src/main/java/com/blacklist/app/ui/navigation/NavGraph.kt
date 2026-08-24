@@ -9,6 +9,7 @@ import com.blacklist.app.ui.screens.blacklist.BlacklistScreen
 import com.blacklist.app.ui.screens.blockedlog.BlockedLogScreen
 import com.blacklist.app.ui.screens.diagnostics.DiagnosticsScreen
 import com.blacklist.app.ui.screens.home.HomeScreen
+import com.blacklist.app.ui.screens.permissions.PermissionCenterScreen
 import com.blacklist.app.ui.screens.schedule.ScheduleScreen
 import com.blacklist.app.ui.screens.security.SecurityEventsScreen
 import com.blacklist.app.ui.screens.settings.SettingsScreen
@@ -26,6 +27,7 @@ object Routes {
     const val DIAGNOSTICS = "diagnostics"
     const val STATISTICS = "statistics"
     const val SECURITY_EVENTS = "security_events"
+    const val PERMISSIONS = "permissions"
 }
 
 @Composable
@@ -41,5 +43,6 @@ fun AppNavGraph(navController: NavHostController) {
         composable(Routes.DIAGNOSTICS) { DiagnosticsScreen(navController) }
         composable(Routes.STATISTICS) { StatisticsScreen(navController) }
         composable(Routes.SECURITY_EVENTS) { SecurityEventsScreen(navController) }
+        composable(Routes.PERMISSIONS) { PermissionCenterScreen(navController) }
     }
 }

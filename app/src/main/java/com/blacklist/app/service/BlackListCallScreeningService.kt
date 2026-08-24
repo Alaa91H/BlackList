@@ -119,7 +119,7 @@ class BlackListCallScreeningService : CallScreeningService() {
                                 } catch (_: Exception) {}
                             }
                             if (globalEnabled && perNumberEnabled) {
-                                showBlockedNotification(rawNumber, finalDecision.explainable.summary)
+                                showBlockedNotification(rawNumber, finalDecision.explainable.summary, finalDecision.riskScore, finalDecision)
                             }
                         } catch (_: Exception) {}
 
@@ -183,7 +183,27 @@ class BlackListCallScreeningService : CallScreeningService() {
         } catch (e: Exception) { Log.e("BlackListService", "respondAllow failed", e) }
     }
 
-    private fun showBlockedNotification(number: String?, reason: String) {
+    private suspend fun showBlockedNotification(
+        number: String?,
+        reason: String,
+        riskScore: Int,
+        decision: com.blacklist.app.domain.model.EnforcementDecision
+    ) {
+        try {
+            // Central notification path (channels, rate-limiting, dedup, history)
+            ServiceLocator.provideNotificationManager(applicationContext).notifyCallBlocked(
+                number = number,
+                reason = reason,
+                riskScore = riskScore,
+                decision = decision
+            )
+        } catch (_: Exception) {
+            // Fail-safe fallback to legacy notification if manager fails
+            legacyBlockedNotification(number, reason)
+        }
+    }
+
+    private fun legacyBlockedNotification(number: String?, reason: String) {
         try {
             val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             val text = getString(R.string.notification_blocked_text, number ?: getString(R.string.blocked_log_private_hidden), reason)
