@@ -3,25 +3,66 @@ name: Release
 on:
   push:
     tags:
-      - 'v*'
+      - 'v*.*.*'
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Tag to release (e.g. v1.0.0)'
+        description: 'Tag to release (e.g. v1.0.1). Must exist or will be created from HEAD.'
         required: true
-        default: 'v1.0.0'
+        default: 'v1.0.1'
+      prerelease:
+        description: 'Mark as pre-release?'
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: write
 
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4g -Dfile.encoding=UTF-8 -Duser.language=en -Duser.country=US -Dorg.gradle.daemon=false"
+  JAVA_TOOL_OPTIONS: "-Duser.language=en -Duser.country=US -Dfile.encoding=UTF-8"
+
 jobs:
   build-and-release:
+    name: Build & Publish Release
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 50
 
     steps:
-      - name: Checkout
+      - name: Checkout (full history + tags)
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Resolve Tag
+        id: tag
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            TAG="${{ inputs.tag }}"
+            echo "Manual dispatch tag: $TAG"
+          else
+            TAG="${GITHUB_REF#refs/tags/}"
+            echo "Push tag: $TAG"
+          fi
+          # normalize: ensure starts with v
+          if [[ ! "$TAG" =~ ^v ]]; then TAG="v$TAG"; fi
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          VERSION="${TAG#v}"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          # versionCode: derive from version (e.g. 1.0.1 -> 10001) or use github run number as fallback
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION"
+          PATCH=${PATCH:-0}
+          CODE=$(( MAJOR * 10000 + MINOR * 100 + PATCH ))
+          if [ "$CODE" -eq 0 ]; then CODE=${{ github.run_number }}; fi
+          echo "versionCode=$CODE" >> $GITHUB_OUTPUT
+          echo "Resolved TAG=$TAG VERSION=$VERSION CODE=$CODE"
 
       - name: Set up JDK 17 (Temurin)
         uses: actions/setup-java@v4
@@ -33,81 +74,99 @@ jobs:
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Accept licenses & install platforms
-        run: |
-          yes | sdkmanager --licenses || true
-          sdkmanager --install "platform-tools" "platforms;android-36" "build-tools;36.0.0" || true
-
-      - name: Gradle cache
+      - name: Cache Gradle
         uses: gradle/actions/setup-gradle@v4
 
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: Assemble Release & Debug
-        run: |
-          ./gradlew assembleRelease assembleDebug --stacktrace
-        env:
-          JAVA_TOOL_OPTIONS: "-Duser.language=en -Duser.country=US"
-          GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4g -Dfile.encoding=UTF-8 -Duser.language=en -Duser.country=US"
+      - name: Validate Gradle Wrapper
+        uses: gradle/wrapper-validation-action@v2
 
-      - name: Rename APKs
+      - name: Install Android platforms
         run: |
-          TAG="${{ github.ref_name }}"
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            TAG="${{ inputs.tag }}"
-          fi
-          echo "TAG=$TAG" >> $GITHUB_ENV
-          cp app/build/outputs/apk/release/app-release-unsigned.apk "BlackList-${TAG}-release.apk" || cp app/build/outputs/apk/release/*.apk "BlackList-${TAG}-release.apk"
-          cp app/build/outputs/apk/debug/app-debug.apk "BlackList-${TAG}-debug.apk" || cp app/build/outputs/apk/debug/*.apk "BlackList-${TAG}-debug.apk"
+          yes | sdkmanager --licenses || true
+          sdkmanager --install "platform-tools" "platforms;android-36" "build-tools;36.0.0" || true
+          sdkmanager --list_installed || true
+
+      - name: Assemble Release & Debug (tag-linked version)
+        run: |
+          echo "Building versionName=${{ steps.tag.outputs.version }} versionCode=${{ steps.tag.outputs.versionCode }}"
+          ./gradlew assembleRelease assembleDebug --stacktrace \
+            -PversionName="${{ steps.tag.outputs.version }}" \
+            -PversionCode="${{ steps.tag.outputs.versionCode }}"
+          ls -lh app/build/outputs/apk/release/*.apk
+          ls -lh app/build/outputs/apk/debug/*.apk
+
+      - name: Rename & checksum APKs
+        id: artifacts
+        run: |
+          TAG="${{ steps.tag.outputs.tag }}"
+          VERSION="${{ steps.tag.outputs.version }}"
+          # Handle unsigned release apk name
+          RELEASE_SRC=$(ls app/build/outputs/apk/release/*.apk | head -n1)
+          DEBUG_SRC=$(ls app/build/outputs/apk/debug/*.apk | head -n1)
+          cp "$RELEASE_SRC" "BlackList-${TAG}-release.apk"
+          cp "$DEBUG_SRC" "BlackList-${TAG}-debug.apk"
           ls -lh BlackList-*.apk
-          sha256sum BlackList-*.apk > checksums.txt
+          sha256sum BlackList-*.apk > checksums.txt || shasum -a 256 BlackList-*.apk > checksums.txt
           cat checksums.txt
+          echo "release_apk=BlackList-${TAG}-release.apk" >> $GITHUB_OUTPUT
+          echo "debug_apk=BlackList-${TAG}-debug.apk" >> $GITHUB_OUTPUT
+
+      - name: Generate release notes
+        run: |
+          TAG="${{ steps.tag.outputs.tag }}"
+          PREV=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+          echo "Previous tag: $PREV"
+          if [ -n "$PREV" ]; then
+            echo "## Changes since $PREV" > release_notes.md
+            git log --pretty=format:"- %s (%h)" "$PREV..HEAD" >> release_notes.md || echo "- Initial release" >> release_notes.md
+          else
+            echo "## Initial Release" > release_notes.md
+            git log --pretty=format:"- %s (%h)" >> release_notes.md
+          fi
+          cat release_notes.md
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ env.TAG }}
-          name: "BlackList ${{ env.TAG }} - Initial Release"
+          tag_name: ${{ steps.tag.outputs.tag }}
+          name: "BlackList ${{ steps.tag.outputs.tag }} - Professional Offline Call Blocker"
+          body_path: release_notes.md
+          append_body: true
           body: |
-            ## BlackList ${{ env.TAG }} - Professional Offline Call Blocker
+            ## BlackList ${{ steps.tag.outputs.tag }} - Professional Offline Call Blocker
 
-            The first stable, production-ready release of BlackList - the most professional, 100% offline call blocker for Android.
+            > 100% Offline • No cloud • No AI • No trackers • Material Design 3 • Jetpack Compose
 
-            ### Highlights
-            - **100% Offline** - Room Database only. No cloud, no AI, no analytics, no tracking. Zero `INTERNET` permission.
-            - **Silent Blocking** - Modern `CallScreeningService` blocks calls before the phone rings.
-            - **Powerful Filtering**
-              - Custom Blacklist (add from contacts / call log)
-              - Whitelist (always bypasses any block)
-              - Block Unknown Numbers (not in contacts)
-              - Block Private / Hidden Numbers
-              - Block All Except Whitelist (nuclear mode)
-            - **Advanced Scheduling** - Time-based rules with day-of-week selection. Example: block all except whitelist 22:00-06:00 Mon-Fri. Overnight spans supported.
-            - **Blocked Log** - Professional timeline with number, name, reason and timestamp.
-            - **Material Design 3 (2026)** - Jetpack Compose, dynamic colors (Material You), Light/Dark/System theme, smooth animations.
-            - **World-Ready** - System language by default, full RTL for Arabic, plus 13 more locales via `locales_config`.
-            - **About Screen** - Luxurious design with developer info and one-tap GitHub link.
+            ### 📦 Installation
+            Download **BlackList-${{ steps.tag.outputs.tag }}-release.apk** (R8 minified, ~1.5 MB, unsigned) or **-debug.apk** (~18 MB) below.
+            Allow “Install unknown apps”, then set as **Call Screening** app when prompted.
 
-            ### Technical
-            - Clean Architecture + MVVM, manual DI (ServiceLocator), Kotlin 2.0.21, Room 2.6.1, Compose BOM 2024.09.02
-            - Min SDK 26, Target 36, Gradle 8.13, AGP 8.13.2, R8 minified (1.5 MB release)
-            - Verified CI builds for both Debug and Release on Ubuntu + JDK 17
+            ### ✨ Highlights
+            - Silent blocking via `CallScreeningService` (before ringing)
+            - Blacklist / Whitelist / Unknown / Private / All-except-Whitelist
+            - Advanced Scheduling (time + weekday bitmask, overnight support)
+            - Blocked Log with reason & timestamp
+            - Dynamic Colors (Material You), Light/Dark/System, RTL Arabic
 
-            ### Developer
-            **Alaa (Alaa91H)** - Software Developer, Creator of ADM (Advanced Download Manager in Rust), passionate about offline-first tools.
-            GitHub: https://github.com/Alaa91H/Alaa91H
+            ### 🔧 Technical
+            - Clean Architecture + MVVM • Room 2.6.1 • Compose BOM 2024.09.02 • Kotlin 2.0.21
+            - Min 26 / Target 36 / Gradle 8.13 / AGP 8.13.2 / JDK 17
+            - CI built on `${{ github.sha }}` via GitHub Actions
 
-            ### Installation
-            Download `BlackList-${{ env.TAG }}-release.apk` (unsigned, 1.5 MB) or `BlackList-${{ env.TAG }}-debug.apk` (18 MB) below, allow unknown sources, and set as Call Screening app when prompted.
+            ### 👨‍💻 Developer
+            Alaa (Alaa91H) — Creator of ADM (Advanced Download Manager in Rust) • https://github.com/Alaa91H/Alaa91H
 
-            ### Checksums
-            See `checksums.txt` attached.
+            ---
+            **Checksums (SHA-256):**
           files: |
             BlackList-*.apk
             checksums.txt
           draft: false
-          prerelease: false
+          prerelease: ${{ inputs.prerelease || false }}
           generate_release_notes: true
+          fail_on_unmatched_files: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
