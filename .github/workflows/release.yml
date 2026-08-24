@@ -107,8 +107,12 @@ jobs:
           ls -lh app/build/outputs/apk/release/*.apk
           ls -lh app/build/outputs/apk/debug/*.apk
           echo "--- Verifying both APKs are signed (installable) ---"
-          apksigner verify --verbose app/build/outputs/apk/debug/*.apk
-          apksigner verify --verbose app/build/outputs/apk/release/*.apk
+          APKSIGNER="$ANDROID_HOME/build-tools/36.0.0/apksigner"
+          if [ ! -f "$APKSIGNER" ]; then APKSIGNER="$ANDROID_SDK_ROOT/build-tools/36.0.0/apksigner"; fi
+          if [ ! -f "$APKSIGNER" ]; then APKSIGNER=$(find "$ANDROID_HOME" -name apksigner -type f | head -n1); fi
+          echo "Using apksigner: $APKSIGNER"
+          "$APKSIGNER" verify --verbose app/build/outputs/apk/debug/*.apk
+          "$APKSIGNER" verify --verbose app/build/outputs/apk/release/*.apk
 
       - name: Rename & checksum APKs
         id: artifacts
