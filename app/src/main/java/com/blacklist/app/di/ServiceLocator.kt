@@ -4,6 +4,11 @@ import android.content.Context
 import androidx.room.Room
 import com.blacklist.app.data.local.BlackListDatabase
 import com.blacklist.app.data.repository.BlackListRepositoryImpl
+import com.blacklist.app.domain.analytics.StatisticsEngine
+import com.blacklist.app.domain.diagnostics.DiagnosticsService
+import com.blacklist.app.domain.enforcement.*
+import com.blacklist.app.domain.engine.*
+import com.blacklist.app.domain.normalization.PhoneNumberNormalizer
 import com.blacklist.app.domain.repository.BlackListRepository
 import com.blacklist.app.util.ContactUtils
 
@@ -11,6 +16,14 @@ object ServiceLocator {
     @Volatile private var db: BlackListDatabase? = null
     @Volatile private var repo: BlackListRepository? = null
     @Volatile private var contactUtils: ContactUtils? = null
+    @Volatile private var normalizer: PhoneNumberNormalizer? = null
+    @Volatile private var blacklistEngine: BlacklistEngine? = null
+    @Volatile private var riskEngine: RiskScoringEngine? = null
+    @Volatile private var reputationEngine: ReputationEngine? = null
+    @Volatile private var behaviorEngine: BehaviorEngine? = null
+    @Volatile private var floodProtector: CallFloodProtector? = null
+    @Volatile private var firewallEngine: CallFirewallEngine? = null
+    @Volatile private var enforcementResolver: EnforcementResolver? = null
 
     fun provideDatabase(context: Context): BlackListDatabase =
         db ?: synchronized(this) {
@@ -25,8 +38,74 @@ object ServiceLocator {
             contactUtils ?: ContactUtils(context.applicationContext).also { contactUtils = it }
         }
 
+    fun provideNormalizer(context: Context): PhoneNumberNormalizer =
+        normalizer ?: synchronized(this) {
+            normalizer ?: PhoneNumberNormalizer().also { normalizer = it }
+        }
+
+    fun provideBlacklistEngine(context: Context): BlacklistEngine =
+        blacklistEngine ?: synchronized(this) {
+            blacklistEngine ?: BlacklistEngine(provideNormalizer(context)).also { blacklistEngine = it }
+        }
+
+    fun provideRiskEngine(): RiskScoringEngine =
+        riskEngine ?: synchronized(this) {
+            riskEngine ?: RiskScoringEngine().also { riskEngine = it }
+        }
+
+    fun provideReputationEngine(context: Context): ReputationEngine =
+        reputationEngine ?: synchronized(this) {
+            reputationEngine ?: ReputationEngine(provideDatabase(context).callerReputationDao()).also { reputationEngine = it }
+        }
+
+    fun provideBehaviorEngine(context: Context): BehaviorEngine =
+        behaviorEngine ?: synchronized(this) {
+            behaviorEngine ?: BehaviorEngine(provideDatabase(context).blockedCallLogDao()).also { behaviorEngine = it }
+        }
+
+    fun provideFloodProtector(): CallFloodProtector =
+        floodProtector ?: synchronized(this) {
+            floodProtector ?: CallFloodProtector().also { floodProtector = it }
+        }
+
+    fun provideFirewallEngine(context: Context): CallFirewallEngine =
+        firewallEngine ?: synchronized(this) {
+            firewallEngine ?: CallFirewallEngine(
+                db = provideDatabase(context),
+                normalizer = provideNormalizer(context),
+                blacklistEngine = provideBlacklistEngine(context),
+                riskEngine = provideRiskEngine(),
+                reputationEngine = provideReputationEngine(context),
+                behaviorEngine = provideBehaviorEngine(context)
+            ).also { firewallEngine = it }
+        }
+
+    fun provideEnforcementResolver(context: Context): EnforcementResolver =
+        enforcementResolver ?: synchronized(this) {
+            enforcementResolver ?: EnforcementResolver(
+                listOf(
+                    AndroidCallScreeningBackend(context.applicationContext),
+                    TelecomBackend(context.applicationContext),
+                    ShizukuBackend(context.applicationContext),
+                    RootBackend(context.applicationContext)
+                )
+            ).also { enforcementResolver = it }
+        }
+
+    fun provideStatisticsEngine(context: Context): StatisticsEngine =
+        StatisticsEngine(provideDatabase(context).blockedCallLogDao(), provideDatabase(context).callerReputationDao())
+
+    fun provideDiagnosticsService(context: Context): DiagnosticsService =
+        DiagnosticsService(context.applicationContext, provideDatabase(context))
+
     fun provideRepository(context: Context): BlackListRepository =
         repo ?: synchronized(this) {
             repo ?: BlackListRepositoryImpl(provideDatabase(context)).also { repo = it }
         }
+
+    fun clearForTest() {
+        db = null; repo = null; contactUtils = null; normalizer = null; blacklistEngine = null
+        riskEngine = null; reputationEngine = null; behaviorEngine = null; floodProtector = null
+        firewallEngine = null; enforcementResolver = null
+    }
 }
