@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">القائمة السوداء</string>
+    <string name="nav_home">الرئيسية</string>
+    <string name="nav_blacklist">القائمة السوداء</string>
+    <string name="nav_whitelist">القائمة البيضاء</string>
+    <string name="nav_blocked_log">سجل الحظر</string>
+    <string name="nav_schedule">الجدولة</string>
+    <string name="nav_settings">الإعدادات</string>
+    <string name="nav_about">حول التطبيق</string>
+
+    <string name="home_title">القائمة السوداء</string>
+    <string name="home_subtitle">حظر مكالمات احترافي — يعمل بدون إنترنت 100%</string>
+    <string name="home_protection_enabled">الحماية مفعّلة</string>
+    <string name="home_protection_disabled">الحماية متوقفة</string>
+    <string name="home_blocked_today">محظورة اليوم</string>
+    <string name="home_total_blocked">إجمالي المحظورة</string>
+    <string name="home_set_as_default">عيّن التطبيق كتطبيق الهاتف الافتراضي لتفعيل الحظر</string>
+    <string name="home_request_role">تفعيل فحص المكالمات</string>
+    <string name="home_stats">الإحصائيات</string>
+    <string name="home_quick_actions">إجراءات سريعة</string>
+    <string name="home_block_unknown">حظر الأرقام غير المحفوظة</string>
+    <string name="home_block_private">حظر الأرقام المخفية/الخاصة</string>
+    <string name="home_block_all_except_whitelist">حظر الكل ما عدا القائمة البيضاء</string>
+
+    <string name="blacklist_title">القائمة السوداء</string>
+    <string name="blacklist_empty">لا توجد أرقام محظورة بعد</string>
+    <string name="blacklist_empty_desc">أضف الأرقام التي تريد حظرها بصمت</string>
+    <string name="blacklist_add">إضافة رقم</string>
+    <string name="blacklist_add_hint">رقم الهاتف</string>
+    <string name="blacklist_add_name_hint">الاسم (اختياري)</string>
+    <string name="blacklist_add_from_contacts">اختيار من جهات الاتصال</string>
+    <string name="blacklist_add_from_log">اختيار من سجل المكالمات</string>
+    <string name="blacklist_delete">حذف</string>
+    <string name="blacklist_search_hint">ابحث في الأرقام…</string>
+
+    <string name="whitelist_title">القائمة البيضاء</string>
+    <string name="whitelist_empty">لا توجد أرقام في القائمة البيضاء</string>
+    <string name="whitelist_empty_desc">الأرقام هنا تتجاوز أي حظر دائماً</string>
+    <string name="whitelist_add">إضافة للقائمة البيضاء</string>
+
+    <string name="blocked_log_title">المكالمات المحظورة</string>
+    <string name="blocked_log_empty">لا توجد مكالمات محظورة بعد</string>
+    <string name="blocked_log_clear">مسح السجل</string>
+    <string name="blocked_log_reason_blacklist">قائمة سوداء</string>
+    <string name="blocked_log_reason_unknown">رقم غير معروف</string>
+    <string name="blocked_log_reason_private">رقم خاص/مخفي</string>
+    <string name="blocked_log_reason_schedule">قاعدة مجدولة</string>
+    <string name="blocked_log_reason_all_except_whitelist">الكل ما عدا البيضاء</string>
+
+    <string name="schedule_title">الجدولة المتقدمة</string>
+    <string name="schedule_desc">أنشئ قواعد حظر حسب الوقت. مثال: حظر الكل ما عدا البيضاء من 10 مساءً حتى 6 صباحاً.</string>
+    <string name="schedule_add_rule">إضافة قاعدة</string>
+    <string name="schedule_no_rules">لا توجد قواعد مجدولة</string>
+    <string name="schedule_enabled">مفعّل</string>
+    <string name="schedule_disabled">متوقف</string>
+    <string name="schedule_start_time">وقت البداية</string>
+    <string name="schedule_end_time">وقت النهاية</string>
+    <string name="schedule_days">أيام الأسبوع</string>
+    <string name="schedule_mode">وضع الحظر</string>
+    <string name="schedule_mode_all">حظر جميع المكالمات</string>
+    <string name="schedule_mode_all_except_whitelist">حظر الكل ما عدا البيضاء</string>
+    <string name="schedule_mode_unknown_private">حظر المجهول والخاص فقط</string>
+    <string name="schedule_mode_blacklist">القائمة السوداء فقط</string>
+    <string name="schedule_save">حفظ القاعدة</string>
+    <string name="schedule_delete">حذف القاعدة</string>
+    <string name="day_mon">الإثنين</string>
+    <string name="day_tue">الثلاثاء</string>
+    <string name="day_wed">الأربعاء</string>
+    <string name="day_thu">الخميس</string>
+    <string name="day_fri">الجمعة</string>
+    <string name="day_sat">السبت</string>
+    <string name="day_sun">الأحد</string>
+
+    <string name="settings_title">الإعدادات</string>
+    <string name="settings_general">عام</string>
+    <string name="settings_block_unknown_desc">رفض المكالمات من أرقام غير محفوظة بصمت</string>
+    <string name="settings_block_private_desc">رفض الأرقام المخفية/الخاصة</string>
+    <string name="settings_notifications">إظهار إشعار للمكالمات المحظورة</string>
+    <string name="settings_theme">المظهر</string>
+    <string name="settings_theme_system">حسب النظام</string>
+    <string name="settings_theme_light">فاتح</string>
+    <string name="settings_theme_dark">داكن</string>
+    <string name="settings_language">اللغة</string>
+    <string name="settings_language_system">لغة النظام</string>
+    <string name="settings_privacy">الخصوصية</string>
+    <string name="settings_privacy_desc">جميع البيانات تبقى على جهازك فقط. بدون سحابة، بدون تتبع، بدون تحليلات.</string>
+    <string name="settings_export">تصدير البيانات</string>
+    <string name="settings_import">استيراد البيانات</string>
+
+    <string name="about_title">حول التطبيق</string>
+    <string name="about_app_desc">القائمة السوداء هو أكثر حاظر مكالمات احترافي يعمل بدون إنترنت 100%. خصوصية أولاً، بدون سحابة، بدون ذكاء اصطناعي، بدون متتبعات. مبني بـ Material Design 2026 و Jetpack Compose.</string>
+    <string name="about_developer">المطور</string>
+    <string name="about_developer_name">علاء (Alaa91H)</string>
+    <string name="about_developer_desc">مطور برمجيات، مبتكر ADM (مدير التحميل المتقدم بلغة Rust)، وشغوف ببناء أدوات محسّنة للغاية تعمل بدون إنترنت أولاً.</string>
+    <string name="about_github">عرض على GitHub</string>
+    <string name="about_version">الإصدار</string>
+    <string name="about_license">الترخيص</string>
+    <string name="about_license_value">ترخيص MIT — مجاني ومفتوح المصدر</string>
+    <string name="about_privacy_title">التزام الخصوصية</string>
+    <string name="about_privacy_text">القائمة السوداء لا ترسل بياناتك إلى أي مكان. كل منطق الحظر وقاعدة البيانات محلية باستخدام Room. خدمة فحص المكالمات تعمل بصمت قبل أن يرن هاتفك.</string>
+
+    <string name="action_cancel">إلغاء</string>
+    <string name="action_save">حفظ</string>
+    <string name="action_delete">حذف</string>
+    <string name="action_confirm">تأكيد</string>
+    <string name="action_ok">حسناً</string>
+    <string name="search">بحث</string>
+    <string name="no_results">لا نتائج</string>
+    <string name="error_invalid_number">رقم هاتف غير صالح</string>
+    <string name="error_already_exists">الرقم موجود مسبقاً</string>
+    <string name="permission_required">الإذن مطلوب</string>
+    <string name="notification_blocked_title">تم حظر مكالمة</string>
+    <string name="notification_blocked_text">تم حظر %1$s — %2$s</string>
+    <string name="notification_channel_blocked">المكالمات المحظورة</string>
+    <string name="notification_channel_blocked_desc">إشعارات للمكالمات المحظورة بصمت</string>
+</resources>

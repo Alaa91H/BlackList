@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">BlackList</string>
+
+    <!-- Navigation -->
+    <string name="nav_home">Home</string>
+    <string name="nav_blacklist">Blacklist</string>
+    <string name="nav_whitelist">Whitelist</string>
+    <string name="nav_blocked_log">Blocked Log</string>
+    <string name="nav_schedule">Schedule</string>
+    <string name="nav_settings">Settings</string>
+    <string name="nav_about">About</string>
+
+    <!-- Home -->
+    <string name="home_title">BlackList</string>
+    <string name="home_subtitle">Professional Call Blocker — 100% Offline</string>
+    <string name="home_protection_enabled">Protection Active</string>
+    <string name="home_protection_disabled">Protection Disabled</string>
+    <string name="home_blocked_today">Blocked Today</string>
+    <string name="home_total_blocked">Total Blocked</string>
+    <string name="home_set_as_default">Set as default phone app to enable blocking</string>
+    <string name="home_request_role">Enable Call Screening</string>
+    <string name="home_stats">Statistics</string>
+    <string name="home_quick_actions">Quick Actions</string>
+    <string name="home_block_unknown">Block Unknown Numbers</string>
+    <string name="home_block_private">Block Private / Hidden</string>
+    <string name="home_block_all_except_whitelist">Block All Except Whitelist</string>
+
+    <!-- Blacklist -->
+    <string name="blacklist_title">Blacklist</string>
+    <string name="blacklist_empty">No blocked numbers yet</string>
+    <string name="blacklist_empty_desc">Add numbers you want to block silently</string>
+    <string name="blacklist_add">Add Number</string>
+    <string name="blacklist_add_hint">Phone number</string>
+    <string name="blacklist_add_name_hint">Name (optional)</string>
+    <string name="blacklist_add_from_contacts">Pick from contacts</string>
+    <string name="blacklist_add_from_log">Pick from call log</string>
+    <string name="blacklist_delete">Delete</string>
+    <string name="blacklist_search_hint">Search numbers…</string>
+
+    <!-- Whitelist -->
+    <string name="whitelist_title">Whitelist</string>
+    <string name="whitelist_empty">No whitelisted numbers</string>
+    <string name="whitelist_empty_desc">Numbers here will always bypass any blocking</string>
+    <string name="whitelist_add">Add to Whitelist</string>
+
+    <!-- Blocked Log -->
+    <string name="blocked_log_title">Blocked Calls</string>
+    <string name="blocked_log_empty">No blocked calls yet</string>
+    <string name="blocked_log_clear">Clear Log</string>
+    <string name="blocked_log_reason_blacklist">Blacklist</string>
+    <string name="blocked_log_reason_unknown">Unknown Number</string>
+    <string name="blocked_log_reason_private">Private Number</string>
+    <string name="blocked_log_reason_schedule">Schedule Rule</string>
+    <string name="blocked_log_reason_all_except_whitelist">All Except Whitelist</string>
+
+    <!-- Schedule -->
+    <string name="schedule_title">Advanced Schedule</string>
+    <string name="schedule_desc">Create time-based blocking rules. Example: block all except whitelist from 10 PM to 6 AM.</string>
+    <string name="schedule_add_rule">Add Rule</string>
+    <string name="schedule_no_rules">No schedule rules</string>
+    <string name="schedule_enabled">Enabled</string>
+    <string name="schedule_disabled">Disabled</string>
+    <string name="schedule_start_time">Start Time</string>
+    <string name="schedule_end_time">End Time</string>
+    <string name="schedule_days">Days of Week</string>
+    <string name="schedule_mode">Blocking Mode</string>
+    <string name="schedule_mode_all">Block All Calls</string>
+    <string name="schedule_mode_all_except_whitelist">Block All Except Whitelist</string>
+    <string name="schedule_mode_unknown_private">Block Unknown &amp; Private Only</string>
+    <string name="schedule_mode_blacklist">Blacklist Only</string>
+    <string name="schedule_save">Save Rule</string>
+    <string name="schedule_delete">Delete Rule</string>
+    <string name="day_mon">Mon</string>
+    <string name="day_tue">Tue</string>
+    <string name="day_wed">Wed</string>
+    <string name="day_thu">Thu</string>
+    <string name="day_fri">Fri</string>
+    <string name="day_sat">Sat</string>
+    <string name="day_sun">Sun</string>
+
+    <!-- Settings -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_general">General</string>
+    <string name="settings_block_unknown_desc">Silently reject calls from numbers not in contacts</string>
+    <string name="settings_block_private_desc">Reject hidden / private numbers</string>
+    <string name="settings_notifications">Show notification for blocked calls</string>
+    <string name="settings_theme">Theme</string>
+    <string name="settings_theme_system">System Default</string>
+    <string name="settings_theme_light">Light</string>
+    <string name="settings_theme_dark">Dark</string>
+    <string name="settings_language">Language</string>
+    <string name="settings_language_system">System Language</string>
+    <string name="settings_privacy">Privacy</string>
+    <string name="settings_privacy_desc">All data stays 100% offline on your device. No cloud, no tracking, no analytics.</string>
+    <string name="settings_export">Export Data</string>
+    <string name="settings_import">Import Data</string>
+
+    <!-- About -->
+    <string name="about_title">About</string>
+    <string name="about_app_desc">BlackList is the most professional, 100% offline call blocker. Privacy-first, no cloud, no AI, no trackers. Built with Material Design 2026 and Jetpack Compose.</string>
+    <string name="about_developer">Developer</string>
+    <string name="about_developer_name">Alaa (Alaa91H)</string>
+    <string name="about_developer_desc">Software Developer, Creator of ADM (Advanced Download Manager in Rust), and passionate about building highly optimized, offline-first tools.</string>
+    <string name="about_github">View on GitHub</string>
+    <string name="about_version">Version</string>
+    <string name="about_license">License</string>
+    <string name="about_license_value">MIT License — Free and Open Source</string>
+    <string name="about_privacy_title">Privacy Commitment</string>
+    <string name="about_privacy_text">BlackList never sends your data anywhere. All blocking logic and database are local using Room. CallScreeningService runs silently before your phone even rings.</string>
+
+    <!-- Common -->
+    <string name="action_cancel">Cancel</string>
+    <string name="action_save">Save</string>
+    <string name="action_delete">Delete</string>
+    <string name="action_confirm">Confirm</string>
+    <string name="action_ok">OK</string>
+    <string name="search">Search</string>
+    <string name="no_results">No results</string>
+    <string name="error_invalid_number">Invalid phone number</string>
+    <string name="error_already_exists">Number already exists</string>
+    <string name="permission_required">Permission required</string>
+    <string name="notification_blocked_title">Call Blocked</string>
+    <string name="notification_blocked_text">Blocked %1$s — %2$s</string>
+    <string name="notification_channel_blocked">Blocked Calls</string>
+    <string name="notification_channel_blocked_desc">Notifications for silently blocked calls</string>
+</resources>
