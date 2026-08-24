@@ -103,6 +103,7 @@ dependencies {
     ksp(libs.androidx.room.compiler)
 
     implementation(libs.kotlinx.coroutines.android)
+    implementation(libs.libphonenumber)
 
     debugImplementation("androidx.compose.ui:ui-tooling:1.9.3")
     debugImplementation("androidx.compose.ui:ui-test-manifest:1.9.3")

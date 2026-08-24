@@ -11,9 +11,12 @@ import com.blacklist.app.data.local.entity.*
         WhitelistedNumberEntity::class,
         BlockedCallLogEntity::class,
         ScheduleRuleEntity::class,
-        AppSettingsEntity::class
+        AppSettingsEntity::class,
+        BlacklistRuleEntity::class,
+        CallerReputationEntity::class,
+        SecurityEventEntity::class
     ],
-    version = 2,
+    version = 3,
     exportSchema = true
 )
 abstract class BlackListDatabase : RoomDatabase() {
@@ -22,4 +25,7 @@ abstract class BlackListDatabase : RoomDatabase() {
     abstract fun blockedCallLogDao(): BlockedCallLogDao
     abstract fun scheduleRuleDao(): ScheduleRuleDao
     abstract fun appSettingsDao(): AppSettingsDao
+    abstract fun blacklistRuleDao(): BlacklistRuleDao
+    abstract fun callerReputationDao(): CallerReputationDao
+    abstract fun securityEventDao(): SecurityEventDao
 }
