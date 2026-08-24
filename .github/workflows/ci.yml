@@ -73,6 +73,9 @@ jobs:
         run: ./gradlew lintDebug --stacktrace --continue
         continue-on-error: true
 
+      - name: Run Unit Tests
+        run: ./gradlew testDebugUnitTest --stacktrace
+
       - name: Ensure debug keystore exists (for signed release fallback)
         run: |
           mkdir -p ~/.android
