@@ -8,6 +8,12 @@ import com.blacklist.app.domain.analytics.StatisticsEngine
 import com.blacklist.app.domain.diagnostics.DiagnosticsService
 import com.blacklist.app.domain.enforcement.*
 import com.blacklist.app.domain.engine.*
+import com.blacklist.app.domain.notification.NotificationManager
+import com.blacklist.app.domain.notification.NotificationManagerImpl
+import com.blacklist.app.domain.permission.PermissionManager
+import com.blacklist.app.domain.permission.PermissionManagerImpl
+import com.blacklist.app.domain.capability.CapabilityManager
+import com.blacklist.app.domain.capability.CapabilityManagerImpl
 import com.blacklist.app.domain.normalization.PhoneNumberNormalizer
 import com.blacklist.app.domain.repository.BlackListRepository
 import com.blacklist.app.util.ContactUtils
@@ -24,6 +30,9 @@ object ServiceLocator {
     @Volatile private var floodProtector: CallFloodProtector? = null
     @Volatile private var firewallEngine: CallFirewallEngine? = null
     @Volatile private var enforcementResolver: EnforcementResolver? = null
+    @Volatile private var permissionManager: com.blacklist.app.domain.permission.PermissionManager? = null
+    @Volatile private var capabilityManager: CapabilityManager? = null
+    @Volatile private var notificationManager: NotificationManager? = null
 
     fun provideDatabase(context: Context): BlackListDatabase =
         db ?: synchronized(this) {
@@ -92,6 +101,25 @@ object ServiceLocator {
             ).also { enforcementResolver = it }
         }
 
+    fun providePermissionManager(context: Context): PermissionManager =
+        permissionManager ?: synchronized(this) {
+            permissionManager ?: PermissionManagerImpl(context).also { permissionManager = it }
+        }
+
+    fun provideCapabilityManager(context: Context): CapabilityManager =
+        capabilityManager ?: synchronized(this) {
+            capabilityManager ?: CapabilityManagerImpl(
+                context,
+                providePermissionManager(context),
+                provideDatabase(context)
+            ).also { capabilityManager = it }
+        }
+
+    fun provideNotificationManager(context: Context): NotificationManager =
+        notificationManager ?: synchronized(this) {
+            notificationManager ?: NotificationManagerImpl(context).also { notificationManager = it }
+        }
+
     fun provideStatisticsEngine(context: Context): StatisticsEngine =
         StatisticsEngine(provideDatabase(context).blockedCallLogDao(), provideDatabase(context).callerReputationDao())
 
@@ -106,6 +134,7 @@ object ServiceLocator {
     fun clearForTest() {
         db = null; repo = null; contactUtils = null; normalizer = null; blacklistEngine = null
         riskEngine = null; reputationEngine = null; behaviorEngine = null; floodProtector = null
-        firewallEngine = null; enforcementResolver = null
+        firewallEngine = null; enforcementResolver = null; permissionManager = null
+        capabilityManager = null; notificationManager = null
     }
 }

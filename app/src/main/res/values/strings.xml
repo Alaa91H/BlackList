@@ -142,6 +142,29 @@
     <string name="settings_export">Export Data</string>
     <string name="settings_import">Import Data</string>
 
+    <!-- Permissions &amp; Capabilities -->
+    <string name="settings_permissions">Permissions &amp; Capabilities</string>
+    <string name="settings_permissions_desc">Manage permissions and system capabilities</string>
+    <string name="settings_permission_center">Permission Center</string>
+    <string name="settings_capability_health">Capability Health</string>
+    <string name="settings_permission_details">Permission Details</string>
+    <string name="settings_permission_remediation">Fix Permission</string>
+    <string name="settings_permission_recheck">Recheck Permissions</string>
+    <string name="settings_capability_health_desc">Overall capability health score</string>
+    <string name="settings_notification_channels">Notification Channels</string>
+    <string name="settings_notification_channels_desc">Manage notification channels and preferences</string>
+    <string name="settings_notification_policy">Notification Policy</string>
+    <string name="settings_notification_policy_desc">Configure notification behavior and quiet hours</string>
+    <string name="settings_quiet_hours">Quiet Hours</string>
+    <string name="settings_quiet_hours_desc">Silence notifications during quiet hours</string>
+    <string name="settings_quiet_hours_start">Start Time</string>
+    <string name="settings_quiet_hours_end">End Time</string>
+    <string name="settings_quiet_hours_critical_override">Allow Critical During Quiet Hours</string>
+    <string name="settings_notification_deduplication">Deduplication</string>
+    <string name="settings_notification_deduplication_desc">Group similar notifications</string>
+    <string name="settings_notification_rate_limit">Rate Limiting</string>
+    <string name="settings_notification_rate_limit_desc">Limit notifications per time period</string>
+
     <!-- About -->
     <string name="about_title">About</string>
     <string name="about_app_desc">BlackList is the most professional, 100% offline call blocker. Privacy-first, no cloud, no AI, no trackers. Built with Material Design 2026 and Jetpack Compose.</string>
@@ -198,4 +221,22 @@
     <string name="notification_channel_blocked_desc">Notifications for silently blocked calls</string>
     <string name="notification_muted_global">Notifications muted globally</string>
     <string name="notification_muted_number">Notifications muted for this number</string>
+
+    <!-- Notification Channels -->
+    <string name="channel_security_alerts">Security Alerts</string>
+    <string name="channel_security_alerts_desc">Critical security alerts for high-risk blocked calls</string>
+    <string name="channel_high_risk">High Risk Calls</string>
+    <string name="channel_high_risk_desc">High-risk call blocking notifications</string>
+    <string name="channel_spam">Spam Detection</string>
+    <string name="channel_spam_desc">Spam and scam call detection notifications</string>
+    <string name="channel_calls">Call Activity</string>
+    <string name="channel_calls_desc">General call blocking activity</string>
+    <string name="channel_permissions">Permission Warnings</string>
+    <string name="channel_permissions_desc">Permission and capability status warnings</string>
+    <string name="channel_diagnostics">Diagnostics</string>
+    <string name="channel_diagnostics_desc">System diagnostics and health warnings</string>
+    <string name="channel_service">Service Status</string>
+    <string name="channel_service_desc">Call screening service status updates</string>
+    <string name="channel_automation">Automation</string>
+    <string name="channel_automation_desc">Automated actions and rules</string>
 </resources>
