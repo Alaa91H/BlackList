@@ -24,9 +24,14 @@ data class BlacklistRuleEntity(
     companion object {
         const val TYPE_EXACT = "EXACT"
         const val TYPE_PREFIX = "PREFIX"
+        const val TYPE_SUFFIX = "SUFFIX"
+        const val TYPE_CONTAINS = "CONTAINS"
         const val TYPE_RANGE = "RANGE"
         const val TYPE_COUNTRY = "COUNTRY"
         const val TYPE_HIDDEN = "HIDDEN"
         const val TYPE_UNKNOWN = "UNKNOWN"
+
+        /** All user-selectable match types (HIDDEN/UNKNOWN are policy toggles, not patterns). */
+        val USER_TYPES = listOf(TYPE_EXACT, TYPE_PREFIX, TYPE_SUFFIX, TYPE_CONTAINS, TYPE_RANGE, TYPE_COUNTRY)
     }
 }

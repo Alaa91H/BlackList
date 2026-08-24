@@ -11,9 +11,11 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.blacklist.app.R
 import com.blacklist.app.di.ServiceLocator
 import com.blacklist.app.ui.navigation.AppNavGraph
 import com.blacklist.app.ui.navigation.Routes
@@ -33,33 +35,34 @@ class MainActivity : ComponentActivity() {
                 val backStack by navController.currentBackStackEntryAsState()
                 val currentRoute = backStack?.destination?.route
 
+                data class BottomItem(val route: String, val labelRes: Int, val icon: androidx.compose.ui.graphics.vector.ImageVector)
                 val bottomItems = listOf(
-                    Triple(Routes.HOME, "Home", Icons.Filled.Home),
-                    Triple(Routes.BLACKLIST, "Blacklist", Icons.Filled.Block),
-                    Triple(Routes.WHITELIST, "Whitelist", Icons.Filled.VerifiedUser),
-                    Triple(Routes.BLOCKED_LOG, "Log", Icons.Filled.ListAlt),
-                    Triple(Routes.SCHEDULE, "Schedule", Icons.Filled.Schedule),
+                    BottomItem(Routes.HOME, R.string.nav_home, Icons.Filled.Home),
+                    BottomItem(Routes.BLACKLIST, R.string.nav_blacklist, Icons.Filled.Block),
+                    BottomItem(Routes.WHITELIST, R.string.nav_whitelist, Icons.Filled.VerifiedUser),
+                    BottomItem(Routes.BLOCKED_LOG, R.string.nav_blocked_log, Icons.Filled.ListAlt),
+                    BottomItem(Routes.SCHEDULE, R.string.nav_schedule, Icons.Filled.Schedule),
                 )
-                val showBottomBar = currentRoute in bottomItems.map { it.first }
+                val showBottomBar = currentRoute in bottomItems.map { it.route }
 
                 Scaffold(
                     bottomBar = {
                         if (showBottomBar) {
                             NavigationBar {
-                                bottomItems.forEach { (route, label, icon) ->
+                                bottomItems.forEach { item ->
                                     NavigationBarItem(
-                                        selected = currentRoute == route,
+                                        selected = currentRoute == item.route,
                                         onClick = {
-                                            if (currentRoute != route) {
-                                                navController.navigate(route) {
+                                            if (currentRoute != item.route) {
+                                                navController.navigate(item.route) {
                                                     popUpTo(Routes.HOME) { saveState = true }
                                                     launchSingleTop = true
                                                     restoreState = true
                                                 }
                                             }
                                         },
-                                        icon = { Icon(icon, contentDescription = label) },
-                                        label = { Text(label) }
+                                        icon = { Icon(item.icon, contentDescription = stringResource(item.labelRes)) },
+                                        label = { Text(stringResource(item.labelRes)) }
                                     )
                                 }
                             }

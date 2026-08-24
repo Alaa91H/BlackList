@@ -239,4 +239,27 @@
     <string name="channel_service_desc">Call screening service status updates</string>
     <string name="channel_automation">Automation</string>
     <string name="channel_automation_desc">Automated actions and rules</string>
+
+    <!-- Blacklist Rule Types -->
+    <string name="rule_type_exact">Exact</string>
+    <string name="rule_type_prefix">Starts with</string>
+    <string name="rule_type_suffix">Ends with</string>
+    <string name="rule_type_contains">Contains</string>
+    <string name="rule_type_range">Range</string>
+    <string name="rule_type_country">Country</string>
+    <string name="rule_type_hidden">Hidden</string>
+    <string name="rule_type_unknown">Unknown</string>
+
+    <!-- Blacklist Rules UI -->
+    <string name="blacklist_rules_section">Pattern Rules</string>
+    <string name="blacklist_numbers_section">Blocked Numbers</string>
+    <string name="blacklist_add_rule_title">Add Block Rule</string>
+    <string name="blacklist_match_type">Match type</string>
+    <string name="blacklist_pattern_label">Number pattern</string>
+    <string name="blacklist_pattern_hint">Matching ignores +, spaces and dashes</string>
+    <string name="blacklist_range_start">Range start</string>
+    <string name="blacklist_range_end">Range end</string>
+    <string name="blacklist_range_hint">Start and end must have the same number of digits, start before end</string>
+    <string name="blacklist_country_hint">Country code (ISO 3166, e.g. DE)</string>
+    <string name="blacklist_pick_source">Pick from contacts or call log</string>
 </resources>

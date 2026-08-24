@@ -15,6 +15,7 @@ class BlackListRepositoryImpl(
     private val logDao get() = db.blockedCallLogDao()
     private val settingsDao get() = db.appSettingsDao()
     private val scheduleDao get() = db.scheduleRuleDao()
+    private val ruleDao get() = db.blacklistRuleDao()
 
     override fun observeBlockedNumbers(): Flow<List<BlockedNumberEntity>> = blockedDao.observeAll()
 
@@ -65,4 +66,68 @@ class BlackListRepositoryImpl(
     override suspend fun addScheduleRule(rule: ScheduleRuleEntity): Long = scheduleDao.insert(rule)
     override suspend fun updateScheduleRule(rule: ScheduleRuleEntity) = scheduleDao.update(rule)
     override suspend fun deleteScheduleRule(rule: ScheduleRuleEntity) = scheduleDao.delete(rule)
+
+    override fun observeBlacklistRules(): Flow<List<BlacklistRuleEntity>> = ruleDao.observeAll()
+
+    override suspend fun addBlacklistRule(rule: BlacklistRuleEntity): Result<Long> {
+        return try {
+            when (rule.ruleType) {
+                BlacklistRuleEntity.TYPE_EXACT,
+                BlacklistRuleEntity.TYPE_PREFIX,
+                BlacklistRuleEntity.TYPE_SUFFIX,
+                BlacklistRuleEntity.TYPE_CONTAINS -> {
+                    val pattern = rule.pattern?.trim() ?: return Result.failure(IllegalArgumentException("Empty pattern"))
+                    if (pattern.isEmpty()) return Result.failure(IllegalArgumentException("Empty pattern"))
+                    val minLen = if (rule.ruleType == BlacklistRuleEntity.TYPE_EXACT) 3 else 2
+                    val digits = pattern.filter { it.isDigit() }
+                    if (rule.ruleType == BlacklistRuleEntity.TYPE_EXACT && digits.length < minLen) {
+                        return Result.failure(IllegalArgumentException("Pattern too short"))
+                    }
+                    if (rule.ruleType != BlacklistRuleEntity.TYPE_EXACT &&
+                        rule.pattern!!.any { !it.isDigit() && it != '+' && it != '*' && it != '#' && it != ' ' && it != '-' }) {
+                        return Result.failure(IllegalArgumentException("Invalid characters in pattern"))
+                    }
+                }
+                BlacklistRuleEntity.TYPE_RANGE -> {
+                    val start = rule.startNumber?.trim()?.filter { it.isDigit() } ?: ""
+                    val end = rule.endNumber?.trim()?.filter { it.isDigit() } ?: ""
+                    if (start.isEmpty() || end.isEmpty()) return Result.failure(IllegalArgumentException("Range endpoints required"))
+                    if (start.length != end.length || start >= end) {
+                        return Result.failure(IllegalArgumentException("Invalid range"))
+                    }
+                }
+                BlacklistRuleEntity.TYPE_COUNTRY -> {
+                    val iso = rule.countryIso?.trim()?.uppercase() ?: ""
+                    if (iso.length != 2 || iso.any { !it.isLetter() }) {
+                        return Result.failure(IllegalArgumentException("Invalid country ISO"))
+                    }
+                }
+                else -> return Result.failure(IllegalArgumentException("Unsupported rule type"))
+            }
+
+            // Duplicate check: same type + same pattern/start-end/country
+            val existing = ruleDao.getAll()
+            val dup = existing.any { e ->
+                e.ruleType == rule.ruleType && (
+                    (e.pattern != null && e.pattern == rule.pattern) ||
+                        (e.startNumber == rule.startNumber && e.endNumber == rule.endNumber && rule.startNumber != null) ||
+                        (e.countryIso != null && e.countryIso.equals(rule.countryIso, ignoreCase = true))
+                    )
+            }
+            if (dup) return Result.failure(IllegalStateException("Rule already exists"))
+
+            // Normalize stored values
+            val toInsert = when (rule.ruleType) {
+                BlacklistRuleEntity.TYPE_RANGE -> rule.copy(startNumber = rule.startNumber?.filter { it.isDigit() }, endNumber = rule.endNumber?.filter { it.isDigit() })
+                BlacklistRuleEntity.TYPE_COUNTRY -> rule.copy(countryIso = rule.countryIso?.uppercase())
+                else -> rule.copy(pattern = rule.pattern?.trim())
+            }
+            Result.success(ruleDao.insert(toInsert))
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun deleteBlacklistRule(id: Long) = ruleDao.deleteById(id)
+    override suspend fun setBlacklistRuleEnabled(id: Long, enabled: Boolean) = ruleDao.setEnabled(id, enabled)
 }

@@ -43,6 +43,44 @@ class FirewallEngineTest {
     }
 
     @Test
+    fun testSuffixMatching() {
+        val event = normalizer.normalize("+49301234567")
+        val rule = BlacklistRuleEntity(ruleType = BlacklistRuleEntity.TYPE_SUFFIX, pattern = "4567", priority = 30)
+        assertTrue(blacklistEngine.matches(event, rule))
+        val noMatch = BlacklistRuleEntity(ruleType = BlacklistRuleEntity.TYPE_SUFFIX, pattern = "9999", priority = 30)
+        assertFalse(blacklistEngine.matches(event, noMatch))
+    }
+
+    @Test
+    fun testContainsMatching() {
+        val event = normalizer.normalize("+49301234567")
+        val rule = BlacklistRuleEntity(ruleType = BlacklistRuleEntity.TYPE_CONTAINS, pattern = "0123", priority = 30)
+        assertTrue(blacklistEngine.matches(event, rule))
+        val midRule = BlacklistRuleEntity(ruleType = BlacklistRuleEntity.TYPE_CONTAINS, pattern = "2345", priority = 30)
+        assertTrue(blacklistEngine.matches(event, midRule))
+        val noMatch = BlacklistRuleEntity(ruleType = BlacklistRuleEntity.TYPE_CONTAINS, pattern = "7777", priority = 30)
+        assertFalse(blacklistEngine.matches(event, noMatch))
+    }
+
+    @Test
+    fun testSuffixContainsIgnoreFormatting() {
+        // Formatting characters in the rule pattern must be ignored
+        val event = normalizer.normalize("+4930 1234-567")
+        val suffixRule = BlacklistRuleEntity(ruleType = BlacklistRuleEntity.TYPE_SUFFIX, pattern = "+1234-567 ", priority = 30)
+        assertTrue(blacklistEngine.matches(event, suffixRule))
+        val containsRule = BlacklistRuleEntity(ruleType = BlacklistRuleEntity.TYPE_CONTAINS, pattern = "30-12 34", priority = 30)
+        assertTrue(blacklistEngine.matches(event, containsRule))
+    }
+
+    @Test
+    fun testBlankPatternNeverMatches() {
+        val event = normalizer.normalize("+49301234567")
+        assertFalse(blacklistEngine.matches(event, BlacklistRuleEntity(ruleType = BlacklistRuleEntity.TYPE_SUFFIX, pattern = "", priority = 30)))
+        assertFalse(blacklistEngine.matches(event, BlacklistRuleEntity(ruleType = BlacklistRuleEntity.TYPE_CONTAINS, pattern = null, priority = 30)))
+        assertFalse(blacklistEngine.matches(event, BlacklistRuleEntity(ruleType = BlacklistRuleEntity.TYPE_PREFIX, pattern = "", priority = 30)))
+    }
+
+    @Test
     fun testRangeMatching() {
         val event = normalizer.normalize("+49301234567")
         val rule = BlacklistRuleEntity(ruleType = BlacklistRuleEntity.TYPE_RANGE, startNumber = "+49300000000", endNumber = "+49309999999", priority = 30)

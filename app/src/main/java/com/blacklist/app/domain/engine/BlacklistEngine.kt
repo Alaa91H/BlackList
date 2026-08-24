@@ -28,7 +28,20 @@ class BlacklistEngine(
                 // Compare normalized digits prefix
                 val eventDigits = eventNumber.digitsOnly
                 val prefixDigits = prefix.filter { it.isDigit() }
+                if (prefixDigits.isEmpty()) return false
                 eventDigits.startsWith(prefixDigits) || (eventNumber.e164 != null && eventNumber.e164.startsWith(prefix))
+            }
+            BlacklistRuleEntity.TYPE_SUFFIX -> {
+                if (eventNumber.presentation != Presentation.ALLOWED) return false
+                val suffix = rule.pattern ?: return false
+                if (suffix.isBlank()) return false
+                eventNumber.digitsOnly.endsWith(suffix.filter { it.isDigit() })
+            }
+            BlacklistRuleEntity.TYPE_CONTAINS -> {
+                if (eventNumber.presentation != Presentation.ALLOWED) return false
+                val needle = rule.pattern ?: return false
+                if (needle.isBlank()) return false
+                eventNumber.digitsOnly.contains(needle.filter { it.isDigit() })
             }
             BlacklistRuleEntity.TYPE_RANGE -> {
                 if (eventNumber.presentation != Presentation.ALLOWED) return false

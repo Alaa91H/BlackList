@@ -187,4 +187,68 @@
     <string name="notification_channel_blocked_desc">إشعارات للمكالمات المحظورة بصمت</string>
     <string name="notification_muted_global">الإشعارات متوقفة عاماً</string>
     <string name="notification_muted_number">الإشعارات متوقفة لهذا الرقم</string>
+
+    <!-- Notification Channels -->
+    <string name="channel_security_alerts">تنبيهات أمنية</string>
+    <string name="channel_security_alerts_desc">تنبيهات أمنية حرجة للمكالمات عالية الخطورة المحظورة</string>
+    <string name="channel_high_risk">مكالمات عالية الخطورة</string>
+    <string name="channel_high_risk_desc">إشعارات حظر المكالمات عالية الخطورة</string>
+    <string name="channel_spam">كشف الرسائل المزعجة</string>
+    <string name="channel_spam_desc">إشعارات كشف المكالمات المزعجة والاحتيالية</string>
+    <string name="channel_calls">نشاط المكالمات</string>
+    <string name="channel_calls_desc">نشاط عام لحظر المكالمات</string>
+    <string name="channel_permissions">تحذيرات الأذونات</string>
+    <string name="channel_permissions_desc">تحذيرات حالة الأذونات والقدرات</string>
+    <string name="channel_diagnostics">التشخيص</string>
+    <string name="channel_diagnostics_desc">تشخيص النظام وتحذيرات الصحة</string>
+    <string name="channel_service">حالة الخدمة</string>
+    <string name="channel_service_desc">تحديثات حالة خدمة فرض المكالمات</string>
+    <string name="channel_automation">الأتمتة</string>
+    <string name="channel_automation_desc">الإجراءات والقواعد المؤتمتة</string>
+
+    <!-- Permission Center / Capability Settings -->
+    <string name="settings_permissions">الأذونات</string>
+    <string name="settings_permissions_desc">إدارة أذونات التطبيق والأدوار</string>
+    <string name="settings_permission_center">مركز الأذونات</string>
+    <string name="settings_permission_details">تفاصيل الإذن والحالة</string>
+    <string name="settings_permission_recheck">إعادة فحص الأذونات</string>
+    <string name="settings_permission_remediation">خطوات الإصلاح</string>
+    <string name="settings_capability_health">صحة القدرات</string>
+    <string name="settings_capability_health_desc">النسبة المئوية العامة لجاهزية الحماية</string>
+    <string name="settings_notification_policy">سياسة الإشعارات</string>
+    <string name="settings_notification_policy_desc">ضبط سلوك الإشعارات والقنوات</string>
+    <string name="settings_notification_channels">قنوات الإشعارات</string>
+    <string name="settings_notification_channels_desc">فتح إعدادات قنوات الإشعارات</string>
+    <string name="settings_notification_rate_limit">حد الإشعارات</string>
+    <string name="settings_notification_rate_limit_desc">أقصى عدد للإشعارات في الدقيقة الواحدة</string>
+    <string name="settings_notification_deduplication">منع التكرار</string>
+    <string name="settings_notification_deduplication_desc">دمج الإشعارات المتكررة خلال نافذة زمنية قصيرة</string>
+    <string name="settings_quiet_hours">ساعات الهدوء</string>
+    <string name="settings_quiet_hours_desc">كتم الإشعارات غير الحرجة ليلاً</string>
+    <string name="settings_quiet_hours_start">بداية ساعات الهدوء</string>
+    <string name="settings_quiet_hours_end">نهاية ساعات الهدوء</string>
+    <string name="settings_quiet_hours_critical_override">تجاوز التنبيهات الحرجة</string>
+
+    <!-- Blacklist Rule Types -->
+    <string name="rule_type_exact">مطابقة تامة</string>
+    <string name="rule_type_prefix">يبدأ بـ</string>
+    <string name="rule_type_suffix">ينتهي بـ</string>
+    <string name="rule_type_contains">يحتوي على</string>
+    <string name="rule_type_range">نطاق رقمي</string>
+    <string name="rule_type_country">بلد</string>
+    <string name="rule_type_hidden">مخفي</string>
+    <string name="rule_type_unknown">غير معروف</string>
+
+    <!-- Blacklist Rules UI -->
+    <string name="blacklist_rules_section">قواعد الأنماط</string>
+    <string name="blacklist_numbers_section">الأرقام المحظورة</string>
+    <string name="blacklist_add_rule_title">إضافة قاعدة حظر</string>
+    <string name="blacklist_match_type">نوع المطابقة</string>
+    <string name="blacklist_pattern_label">نمط الرقم</string>
+    <string name="blacklist_pattern_hint">تتم المطابقة مع تجاهل + والمسافات والشرطات</string>
+    <string name="blacklist_range_start">بداية النطاق</string>
+    <string name="blacklist_range_end">نهاية النطاق</string>
+    <string name="blacklist_range_hint">يجب أن يكون للبداية والنهاية نفس عدد الأرقام، والبداية قبل النهاية</string>
+    <string name="blacklist_country_hint">رمز البلد (ISO 3166، مثال DE)</string>
+    <string name="blacklist_pick_source">اختيار من جهات الاتصال أو سجل المكالمات</string>
 </resources>
