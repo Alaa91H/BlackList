@@ -1,0 +1,113 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to release (e.g. v1.0.0)'
+        required: true
+        default: 'v1.0.0'
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17 (Temurin)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Accept licenses & install platforms
+        run: |
+          yes | sdkmanager --licenses || true
+          sdkmanager --install "platform-tools" "platforms;android-36" "build-tools;36.0.0" || true
+
+      - name: Gradle cache
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Assemble Release & Debug
+        run: |
+          ./gradlew assembleRelease assembleDebug --stacktrace
+        env:
+          JAVA_TOOL_OPTIONS: "-Duser.language=en -Duser.country=US"
+          GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4g -Dfile.encoding=UTF-8 -Duser.language=en -Duser.country=US"
+
+      - name: Rename APKs
+        run: |
+          TAG="${{ github.ref_name }}"
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            TAG="${{ inputs.tag }}"
+          fi
+          echo "TAG=$TAG" >> $GITHUB_ENV
+          cp app/build/outputs/apk/release/app-release-unsigned.apk "BlackList-${TAG}-release.apk" || cp app/build/outputs/apk/release/*.apk "BlackList-${TAG}-release.apk"
+          cp app/build/outputs/apk/debug/app-debug.apk "BlackList-${TAG}-debug.apk" || cp app/build/outputs/apk/debug/*.apk "BlackList-${TAG}-debug.apk"
+          ls -lh BlackList-*.apk
+          sha256sum BlackList-*.apk > checksums.txt
+          cat checksums.txt
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.TAG }}
+          name: "BlackList ${{ env.TAG }} - Initial Release"
+          body: |
+            ## BlackList ${{ env.TAG }} - Professional Offline Call Blocker
+
+            The first stable, production-ready release of BlackList - the most professional, 100% offline call blocker for Android.
+
+            ### Highlights
+            - **100% Offline** - Room Database only. No cloud, no AI, no analytics, no tracking. Zero `INTERNET` permission.
+            - **Silent Blocking** - Modern `CallScreeningService` blocks calls before the phone rings.
+            - **Powerful Filtering**
+              - Custom Blacklist (add from contacts / call log)
+              - Whitelist (always bypasses any block)
+              - Block Unknown Numbers (not in contacts)
+              - Block Private / Hidden Numbers
+              - Block All Except Whitelist (nuclear mode)
+            - **Advanced Scheduling** - Time-based rules with day-of-week selection. Example: block all except whitelist 22:00-06:00 Mon-Fri. Overnight spans supported.
+            - **Blocked Log** - Professional timeline with number, name, reason and timestamp.
+            - **Material Design 3 (2026)** - Jetpack Compose, dynamic colors (Material You), Light/Dark/System theme, smooth animations.
+            - **World-Ready** - System language by default, full RTL for Arabic, plus 13 more locales via `locales_config`.
+            - **About Screen** - Luxurious design with developer info and one-tap GitHub link.
+
+            ### Technical
+            - Clean Architecture + MVVM, manual DI (ServiceLocator), Kotlin 2.0.21, Room 2.6.1, Compose BOM 2024.09.02
+            - Min SDK 26, Target 36, Gradle 8.13, AGP 8.13.2, R8 minified (1.5 MB release)
+            - Verified CI builds for both Debug and Release on Ubuntu + JDK 17
+
+            ### Developer
+            **Alaa (Alaa91H)** - Software Developer, Creator of ADM (Advanced Download Manager in Rust), passionate about offline-first tools.
+            GitHub: https://github.com/Alaa91H/Alaa91H
+
+            ### Installation
+            Download `BlackList-${{ env.TAG }}-release.apk` (unsigned, 1.5 MB) or `BlackList-${{ env.TAG }}-debug.apk` (18 MB) below, allow unknown sources, and set as Call Screening app when prompted.
+
+            ### Checksums
+            See `checksums.txt` attached.
+          files: |
+            BlackList-*.apk
+            checksums.txt
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
