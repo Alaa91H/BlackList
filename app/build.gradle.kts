@@ -105,6 +105,11 @@ dependencies {
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.libphonenumber)
 
+    testImplementation("junit:junit:4.13.2")
+    testImplementation("androidx.arch.core:core-testing:2.2.0")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.1")
+    testImplementation("androidx.room:room-testing:2.6.1")
+
     debugImplementation("androidx.compose.ui:ui-tooling:1.9.3")
     debugImplementation("androidx.compose.ui:ui-test-manifest:1.9.3")
 }

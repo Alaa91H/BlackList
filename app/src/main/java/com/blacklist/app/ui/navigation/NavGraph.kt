@@ -7,9 +7,12 @@ import androidx.navigation.compose.composable
 import com.blacklist.app.ui.screens.about.AboutScreen
 import com.blacklist.app.ui.screens.blacklist.BlacklistScreen
 import com.blacklist.app.ui.screens.blockedlog.BlockedLogScreen
+import com.blacklist.app.ui.screens.diagnostics.DiagnosticsScreen
 import com.blacklist.app.ui.screens.home.HomeScreen
 import com.blacklist.app.ui.screens.schedule.ScheduleScreen
+import com.blacklist.app.ui.screens.security.SecurityEventsScreen
 import com.blacklist.app.ui.screens.settings.SettingsScreen
+import com.blacklist.app.ui.screens.statistics.StatisticsScreen
 import com.blacklist.app.ui.screens.whitelist.WhitelistScreen
 
 object Routes {
@@ -20,6 +23,9 @@ object Routes {
     const val SCHEDULE = "schedule"
     const val SETTINGS = "settings"
     const val ABOUT = "about"
+    const val DIAGNOSTICS = "diagnostics"
+    const val STATISTICS = "statistics"
+    const val SECURITY_EVENTS = "security_events"
 }
 
 @Composable
@@ -32,5 +38,8 @@ fun AppNavGraph(navController: NavHostController) {
         composable(Routes.SCHEDULE) { ScheduleScreen(navController) }
         composable(Routes.SETTINGS) { SettingsScreen(navController) }
         composable(Routes.ABOUT) { AboutScreen(navController) }
+        composable(Routes.DIAGNOSTICS) { DiagnosticsScreen(navController) }
+        composable(Routes.STATISTICS) { StatisticsScreen(navController) }
+        composable(Routes.SECURITY_EVENTS) { SecurityEventsScreen(navController) }
     }
 }

@@ -146,15 +146,18 @@ fun HomeScreen(navController: NavController) {
         Triple(stringResource(R.string.nav_blacklist), Icons.Filled.Block, Routes.BLACKLIST),
         Triple(stringResource(R.string.nav_whitelist), Icons.Filled.VerifiedUser, Routes.WHITELIST),
         Triple(stringResource(R.string.nav_blocked_log), Icons.Filled.ListAlt, Routes.BLOCKED_LOG),
-        Triple(stringResource(R.string.nav_schedule), Icons.Filled.Schedule, Routes.SCHEDULE)
+        Triple(stringResource(R.string.nav_schedule), Icons.Filled.Schedule, Routes.SCHEDULE),
+        Triple("Diagnostics", Icons.Filled.BugReport, Routes.DIAGNOSTICS),
+        Triple("Statistics", Icons.Filled.BarChart, Routes.STATISTICS),
+        Triple("Security", Icons.Filled.Security, Routes.SECURITY_EVENTS)
     )
-    LazyVerticalGrid(columns = GridCells.Fixed(2), modifier = Modifier.height(220.dp), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalArrangement = Arrangement.spacedBy(12.dp), userScrollEnabled = false) {
+    LazyVerticalGrid(columns = GridCells.Fixed(3), modifier = Modifier.height(320.dp), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalArrangement = Arrangement.spacedBy(12.dp), userScrollEnabled = false) {
         items(items.size) { idx ->
             val (label, icon, route) = items[idx]
             ElevatedCard(onClick = { nav.navigate(route) }, shape = RoundedCornerShape(20.dp)) {
-                Column(Modifier.padding(16.dp).fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Icon(icon, contentDescription = null, modifier = Modifier.size(32.dp), tint = MaterialTheme.colorScheme.primary)
-                    Text(label, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Medium)
+                Column(Modifier.padding(12.dp).fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Icon(icon, contentDescription = null, modifier = Modifier.size(28.dp), tint = MaterialTheme.colorScheme.primary)
+                    Text(label, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Medium, maxLines = 1)
                 }
             }
         }
