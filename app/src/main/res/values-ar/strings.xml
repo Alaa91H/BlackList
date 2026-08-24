@@ -251,4 +251,23 @@
     <string name="blacklist_range_hint">يجب أن يكون للبداية والنهاية نفس عدد الأرقام، والبداية قبل النهاية</string>
     <string name="blacklist_country_hint">رمز البلد (ISO 3166، مثال DE)</string>
     <string name="blacklist_pick_source">اختيار من جهات الاتصال أو سجل المكالمات</string>
+
+    <!-- Temporary Firewall -->
+    <string name="temp_firewall_title">الجدار الزمني المؤقت</string>
+    <string name="temp_firewall_desc">حظر جميع المكالمات الواردة عدا القائمة البيضاء لفترة محدودة</string>
+    <string name="temp_firewall_active_until">جارٍ حظر جميع المكالمات — يتبقى %1$s</string>
+    <string name="temp_firewall_stop">إيقاف الآن</string>
+
+    <!-- Home -->
+    <string name="home_protection_score">درجة الحماية</string>
+
+    <!-- False-positive actions -->
+    <string name="fp_not_spam">ليست مكالمة مزعجة</string>
+    <string name="fp_always_allow">السماح دائماً</string>
+    <string name="fp_temp_allow">سماح ساعة</string>
+    <string name="fp_action_title">الإبلاغ عن حظر خاطئ</string>
+    <string name="fp_action_desc">وضع علامة "ليست مزعجة" على %1$s. يحسّن ذلك القرارات المستقبلية.</string>
+    <string name="fp_temp_allow_title">سماح مؤقت</string>
+    <string name="fp_temp_allow_desc">السماح بمكالمات %1$s للساعة القادمة حتى لو كانت القواعد تحظرها.</string>
+    <string name="fp_temp_allow_confirm">سماح لمدة ساعة</string>
 </resources>

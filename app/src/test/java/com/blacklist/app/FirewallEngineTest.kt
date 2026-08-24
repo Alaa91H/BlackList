@@ -4,6 +4,7 @@ import com.blacklist.app.data.local.entity.BlacklistRuleEntity
 import com.blacklist.app.domain.engine.BehaviorEngine
 import com.blacklist.app.domain.engine.BlacklistEngine
 import com.blacklist.app.domain.engine.RiskScoringEngine
+import com.blacklist.app.domain.engine.TemporaryFirewall
 import com.blacklist.app.domain.model.*
 import com.blacklist.app.domain.normalization.PhoneNumberNormalizer
 import com.blacklist.app.util.PhoneNumberUtils
@@ -146,5 +147,57 @@ class FirewallEngineTest {
         val signals = com.blacklist.app.domain.engine.BehaviorSignals(isBurst = true, repeatedCount = 3)
         val score = riskEngine.score(event, CallerReputation("+49301234567", blockedCalls = 2, riskScore = 70, level = ReputationLevel.SUSPICIOUS), signals, isSuspiciousPrefix = true)
         assertTrue(score >= 80)
+    }
+
+    // ---- TemporaryFirewall ----
+
+    private val NOW = 1_700_000_000_000L
+
+    private fun tempBlockAll(expiry: Long, enabled: Boolean = true) =
+        BlacklistRuleEntity(ruleType = BlacklistRuleEntity.TYPE_TEMP_BLOCK_ALL, pattern = expiry.toString(), isEnabled = enabled)
+
+    private fun tempAllow(number: String, expiry: Long) =
+        BlacklistRuleEntity(ruleType = BlacklistRuleEntity.TYPE_TEMP_ALLOW, pattern = number, startNumber = expiry.toString())
+
+    @Test
+    fun testTempBlockAllActiveAndExpiry() {
+        val active = tempBlockAll(NOW + TemporaryFirewall.MIN_15)
+        val expired = tempBlockAll(NOW - 1)
+        assertTrue(TemporaryFirewall.isActive(active, NOW))
+        assertFalse(TemporaryFirewall.isActive(expired, NOW))
+        assertEquals(active, TemporaryFirewall.blockAllActive(listOf(expired, active), NOW))
+        assertNull(TemporaryFirewall.blockAllActive(listOf(expired), NOW))
+    }
+
+    @Test
+    fun testTempBlockAllDisabledIgnored() {
+        val disabled = tempBlockAll(NOW + TemporaryFirewall.HOUR_1, enabled = false)
+        assertFalse(TemporaryFirewall.isActive(disabled, NOW))
+        assertNull(TemporaryFirewall.blockAllActive(listOf(disabled), NOW))
+    }
+
+    @Test
+    fun testTempAllowMatchesIgnoringFormatting() {
+        val rule = tempAllow("+49 (30) 1234-5678", NOW + TemporaryFirewall.HOUR_1)
+        assertTrue(TemporaryFirewall.allowMatches(listOf(rule), "+493012345678", NOW))
+        assertTrue(TemporaryFirewall.allowMatches(listOf(rule), "00493012345678", NOW))
+        assertFalse(TemporaryFirewall.allowMatches(listOf(rule), "+493098765432", NOW))
+    }
+
+    @Test
+    fun testTempAllowExpiry() {
+        val rule = tempAllow("493012345678", NOW - 1)
+        assertFalse(TemporaryFirewall.isActive(rule, NOW))
+        assertFalse(TemporaryFirewall.allowMatches(listOf(rule), "493012345678", NOW))
+    }
+
+    @Test
+    fun testTempRulesCorruptPayloadNeverActive() {
+        val badBlock = BlacklistRuleEntity(ruleType = BlacklistRuleEntity.TYPE_TEMP_BLOCK_ALL, pattern = "not-a-number", isEnabled = true)
+        val badAllow = BlacklistRuleEntity(ruleType = BlacklistRuleEntity.TYPE_TEMP_ALLOW, pattern = "123", startNumber = null)
+        assertFalse(TemporaryFirewall.isActive(badBlock, NOW))
+        assertFalse(TemporaryFirewall.isActive(badAllow, NOW))
+        assertFalse(TemporaryFirewall.allowMatches(listOf(badAllow), "123", NOW))
+        assertEquals(0L, TemporaryFirewall.remainingMs(badAllow, NOW))
     }
 }

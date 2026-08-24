@@ -49,4 +49,14 @@ class HomeViewModel(
     fun toggleBlockPrivate(v: Boolean) = viewModelScope.launch { repo.updateSettings { it.copy(blockPrivate = v) } }
     fun toggleBlockAllExceptWhitelist(v: Boolean) = viewModelScope.launch { repo.updateSettings { it.copy(blockAllExceptWhitelist = v) } }
     fun toggleNotifications(v: Boolean) = viewModelScope.launch { repo.updateSettings { it.copy(showBlockedNotification = v) } }
+
+    // Temporary firewall
+    val blacklistRules = repo.observeBlacklistRules().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    fun enableTempBlockAll(durationMs: Long) = viewModelScope.launch {
+        repo.cleanupExpiredTemporaryRules()
+        repo.enableTemporaryBlockAll(durationMs)
+    }
+    fun cancelTempBlockAll() = viewModelScope.launch { repo.cancelTemporaryBlockAll() }
+    fun cleanupExpired() = viewModelScope.launch { repo.cleanupExpiredTemporaryRules() }
 }

@@ -42,4 +42,10 @@ interface BlackListRepository {
     suspend fun addBlacklistRule(rule: BlacklistRuleEntity): Result<Long>
     suspend fun deleteBlacklistRule(id: Long)
     suspend fun setBlacklistRuleEnabled(id: Long, enabled: Boolean)
+
+    // Temporary firewall (auto-expiring; stored as internal TEMP_* rules)
+    suspend fun enableTemporaryBlockAll(durationMs: Long)
+    suspend fun cancelTemporaryBlockAll()
+    suspend fun addTemporaryAllow(rawNumber: String, durationMs: Long): Result<Long>
+    suspend fun cleanupExpiredTemporaryRules(): Int
 }

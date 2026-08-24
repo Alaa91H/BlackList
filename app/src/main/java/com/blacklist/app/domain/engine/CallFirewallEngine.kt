@@ -27,6 +27,12 @@ class CallFirewallEngine(
             return decision(event, Decision.ALLOW, 0, ReputationLevel.TRUSTED, listOf("Whitelisted"), emptyList(), "whitelist bypass")
         }
 
+        // 2b. Temporary allow (user reversal of a false positive; auto-expires)
+        val tempRules = try { db.blacklistRuleDao().getEnabled() } catch (_: Exception) { emptyList() }
+        if (TemporaryFirewall.allowMatches(tempRules, event.phoneNumber.digitsOnly)) {
+            return decision(event, Decision.ALLOW, 0, ReputationLevel.NEUTRAL, listOf("Temporary allow active"), emptyList(), "temp_allow")
+        }
+
         // 3. Schedule profile rules (priority 70)
         val scheduleRule = activeScheduleRule()
         if (scheduleRule != null) {
@@ -35,8 +41,14 @@ class CallFirewallEngine(
             if (scheduleDecision != null) return scheduleDecision
         }
 
-        // 4. Load blacklist rules (priority 30) + hidden/unknown (priority 40)
-        val rules = try { db.blacklistRuleDao().getEnabled() } catch (_: Exception) { emptyList() }
+        // 3b. Temporary block-all firewall (auto-expires; whitelist/temp-allow already handled above)
+        val tempBlock = TemporaryFirewall.blockAllActive(tempRules)
+        if (tempBlock != null) {
+            return decision(event, Decision.BLOCK, 90, ReputationLevel.SUSPICIOUS, listOf("Temporary firewall active"), emptyList(), "temp_block_all")
+        }
+
+        // 4. Load blacklist rules (priority 30) + hidden/unknown (priority 40) — single DAO read reused for temp checks
+        val rules = tempRules
         val matchedBlacklist = blacklistEngine.findMatching(event.phoneNumber, rules)
         if (matchedBlacklist.isNotEmpty()) {
             // Check if any matched is EXPLICIT_BLOCK vs COUNTRY etc.

@@ -71,6 +71,10 @@ class BlackListRepositoryImpl(
 
     override suspend fun addBlacklistRule(rule: BlacklistRuleEntity): Result<Long> {
         return try {
+            // TEMP_* types are internal-only (created via temporary firewall APIs)
+            if (rule.ruleType == BlacklistRuleEntity.TYPE_TEMP_BLOCK_ALL || rule.ruleType == BlacklistRuleEntity.TYPE_TEMP_ALLOW) {
+                return Result.failure(IllegalArgumentException("Internal rule type"))
+            }
             when (rule.ruleType) {
                 BlacklistRuleEntity.TYPE_EXACT,
                 BlacklistRuleEntity.TYPE_PREFIX,
@@ -130,4 +134,56 @@ class BlackListRepositoryImpl(
 
     override suspend fun deleteBlacklistRule(id: Long) = ruleDao.deleteById(id)
     override suspend fun setBlacklistRuleEnabled(id: Long, enabled: Boolean) = ruleDao.setEnabled(id, enabled)
+
+    override suspend fun enableTemporaryBlockAll(durationMs: Long) {
+        cancelTemporaryBlockAll()
+        val expiry = System.currentTimeMillis() + durationMs.coerceAtLeast(60_000)
+        ruleDao.insert(
+            BlacklistRuleEntity(
+                ruleType = BlacklistRuleEntity.TYPE_TEMP_BLOCK_ALL,
+                pattern = expiry.toString(),
+                priority = 10,
+                displayName = "temporary_firewall"
+            )
+        )
+    }
+
+    override suspend fun cancelTemporaryBlockAll() {
+        ruleDao.getAll().filter { it.ruleType == BlacklistRuleEntity.TYPE_TEMP_BLOCK_ALL }.forEach { ruleDao.deleteById(it.id) }
+    }
+
+    override suspend fun addTemporaryAllow(rawNumber: String, durationMs: Long): Result<Long> {
+        return try {
+            val digits = rawNumber.filter { it.isDigit() }
+            if (digits.length < 3) return Result.failure(IllegalArgumentException("Invalid number"))
+            // Replace any previous temp-allow for the same number
+            ruleDao.getAll()
+                .filter { it.ruleType == BlacklistRuleEntity.TYPE_TEMP_ALLOW && it.pattern?.filter { c -> c.isDigit() } == digits }
+                .forEach { ruleDao.deleteById(it.id) }
+            val expiry = System.currentTimeMillis() + durationMs.coerceAtLeast(60_000)
+            Result.success(
+                ruleDao.insert(
+                    BlacklistRuleEntity(
+                        ruleType = BlacklistRuleEntity.TYPE_TEMP_ALLOW,
+                        pattern = digits,
+                        startNumber = expiry.toString(),
+                        priority = 15,
+                        displayName = "temporary_allow"
+                    )
+                )
+            )
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun cleanupExpiredTemporaryRules(): Int {
+        val now = System.currentTimeMillis()
+        val expired = ruleDao.getAll().filter {
+            (it.ruleType == BlacklistRuleEntity.TYPE_TEMP_BLOCK_ALL || it.ruleType == BlacklistRuleEntity.TYPE_TEMP_ALLOW) &&
+                !com.blacklist.app.domain.engine.TemporaryFirewall.isActive(it, now)
+        }
+        expired.forEach { ruleDao.deleteById(it.id) }
+        return expired.size
+    }
 }

@@ -84,6 +84,7 @@ fun HomeScreen(navController: NavController) {
                         }
                         if (isRoleHeld.value) Badge(containerColor = MaterialTheme.colorScheme.primary) { Text(stringResource(R.string.home_on), modifier = Modifier.padding(horizontal = 6.dp)) }
                     }
+                    ProtectionScoreRow()
                     AnimatedVisibility(visible = !isRoleHeld.value, enter = fadeIn()+expandVertically(), exit = fadeOut()+shrinkVertically()) {
                         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             Text(stringResource(R.string.home_set_as_default), style = MaterialTheme.typography.bodySmall)
@@ -116,11 +117,83 @@ fun HomeScreen(navController: NavController) {
             QuickToggleCard(title = stringResource(R.string.home_block_unknown), desc = stringResource(R.string.settings_block_unknown_desc), icon = Icons.Filled.PersonOff, checked = settings?.blockUnknown ?: false, onChecked = { vm.toggleBlockUnknown(it) })
             QuickToggleCard(title = stringResource(R.string.home_block_private), desc = stringResource(R.string.settings_block_private_desc), icon = Icons.Filled.VisibilityOff, checked = settings?.blockPrivate ?: true, onChecked = { vm.toggleBlockPrivate(it) })
             QuickToggleCard(title = stringResource(R.string.home_block_all_except_whitelist), desc = stringResource(R.string.home_whitelist_bypass), icon = Icons.Filled.DoNotDisturbOn, checked = settings?.blockAllExceptWhitelist ?: false, onChecked = { vm.toggleBlockAllExceptWhitelist(it) })
+
+            TemporaryFirewallCard(vm)
+
             Text(stringResource(R.string.home_manage), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
             GridNav(navController)
             Spacer(Modifier.height(24.dp))
         }
     }
+}
+
+@Composable private fun ProtectionScoreRow() {
+    val ctx = LocalContext.current
+    val capManager = remember { ServiceLocator.provideCapabilityManager(ctx) }
+    var health by remember { mutableIntStateOf(0) }
+    LaunchedEffect(Unit) {
+        health = capManager.getHealthPercentage()
+        capManager.refresh()
+        capManager.capabilityStates.collect { health = capManager.getHealthPercentage() }
+    }
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            Text(stringResource(R.string.home_protection_score), style = MaterialTheme.typography.labelMedium)
+            Text("$health%", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
+        }
+        LinearProgressIndicator(progress = { health / 100f }, modifier = Modifier.fillMaxWidth().height(8.dp), trackColor = MaterialTheme.colorScheme.surfaceVariant)
+    }
+}
+
+@Composable private fun TemporaryFirewallCard(vm: HomeViewModel) {
+    val rules by vm.blacklistRules.collectAsState()
+    val active = remember(rules) { com.blacklist.app.domain.engine.TemporaryFirewall.blockAllActive(rules) }
+    var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
+    LaunchedEffect(active?.id) {
+        vm.cleanupExpired()
+        while (active != null) { delay(1000); now = System.currentTimeMillis() }
+    }
+    ElevatedCard(
+        shape = RoundedCornerShape(20.dp),
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.elevatedCardColors(containerColor = if (active != null) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.surfaceVariant)
+    ) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Surface(shape = RoundedCornerShape(12.dp), color = if (active != null) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primaryContainer, modifier = Modifier.size(48.dp)) {
+                    Box(contentAlignment = Alignment.Center) { Icon(Icons.Filled.Timer, contentDescription = null, tint = if (active != null) MaterialTheme.colorScheme.onError else LocalContentColor.current) }
+                }
+                Column(Modifier.weight(1f)) {
+                    Text(stringResource(R.string.temp_firewall_title), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                    Text(
+                        if (active != null) stringResource(R.string.temp_firewall_active_until, formatRemaining(com.blacklist.app.domain.engine.TemporaryFirewall.remainingMs(active!!, now)))
+                        else stringResource(R.string.temp_firewall_desc),
+                        style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+            if (active != null) {
+                Button(onClick = { vm.cancelTempBlockAll() }, colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error), modifier = Modifier.fillMaxWidth()) {
+                    Icon(Icons.Filled.Stop, contentDescription = null, modifier = Modifier.size(18.dp)); Spacer(Modifier.width(8.dp)); Text(stringResource(R.string.temp_firewall_stop))
+                }
+            } else {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                    FilledTonalButton(onClick = { vm.enableTempBlockAll(com.blacklist.app.domain.engine.TemporaryFirewall.MIN_15) }, modifier = Modifier.weight(1f)) { Text("15m") }
+                    FilledTonalButton(onClick = { vm.enableTempBlockAll(com.blacklist.app.domain.engine.TemporaryFirewall.MIN_30) }, modifier = Modifier.weight(1f)) { Text("30m") }
+                    FilledTonalButton(onClick = { vm.enableTempBlockAll(com.blacklist.app.domain.engine.TemporaryFirewall.HOUR_1) }, modifier = Modifier.weight(1f)) { Text("1h") }
+                    FilledTonalButton(onClick = { vm.enableTempBlockAll(com.blacklist.app.domain.engine.TemporaryFirewall.HOUR_2) }, modifier = Modifier.weight(1f)) { Text("2h") }
+                }
+            }
+        }
+    }
+}
+
+private fun formatRemaining(ms: Long): String {
+    val totalMin = ms / 60000
+    val h = totalMin / 60
+    val m = totalMin % 60
+    val s = (ms / 1000) % 60
+    return if (h > 0) String.format("%d:%02d:%02d", h, m, s) else String.format("%02d:%02d", m, s)
 }
 
 @Composable private fun StatCard(title: String, value: String, icon: androidx.compose.ui.graphics.vector.ImageVector, modifier: Modifier = Modifier) {

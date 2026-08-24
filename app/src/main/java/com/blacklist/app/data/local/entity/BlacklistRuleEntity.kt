@@ -31,7 +31,11 @@ data class BlacklistRuleEntity(
         const val TYPE_HIDDEN = "HIDDEN"
         const val TYPE_UNKNOWN = "UNKNOWN"
 
-        /** All user-selectable match types (HIDDEN/UNKNOWN are policy toggles, not patterns). */
+        /** Internal temporary-firewall types (not user-selectable). See TemporaryFirewall for encoding. */
+        const val TYPE_TEMP_BLOCK_ALL = "TEMP_BLOCK_ALL"
+        const val TYPE_TEMP_ALLOW = "TEMP_ALLOW"
+
+        /** All user-selectable match types (HIDDEN/UNKNOWN are policy toggles, not patterns; TEMP_* internal). */
         val USER_TYPES = listOf(TYPE_EXACT, TYPE_PREFIX, TYPE_SUFFIX, TYPE_CONTAINS, TYPE_RANGE, TYPE_COUNTRY)
     }
 }

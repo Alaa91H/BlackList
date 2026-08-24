@@ -21,6 +21,7 @@ import com.blacklist.app.R
 import com.blacklist.app.di.ServiceLocator
 import com.blacklist.app.di.ViewModelFactory
 import com.blacklist.app.ui.components.EmptyState
+import kotlinx.coroutines.launch
 import java.text.DateFormat
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -29,8 +30,12 @@ fun BlockedLogScreen(nav: NavController) {
     val ctx = LocalContext.current
     val repo = remember { ServiceLocator.provideRepository(ctx) }
     val vm: BlockedLogViewModel = viewModel(factory = ViewModelFactory(repo))
+    val scope = rememberCoroutineScope()
     val logs by vm.logs.collectAsState()
     var confirmClear by remember { mutableStateOf(false) }
+    var actionTarget by remember { mutableStateOf<com.blacklist.app.data.local.entity.BlockedCallLogEntity?>(null) }
+    var tempAllowTarget by remember { mutableStateOf<com.blacklist.app.data.local.entity.BlockedCallLogEntity?>(null) }
+    LaunchedEffect(Unit) { vm.cleanupExpiredTemporaryRules() }
 
     Scaffold(
         topBar = {
@@ -49,8 +54,16 @@ fun BlockedLogScreen(nav: NavController) {
                             Text(reasonLabel(log.reason), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
                             Text(DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT).format(log.timestamp), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
-                        AssistChip(onClick = {}, label = { Text(log.reason) }, leadingIcon = { Icon(Icons.Filled.Shield, null, modifier = Modifier.size(16.dp)) })
+                        AssistChip(onClick = { actionTarget = log }, label = { Text(log.reason) }, leadingIcon = { Icon(Icons.Filled.Shield, null, modifier = Modifier.size(16.dp)) })
                     }
+                    FalsePositiveActions(log = log,
+                        onNotSpam = {
+                            val digits = log.phoneNumber?.filter { it.isDigit() }
+                            if (!digits.isNullOrBlank() && digits.length >= 3) scope.launch { ServiceLocator.provideReputationEngine(ctx).recordAllowed(digits) }
+                        },
+                        onAlwaysAllow = { vm.alwaysAllow(log.phoneNumber!!, log.displayName) },
+                        onTempAllow = { tempAllowTarget = log },
+                        enabled = !log.phoneNumber.isNullOrBlank())
                 }
             }
         }
@@ -60,7 +73,58 @@ fun BlockedLogScreen(nav: NavController) {
             confirmButton = { Button(onClick = { vm.clear(); confirmClear = false }, colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)) { Text(stringResource(R.string.action_delete)) } },
             dismissButton = { TextButton(onClick = { confirmClear = false }) { Text(stringResource(R.string.action_cancel)) } })
     }
+    actionTarget?.let { target ->
+        AlertDialog(
+            onDismissRequest = { actionTarget = null },
+            title = { Text(stringResource(R.string.fp_action_title)) },
+            text = { Text(stringResource(R.string.fp_action_desc, target.phoneNumber ?: "")) },
+            confirmButton = {
+                TextButton(onClick = {
+                    val digits = target.phoneNumber?.filter { it.isDigit() }
+                    if (!digits.isNullOrBlank() && digits.length >= 3) scope.launch { ServiceLocator.provideReputationEngine(ctx).recordAllowed(digits) }
+                    actionTarget = null
+                }) { Text(stringResource(R.string.fp_not_spam)) }
+            },
+            dismissButton = { TextButton(onClick = { actionTarget = null }) { Text(stringResource(R.string.action_cancel)) } })
+    }
+    tempAllowTarget?.let { target ->
+        AlertDialog(
+            onDismissRequest = { tempAllowTarget = null },
+            title = { Text(stringResource(R.string.fp_temp_allow_title)) },
+            text = { Text(stringResource(R.string.fp_temp_allow_desc, target.phoneNumber ?: "")) },
+            confirmButton = {
+                TextButton(onClick = {
+                    vm.temporaryAllow(target.phoneNumber!!, com.blacklist.app.domain.engine.TemporaryFirewall.HOUR_1)
+                    tempAllowTarget = null
+                }) { Text(stringResource(R.string.fp_temp_allow_confirm)) }
+            },
+            dismissButton = { TextButton(onClick = { tempAllowTarget = null }) { Text(stringResource(R.string.action_cancel)) } })
+    }
 }
+@Composable
+private fun FalsePositiveActions(
+    log: com.blacklist.app.data.local.entity.BlockedCallLogEntity,
+    onNotSpam: () -> Unit,
+    onAlwaysAllow: () -> Unit,
+    onTempAllow: () -> Unit,
+    enabled: Boolean
+) {
+    Row(Modifier.padding(start = 16.dp, end = 16.dp, bottom = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        FilledTonalButton(onClick = onNotSpam, enabled = enabled, contentPadding = PaddingValues(horizontal = 12.dp)) {
+            Icon(Icons.Filled.ThumbUp, contentDescription = null, modifier = Modifier.size(16.dp)); Spacer(Modifier.width(4.dp))
+            Text(stringResource(R.string.fp_not_spam), style = MaterialTheme.typography.labelMedium)
+        }
+        FilledTonalButton(onClick = onAlwaysAllow, enabled = enabled, contentPadding = PaddingValues(horizontal = 12.dp)) {
+            Icon(Icons.Filled.VerifiedUser, contentDescription = null, modifier = Modifier.size(16.dp)); Spacer(Modifier.width(4.dp))
+            Text(stringResource(R.string.fp_always_allow), style = MaterialTheme.typography.labelMedium)
+        }
+        FilledTonalButton(onClick = onTempAllow, enabled = enabled, contentPadding = PaddingValues(horizontal = 12.dp)) {
+            Icon(Icons.Filled.Schedule, contentDescription = null, modifier = Modifier.size(16.dp)); Spacer(Modifier.width(4.dp))
+            Text(stringResource(R.string.fp_temp_allow), style = MaterialTheme.typography.labelMedium)
+        }
+    }
+}
+
 @Composable
 private fun reasonLabel(r: String): String {
     return when (r) {

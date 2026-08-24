@@ -262,4 +262,23 @@
     <string name="blacklist_range_hint">Start and end must have the same number of digits, start before end</string>
     <string name="blacklist_country_hint">Country code (ISO 3166, e.g. DE)</string>
     <string name="blacklist_pick_source">Pick from contacts or call log</string>
+
+    <!-- Temporary Firewall -->
+    <string name="temp_firewall_title">Temporary Firewall</string>
+    <string name="temp_firewall_desc">Block all incoming calls except whitelist for a limited time</string>
+    <string name="temp_firewall_active_until">Blocking all calls — %1$s remaining</string>
+    <string name="temp_firewall_stop">Stop now</string>
+
+    <!-- Home -->
+    <string name="home_protection_score">Protection score</string>
+
+    <!-- False-positive actions -->
+    <string name="fp_not_spam">Not spam</string>
+    <string name="fp_always_allow">Always allow</string>
+    <string name="fp_temp_allow">Allow 1h</string>
+    <string name="fp_action_title">Report wrong block</string>
+    <string name="fp_action_desc">Mark %1$s as not spam. This improves future decisions.</string>
+    <string name="fp_temp_allow_title">Temporary allow</string>
+    <string name="fp_temp_allow_desc">Allow calls from %1$s for the next hour, even if rules would block them.</string>
+    <string name="fp_temp_allow_confirm">Allow for 1 hour</string>
 </resources>
