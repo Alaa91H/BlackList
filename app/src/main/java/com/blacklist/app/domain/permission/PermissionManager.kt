@@ -69,6 +69,32 @@ class PermissionManagerImpl(
             optional = true
         ),
         PermissionDescriptor(
+            id = android.Manifest.permission.READ_CALL_LOG,
+            name = "Call log",
+            description = "Optionally selects numbers from the local call history.",
+            category = PermissionCategory.CALLS,
+            required = false,
+            runtime = true,
+            specialAccess = false,
+            role = false,
+            rationale = "Only needed when you choose the Call log source in the number picker.",
+            remediation = "Grant Call log access from the in-app permission manager to use this optional picker source.",
+            optional = true
+        ),
+        PermissionDescriptor(
+            id = android.Manifest.permission.READ_SMS,
+            name = "Messages",
+            description = "Optionally selects sender numbers from local SMS history.",
+            category = PermissionCategory.OPTIONAL,
+            required = false,
+            runtime = true,
+            specialAccess = false,
+            role = false,
+            rationale = "Only needed when you choose the Messages source in the number picker.",
+            remediation = "Grant Messages access from the in-app permission manager to use this optional picker source.",
+            optional = true
+        ),
+        PermissionDescriptor(
             id = android.Manifest.permission.POST_NOTIFICATIONS,
             name = "Notifications",
             description = "Optionally shows private, low-priority summaries of blocked calls.",

@@ -25,6 +25,7 @@ import androidx.navigation.NavController
 import com.blacklist.app.R
 import com.blacklist.app.di.ServiceLocator
 import com.blacklist.app.di.ViewModelFactory
+import com.blacklist.app.ui.navigation.Routes
 import kotlinx.coroutines.flow.collectLatest
 
 private enum class BackupUiAction { EXPORT, RESTORE }
@@ -34,12 +35,15 @@ private enum class BackupUiAction { EXPORT, RESTORE }
 fun SettingsScreen(nav: NavController) {
     val context = LocalContext.current
     val repo = remember { ServiceLocator.provideRepository(context) }
+    val notificationManager = remember { ServiceLocator.provideNotificationManager(context) }
     val vm: SettingsViewModel = viewModel(factory = ViewModelFactory(repo))
     val settings by vm.settings.collectAsState()
+    val blockedNumbers by vm.blockedNumbers.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     var pendingAction by remember { mutableStateOf<BackupUiAction?>(null) }
     var pendingRestoreUri by remember { mutableStateOf<android.net.Uri?>(null) }
     var exportPassphrase by remember { mutableStateOf<CharArray?>(null) }
+    var showNotificationManager by remember { mutableStateOf(false) }
 
     val exportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/octet-stream")) { uri ->
         val passphrase = exportPassphrase
@@ -53,6 +57,12 @@ fun SettingsScreen(nav: NavController) {
     val restoreLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         pendingRestoreUri = uri
         if (uri != null) pendingAction = BackupUiAction.RESTORE
+    }
+
+    LaunchedEffect(settings?.showBlockedNotification) {
+        settings?.showBlockedNotification?.let { enabled ->
+            notificationManager.updatePolicy(notificationManager.getPolicy().copy(enabled = enabled))
+        }
     }
 
     LaunchedEffect(vm) {
@@ -72,6 +82,20 @@ fun SettingsScreen(nav: NavController) {
             }
             snackbarHostState.showSnackbar(message)
         }
+    }
+
+    if (showNotificationManager) {
+        NotificationManagerDialog(
+            globallyEnabled = settings?.showBlockedNotification ?: true,
+            blockedNumbers = blockedNumbers,
+            onDismiss = { showNotificationManager = false },
+            onGlobalEnabledChange = { enabled ->
+                vm.setNotifications(enabled)
+                notificationManager.updatePolicy(notificationManager.getPolicy().copy(enabled = enabled))
+            },
+            onSetAll = vm::setAllBlockedNumberNotifications,
+            onSetNumber = vm::setBlockedNumberNotification
+        )
     }
 
     if (pendingAction != null) {
@@ -127,15 +151,31 @@ fun SettingsScreen(nav: NavController) {
             Text(stringResource(R.string.settings_notifications), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
             ElevatedCard(shape = RoundedCornerShape(20.dp)) {
                 Column {
-                    SettingSwitch(stringResource(R.string.settings_notifications_global), stringResource(R.string.settings_notifications_global_desc), Icons.Filled.NotificationsActive, settings?.showBlockedNotification ?: true) { vm.setNotifications(it) }
+                    SettingSwitch(stringResource(R.string.settings_notifications_global), stringResource(R.string.settings_notifications_global_desc), Icons.Filled.NotificationsActive, settings?.showBlockedNotification ?: true) { enabled ->
+                        vm.setNotifications(enabled)
+                        notificationManager.updatePolicy(notificationManager.getPolicy().copy(enabled = enabled))
+                    }
                     HorizontalDivider()
                     Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         Icon(Icons.Filled.Tune, null, tint = MaterialTheme.colorScheme.primary)
                         Column(Modifier.weight(1f)) {
-                            Text(stringResource(R.string.settings_notifications_per_number), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Medium)
-                            Text(stringResource(R.string.settings_notifications_per_number_desc), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(stringResource(R.string.settings_notification_manager), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Medium)
+                            Text(stringResource(R.string.settings_notification_manager_desc), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
+                        TextButton(onClick = { showNotificationManager = true }) { Text(stringResource(R.string.home_manage)) }
                     }
+                }
+            }
+
+            Text(stringResource(R.string.settings_permissions), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
+            ElevatedCard(shape = RoundedCornerShape(20.dp)) {
+                Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Icon(Icons.Filled.AdminPanelSettings, null, tint = MaterialTheme.colorScheme.primary)
+                    Column(Modifier.weight(1f)) {
+                        Text(stringResource(R.string.settings_permission_manager), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Medium)
+                        Text(stringResource(R.string.settings_permission_manager_desc), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    TextButton(onClick = { nav.navigate(Routes.PERMISSIONS) }) { Text(stringResource(R.string.home_manage)) }
                 }
             }
 

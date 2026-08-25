@@ -14,6 +14,7 @@ interface BlackListRepository {
     suspend fun isBlocked(normalized: String): Boolean
     suspend fun findBlockedMatches(phone: String): BlockedNumberEntity?
     suspend fun setBlockedNotificationEnabled(id: Long, enabled: Boolean)
+    suspend fun setAllBlockedNotificationsEnabled(enabled: Boolean)
 
     // Whitelist
     fun observeWhitelisted(): Flow<List<WhitelistedNumberEntity>>

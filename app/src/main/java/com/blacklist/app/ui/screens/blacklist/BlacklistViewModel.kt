@@ -4,6 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.blacklist.app.data.local.entity.BlacklistRuleEntity
 import com.blacklist.app.domain.repository.BlackListRepository
+import com.blacklist.app.util.PickerItem
+import com.blacklist.app.util.PhoneNumberUtils
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
@@ -35,6 +37,20 @@ class BlacklistViewModel(private val repo: BlackListRepository): ViewModel() {
         val res = repo.addBlockedNumber(number, name?.takeIf { it.isNotBlank() })
         if (res.isFailure) _error.value = res.exceptionOrNull()?.message ?: "Error"
         else _error.value = null
+    }
+
+    fun addAll(selected: List<PickerItem>) = viewModelScope.launch {
+        var added = 0
+        var skipped = 0
+        selected.distinctBy { PhoneNumberUtils.normalize(it.number) ?: it.number }.forEach { item ->
+            val result = repo.addBlockedNumber(item.number, item.name?.takeIf { it.isNotBlank() })
+            if (result.isSuccess) added++ else skipped++
+        }
+        _error.value = when {
+            skipped == 0 -> null
+            added == 0 -> "All selected numbers are already in the blacklist."
+            else -> "$added numbers added; $skipped already existed."
+        }
     }
 
     fun addRule(rule: BlacklistRuleEntity) = viewModelScope.launch {

@@ -22,6 +22,7 @@ class SettingsViewModel(private val repo: BlackListRepository) : ViewModel() {
     enum class Action { EXPORT, RESTORE }
 
     val settings = repo.observeSettings().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+    val blockedNumbers = repo.observeBlockedNumbers().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     private val _backupEvents = MutableSharedFlow<BackupEvent>(extraBufferCapacity = 1)
     val backupEvents = _backupEvents.asSharedFlow()
@@ -31,6 +32,8 @@ class SettingsViewModel(private val repo: BlackListRepository) : ViewModel() {
     fun setBlockAllExcept(value: Boolean) = viewModelScope.launch { repo.updateSettings { it.copy(blockAllExceptWhitelist = value) } }
     fun setNotifications(value: Boolean) = viewModelScope.launch { repo.updateSettings { it.copy(showBlockedNotification = value) } }
     fun setTheme(mode: String) = viewModelScope.launch { repo.updateSettings { it.copy(themeMode = mode) } }
+    fun setBlockedNumberNotification(id: Long, enabled: Boolean) = viewModelScope.launch { repo.setBlockedNotificationEnabled(id, enabled) }
+    fun setAllBlockedNumberNotifications(enabled: Boolean) = viewModelScope.launch { repo.setAllBlockedNotificationsEnabled(enabled) }
 
     fun exportEncryptedBackup(contentResolver: ContentResolver, uri: Uri, passphrase: CharArray) {
         performBackup(Action.EXPORT, passphrase) {

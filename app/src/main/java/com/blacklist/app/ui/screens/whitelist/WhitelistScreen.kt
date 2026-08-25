@@ -22,6 +22,7 @@ import com.blacklist.app.di.ServiceLocator
 import com.blacklist.app.di.ViewModelFactory
 import com.blacklist.app.ui.components.EmptyState
 import com.blacklist.app.ui.components.PickerDialog
+import com.blacklist.app.ui.components.PickerSource
 import java.text.DateFormat
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -35,6 +36,7 @@ fun WhitelistScreen(nav: NavController) {
     val error by vm.error.collectAsState()
     var showAdd by remember { mutableStateOf(false) }
     var showPicker by remember { mutableStateOf(false) }
+    var pickerSource by remember { mutableStateOf(PickerSource.CONTACTS) }
     var inputNumber by remember { mutableStateOf("") }
     var inputName by remember { mutableStateOf("") }
 
@@ -66,8 +68,12 @@ fun WhitelistScreen(nav: NavController) {
                         Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                             Surface(shape = RoundedCornerShape(12.dp), color = MaterialTheme.colorScheme.primaryContainer, modifier = Modifier.size(48.dp)) { Box(contentAlignment = Alignment.Center) { Icon(Icons.Filled.VerifiedUser, null) } }
                             Column(Modifier.weight(1f)) {
-                                Text(item.rawNumber, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-                                if (!item.displayName.isNullOrBlank()) Text(item.displayName, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                if (!item.displayName.isNullOrBlank()) {
+                                    Text(item.displayName, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                                    Text(item.rawNumber, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                } else {
+                                    Text(item.rawNumber, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                                }
                                 Text(DateFormat.getDateTimeInstance().format(item.createdAt), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                             IconButton(onClick = { vm.remove(item.id) }) { Icon(Icons.Filled.Delete, null, tint = MaterialTheme.colorScheme.error) }
@@ -86,18 +92,18 @@ fun WhitelistScreen(nav: NavController) {
                     OutlinedTextField(value = inputNumber, onValueChange = { inputNumber = it }, label = { Text(stringResource(R.string.blacklist_add_hint)) }, singleLine = true, modifier = Modifier.fillMaxWidth())
                     OutlinedTextField(value = inputName, onValueChange = { inputName = it }, label = { Text(stringResource(R.string.blacklist_add_name_hint)) }, singleLine = true, modifier = Modifier.fillMaxWidth())
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                        OutlinedButton(onClick = { showPicker = true }, modifier = Modifier.weight(1f)) {
+                        OutlinedButton(onClick = { pickerSource = PickerSource.CONTACTS; showPicker = true }, modifier = Modifier.weight(1f)) {
                             Icon(Icons.Filled.Contacts, null, modifier = Modifier.size(16.dp))
                             Spacer(Modifier.width(4.dp))
                             Text(stringResource(R.string.blacklist_add_from_contacts), style = MaterialTheme.typography.labelSmall)
                         }
-                        OutlinedButton(onClick = { showPicker = true }, modifier = Modifier.weight(1f)) {
+                        OutlinedButton(onClick = { pickerSource = PickerSource.CALL_LOG; showPicker = true }, modifier = Modifier.weight(1f)) {
                             Icon(Icons.Filled.History, null, modifier = Modifier.size(16.dp))
                             Spacer(Modifier.width(4.dp))
                             Text(stringResource(R.string.blacklist_add_from_log), style = MaterialTheme.typography.labelSmall)
                         }
                     }
-                    OutlinedButton(onClick = { showPicker = true }, modifier = Modifier.fillMaxWidth()) {
+                    OutlinedButton(onClick = { pickerSource = PickerSource.MESSAGES; showPicker = true }, modifier = Modifier.fillMaxWidth()) {
                         Icon(Icons.Filled.Message, null, modifier = Modifier.size(16.dp))
                         Spacer(Modifier.width(4.dp))
                         Text(stringResource(R.string.blacklist_add_from_messages))
@@ -109,10 +115,14 @@ fun WhitelistScreen(nav: NavController) {
         )
     }
     if (showPicker) {
-        PickerDialog(onDismiss = { showPicker = false }, onPick = { item ->
-            inputNumber = item.number
-            if (!item.name.isNullOrBlank()) inputName = item.name
-            showPicker = false
-        })
+        PickerDialog(
+            initialSource = pickerSource,
+            onDismiss = { showPicker = false },
+            onConfirm = { selected ->
+                vm.addAll(selected)
+                showPicker = false
+                showAdd = false
+            }
+        )
     }
 }

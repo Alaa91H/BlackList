@@ -129,6 +129,17 @@
     <string name="settings_notifications_global_desc">Master switch for all blocked-call notifications</string>
     <string name="settings_notifications_per_number">Per-number control</string>
     <string name="settings_notifications_per_number_desc">Mute individual numbers from the Blacklist list (bell icon)</string>
+    <string name="settings_notification_manager">Notification manager</string>
+    <string name="settings_notification_manager_desc">Set global, bulk, or per-number blocked-call summaries</string>
+    <string name="settings_notification_manager_empty">No blocked numbers to customise yet</string>
+    <string name="settings_notification_enable_all">Enable all</string>
+    <string name="settings_notification_mute_all">Mute all</string>
+    <string name="settings_notification_global_desc">Notifications are optional and never delay or change call blocking.</string>
+    <string name="settings_permission_manager">Permission manager</string>
+    <string name="settings_permission_manager_desc">Grant optional permissions from system prompts and check call-screening readiness</string>
+
+
+
     <string name="settings_block_all_except_desc">When enabled, only whitelisted numbers ring</string>
     <string name="settings_theme">Theme</string>
     <string name="settings_theme_system">System Default</string>
@@ -207,6 +218,13 @@
     <string name="picker_permission_call_log">Call log permission required</string>
     <string name="picker_permission_messages">Messages permission required</string>
     <string name="picker_grant">Grant</string>
+    <string name="picker_select_all">Select all</string>
+    <string name="picker_clear_all">Clear selection</string>
+    <string name="picker_selected_count">%1$d selected</string>
+    <string name="picker_add_selected">Add (%1$d)</string>
+
+
+
     <string name="picker_incoming">Incoming</string>
     <string name="picker_outgoing">Outgoing</string>
     <string name="picker_missed">Missed</string>

@@ -27,6 +27,7 @@ import com.blacklist.app.di.ServiceLocator
 import com.blacklist.app.di.ViewModelFactory
 import com.blacklist.app.ui.components.EmptyState
 import com.blacklist.app.ui.components.PickerDialog
+import com.blacklist.app.ui.components.PickerSource
 import java.text.DateFormat
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -41,6 +42,7 @@ fun BlacklistScreen(nav: NavController) {
     val error by vm.error.collectAsState()
     var showAdd by remember { mutableStateOf(false) }
     var showPicker by remember { mutableStateOf(false) }
+    var pickerSource by remember { mutableStateOf(PickerSource.CONTACTS) }
 
     Scaffold(
         topBar = {
@@ -98,8 +100,12 @@ fun BlacklistScreen(nav: NavController) {
                                         Box(contentAlignment = Alignment.Center) { Icon(Icons.Filled.Block, null, tint = MaterialTheme.colorScheme.onErrorContainer) }
                                     }
                                     Column(Modifier.weight(1f)) {
-                                        Text(item.rawNumber, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-                                        if (!item.displayName.isNullOrBlank()) Text(item.displayName, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                        if (!item.displayName.isNullOrBlank()) {
+                                            Text(item.displayName, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                                            Text(item.rawNumber, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                        } else {
+                                            Text(item.rawNumber, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                                        }
                                         Text(DateFormat.getDateTimeInstance().format(item.createdAt), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                     }
                                     IconButton(onClick = { vm.toggleNotification(item.id, !item.showNotification) }) {
@@ -125,15 +131,22 @@ fun BlacklistScreen(nav: NavController) {
                 vm.addRule(rule)
                 showAdd = false
             },
-            onPickFromPicker = { showPicker = true }
+            onPickSource = { source ->
+                pickerSource = source
+                showPicker = true
+            }
         )
     }
     if (showPicker) {
-        PickerDialog(onDismiss = { showPicker = false }, onPick = { item ->
-            // Picked numbers land as exact blocked entries
-            vm.add(item.number, item.name)
-            showPicker = false
-        })
+        PickerDialog(
+            initialSource = pickerSource,
+            onDismiss = { showPicker = false },
+            onConfirm = { selected ->
+                vm.addAll(selected)
+                showPicker = false
+                showAdd = false
+            }
+        )
     }
 }
 
@@ -209,7 +222,7 @@ private fun RuleCard(rule: BlacklistRuleEntity, onToggle: (Boolean) -> Unit, onD
 private fun AddRuleDialog(
     onDismiss: () -> Unit,
     onSaveRule: (BlacklistRuleEntity) -> Unit,
-    onPickFromPicker: () -> Unit
+    onPickSource: (PickerSource) -> Unit
 ) {
     var selectedType by remember { mutableStateOf(BlacklistRuleEntity.TYPE_EXACT) }
     var pattern by remember { mutableStateOf("") }
@@ -292,16 +305,21 @@ private fun AddRuleDialog(
                     HorizontalDivider()
                     Text(stringResource(R.string.blacklist_pick_source), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                        OutlinedButton(onClick = onPickFromPicker, modifier = Modifier.weight(1f)) {
+                        OutlinedButton(onClick = { onPickSource(PickerSource.CONTACTS) }, modifier = Modifier.weight(1f)) {
                             Icon(Icons.Filled.Contacts, null, modifier = Modifier.size(16.dp))
                             Spacer(Modifier.width(4.dp))
                             Text(stringResource(R.string.blacklist_add_from_contacts), style = MaterialTheme.typography.labelSmall)
                         }
-                        OutlinedButton(onClick = onPickFromPicker, modifier = Modifier.weight(1f)) {
+                        OutlinedButton(onClick = { onPickSource(PickerSource.CALL_LOG) }, modifier = Modifier.weight(1f)) {
                             Icon(Icons.Filled.History, null, modifier = Modifier.size(16.dp))
                             Spacer(Modifier.width(4.dp))
                             Text(stringResource(R.string.blacklist_add_from_log), style = MaterialTheme.typography.labelSmall)
                         }
+                    }
+                    OutlinedButton(onClick = { onPickSource(PickerSource.MESSAGES) }, modifier = Modifier.fillMaxWidth()) {
+                        Icon(Icons.Filled.Message, null, modifier = Modifier.size(16.dp))
+                        Spacer(Modifier.width(4.dp))
+                        Text(stringResource(R.string.blacklist_add_from_messages), style = MaterialTheme.typography.labelSmall)
                     }
                 }
             }

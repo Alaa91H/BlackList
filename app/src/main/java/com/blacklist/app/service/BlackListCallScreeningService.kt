@@ -1,19 +1,15 @@
 package com.blacklist.app.service
 
-import android.app.NotificationManager
-import android.content.Context
 import android.telecom.Call
 import android.telecom.CallScreeningService
 import android.util.Log
-import androidx.core.app.NotificationCompat
-import com.blacklist.app.BlackListApp
-import com.blacklist.app.R
 import com.blacklist.app.data.local.entity.BlockedCallLogEntity
 import com.blacklist.app.data.local.entity.SecurityEventEntity
 import com.blacklist.app.di.ServiceLocator
 import com.blacklist.app.domain.events.FirewallEvent
 import com.blacklist.app.domain.events.FirewallEventBus
 import com.blacklist.app.domain.model.Decision
+import com.blacklist.app.domain.notification.BlockedNotificationGate
 import com.blacklist.app.domain.model.EnforcementDecision
 import com.blacklist.app.domain.model.Presentation
 import kotlinx.coroutines.CoroutineScope
@@ -85,7 +81,9 @@ class BlackListCallScreeningService : CallScreeningService() {
                     .setDisallowCall(true)
                     .setRejectCall(true)
                     .setSkipCallLog(false)
-                    .setSkipNotification(false)
+                    // BlackList owns blocked-call notifications; suppress the
+                    // system fallback so a muted configuration stays muted.
+                    .setSkipNotification(true)
                     .build()
                 Decision.SILENCE -> CallResponse.Builder()
                     .setDisallowCall(false)
@@ -184,14 +182,14 @@ class BlackListCallScreeningService : CallScreeningService() {
 
     private suspend fun notifyBlockedIfEnabled(number: String?, decision: EnforcementDecision) {
         val settings = ServiceLocator.provideDatabase(applicationContext).appSettingsDao().get()
-        if (settings?.showBlockedNotification == false) return
+        val globalEnabled = settings?.showBlockedNotification ?: true
 
         val perNumberEnabled = runCatching {
             ServiceLocator.provideRepository(applicationContext)
                 .findBlockedMatches(number.orEmpty())
                 ?.showNotification ?: true
         }.getOrDefault(true)
-        if (!perNumberEnabled) return
+        if (!BlockedNotificationGate.isAllowed(globalEnabled, perNumberEnabled)) return
 
         runCatching {
             ServiceLocator.provideNotificationManager(applicationContext).notifyCallBlocked(
@@ -200,8 +198,10 @@ class BlackListCallScreeningService : CallScreeningService() {
                 riskScore = decision.riskScore,
                 decision = decision
             )
-        }.onFailure {
-            legacyBlockedNotification(number, decision.explainable.summary)
+        }.onFailure { error ->
+            // Never fall back to an unmanaged notification path: the user's
+            // global/per-number privacy choices must remain authoritative.
+            Log.w(TAG, "Blocked-call notification was not delivered", error)
         }
     }
 
@@ -231,28 +231,6 @@ class BlackListCallScreeningService : CallScreeningService() {
             )
         } catch (error: Exception) {
             Log.e(TAG, "Safe fallback response failed", error)
-        }
-    }
-
-    private fun legacyBlockedNotification(number: String?, reason: String) {
-        try {
-            val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            val text = getString(
-                R.string.notification_blocked_text,
-                number ?: getString(R.string.blocked_log_private_hidden),
-                reason
-            )
-            val notification = NotificationCompat.Builder(this, BlackListApp.CHANNEL_BLOCKED)
-                .setSmallIcon(R.drawable.ic_block)
-                .setContentTitle(getString(R.string.notification_blocked_title))
-                .setContentText(text)
-                .setStyle(NotificationCompat.BigTextStyle().bigText(text))
-                .setAutoCancel(true)
-                .setPriority(NotificationCompat.PRIORITY_LOW)
-                .build()
-            manager.notify((System.currentTimeMillis() % Int.MAX_VALUE).toInt(), notification)
-        } catch (_: Exception) {
-            // Notification permission is optional and must not affect blocking.
         }
     }
 

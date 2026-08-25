@@ -37,6 +37,7 @@ class BlackListRepositoryImpl(
         return all.firstOrNull { PhoneNumberUtils.matches(it.rawNumber, phone) || PhoneNumberUtils.matches(it.normalizedNumber, phone) }
     }
     override suspend fun setBlockedNotificationEnabled(id: Long, enabled: Boolean) = blockedDao.setNotificationEnabled(id, enabled)
+    override suspend fun setAllBlockedNotificationsEnabled(enabled: Boolean) = blockedDao.setAllNotificationsEnabled(enabled)
 
     override fun observeWhitelisted(): Flow<List<WhitelistedNumberEntity>> = whiteDao.observeAll()
     override suspend fun addWhitelisted(raw: String, name: String?): Result<Long> {

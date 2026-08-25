@@ -3,6 +3,8 @@ package com.blacklist.app.ui.screens.whitelist
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.blacklist.app.domain.repository.BlackListRepository
+import com.blacklist.app.util.PickerItem
+import com.blacklist.app.util.PhoneNumberUtils
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
@@ -19,6 +21,20 @@ class WhitelistViewModel(private val repo: BlackListRepository): ViewModel() {
     fun add(n:String, name:String?) = viewModelScope.launch {
         val r = repo.addWhitelisted(n, name?.takeIf{it.isNotBlank()})
         _error.value = if(r.isFailure) r.exceptionOrNull()?.message else null
+    }
+
+    fun addAll(selected: List<PickerItem>) = viewModelScope.launch {
+        var added = 0
+        var skipped = 0
+        selected.distinctBy { PhoneNumberUtils.normalize(it.number) ?: it.number }.forEach { item ->
+            val result = repo.addWhitelisted(item.number, item.name?.takeIf { it.isNotBlank() })
+            if (result.isSuccess) added++ else skipped++
+        }
+        _error.value = when {
+            skipped == 0 -> null
+            added == 0 -> "All selected numbers are already in the whitelist."
+            else -> "$added numbers added; $skipped already existed."
+        }
     }
     fun remove(id:Long)=viewModelScope.launch{repo.removeWhitelisted(id)}
     fun clearError(){_error.value=null}

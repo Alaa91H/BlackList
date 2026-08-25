@@ -79,6 +79,7 @@ fun PermissionCenterScreen(nav: NavController) {
     val scope = rememberCoroutineScope()
     var refreshTick by remember { mutableIntStateOf(0) }
     var busy by remember { mutableStateOf(false) }
+    var pendingRuntimePermission by remember { mutableStateOf<PermissionDescriptor?>(null) }
 
     fun refreshAll() {
         scope.launch {
@@ -113,12 +114,32 @@ fun PermissionCenterScreen(nav: NavController) {
                     refreshAll()
                 }
             }
-            desc.runtime -> runtimeLauncher.launch(arrayOf(desc.id))
+            desc.runtime -> pendingRuntimePermission = desc
             else -> {
                 permManager.openSettings(desc.id, ctx)
                 refreshAll()
             }
         }
+    }
+
+    pendingRuntimePermission?.let { permission ->
+        AlertDialog(
+            onDismissRequest = { pendingRuntimePermission = null },
+            title = { Text("Grant ${permission.name}?") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(permission.rationale)
+                    Text("This is optional. Call blocking continues if you decline.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            },
+            confirmButton = {
+                Button(onClick = {
+                    pendingRuntimePermission = null
+                    runtimeLauncher.launch(arrayOf(permission.id))
+                }) { Text("Continue") }
+            },
+            dismissButton = { TextButton(onClick = { pendingRuntimePermission = null }) { Text("Not now") } }
+        )
     }
 
     val capabilities = capManager.descriptors
