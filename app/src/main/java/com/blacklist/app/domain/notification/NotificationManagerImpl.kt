@@ -114,7 +114,7 @@ class NotificationManagerImpl(
 
         actionLabel?.let { label -> actionIntent?.let { builder.addAction(R.drawable.ic_block, label, activityPendingIntent(it)) } }
         notificationManager.notify(nextNotificationId(), builder.build())
-        recordHistory(NotificationRecord(NotificationCategory.SECURITY, title, body, CHANNEL_SECURITY_ALERTS, NotificationSeverity.WARNING))
+        recordHistory(NotificationRecord(category = NotificationCategory.SECURITY, title = title, body = body, channelId = CHANNEL_SECURITY_ALERTS, severity = NotificationSeverity.WARNING))
     }
 
     override suspend fun notifySpam(
@@ -137,7 +137,7 @@ class NotificationManagerImpl(
             .setGroup(GROUP_BLOCKED)
             .setNumber(count.coerceAtLeast(1))
         notificationManager.notify(nextNotificationId(), builder.build())
-        recordHistory(NotificationRecord(NotificationCategory.SPAM, title, displayBody, BlackListApp.CHANNEL_BLOCKED, NotificationSeverity.WARNING))
+        recordHistory(NotificationRecord(category = NotificationCategory.SPAM, title = title, body = displayBody, channelId = BlackListApp.CHANNEL_BLOCKED, severity = NotificationSeverity.WARNING))
     }
 
     override suspend fun notifyCampaign(prefix: String, count: Int, attempts: Int, durationMinutes: Int) {
@@ -151,7 +151,7 @@ class NotificationManagerImpl(
             .setCategory(NotificationCompat.CATEGORY_STATUS)
             .setGroup(GROUP_SECURITY)
         notificationManager.notify(nextNotificationId(), builder.build())
-        recordHistory(NotificationRecord(NotificationCategory.CAMPAIGNS, "Local call campaign detected", body, CHANNEL_SECURITY_ALERTS, NotificationSeverity.WARNING))
+        recordHistory(NotificationRecord(category = NotificationCategory.CAMPAIGNS, title = "Local call campaign detected", body = body, channelId = CHANNEL_SECURITY_ALERTS, severity = NotificationSeverity.WARNING))
     }
 
     override suspend fun notifyCallFlood(count: Int, durationMinutes: Int, reason: String) {
@@ -165,7 +165,7 @@ class NotificationManagerImpl(
             .setCategory(NotificationCompat.CATEGORY_STATUS)
             .setGroup(GROUP_SECURITY)
         notificationManager.notify(nextNotificationId(), builder.build())
-        recordHistory(NotificationRecord(NotificationCategory.SECURITY, "Call flood detected", body, CHANNEL_SECURITY_ALERTS, NotificationSeverity.WARNING))
+        recordHistory(NotificationRecord(category = NotificationCategory.SECURITY, title = "Call flood detected", body = body, channelId = CHANNEL_SECURITY_ALERTS, severity = NotificationSeverity.WARNING))
     }
 
     override suspend fun notifyPermissionWarning(
@@ -187,7 +187,7 @@ class NotificationManagerImpl(
             .addAction(R.drawable.ic_block, actionLabel, activityPendingIntent(intent))
             .setGroup(GROUP_HEALTH)
         notificationManager.notify(nextNotificationId(), builder.build())
-        recordHistory(NotificationRecord(NotificationCategory.PERMISSIONS, "Action needed for call protection", reason, CHANNEL_PERMISSIONS, NotificationSeverity.WARNING))
+        recordHistory(NotificationRecord(category = NotificationCategory.PERMISSIONS, title = "Action needed for call protection", body = reason, channelId = CHANNEL_PERMISSIONS, severity = NotificationSeverity.WARNING))
     }
 
     override suspend fun notifyDiagnostic(title: String, message: String, severity: NotificationSeverity) {
@@ -205,7 +205,7 @@ class NotificationManagerImpl(
             .setCategory(NotificationCompat.CATEGORY_STATUS)
             .setGroup(GROUP_HEALTH)
         notificationManager.notify(nextNotificationId(), builder.build())
-        recordHistory(NotificationRecord(NotificationCategory.DIAGNOSTICS, title, message, CHANNEL_DIAGNOSTICS, severity))
+        recordHistory(NotificationRecord(category = NotificationCategory.DIAGNOSTICS, title = title, body = message, channelId = CHANNEL_DIAGNOSTICS, severity = severity))
     }
 
     override suspend fun notifyCallBlocked(
@@ -229,7 +229,7 @@ class NotificationManagerImpl(
             .setCategory(NotificationCompat.CATEGORY_CALL)
             .setGroup(GROUP_BLOCKED)
         notificationManager.notify(nextNotificationId(), builder.build())
-        recordHistory(NotificationRecord(NotificationCategory.CALLS, title, "Blocked ${number ?: "Private"} — $body", BlackListApp.CHANNEL_BLOCKED, NotificationSeverity.INFO))
+        recordHistory(NotificationRecord(category = NotificationCategory.CALLS, title = title, body = "Blocked ${number ?: "Private"} — $body", channelId = BlackListApp.CHANNEL_BLOCKED, severity = NotificationSeverity.INFO))
     }
 
     override suspend fun sendTestNotification(channelId: String) {
