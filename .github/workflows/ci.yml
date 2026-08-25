@@ -49,6 +49,40 @@ jobs:
         with:
           cache-read-only: ${{ github.ref != 'refs/heads/main' }}
 
+      - name: Restore and verify permanent release signing key
+        env:
+          BLACKLIST_KEYSTORE_B64: ${{ secrets.BLACKLIST_KEYSTORE_B64 }}
+          BLACKLIST_KEYSTORE_PASSWORD: ${{ secrets.BLACKLIST_KEYSTORE_PASSWORD }}
+          BLACKLIST_KEY_ALIAS: ${{ secrets.BLACKLIST_KEY_ALIAS }}
+          BLACKLIST_KEY_PASSWORD: ${{ secrets.BLACKLIST_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          : "${BLACKLIST_KEYSTORE_B64:?Missing BLACKLIST_KEYSTORE_B64 secret}"
+          : "${BLACKLIST_KEYSTORE_PASSWORD:?Missing BLACKLIST_KEYSTORE_PASSWORD secret}"
+          : "${BLACKLIST_KEY_ALIAS:?Missing BLACKLIST_KEY_ALIAS secret}"
+          : "${BLACKLIST_KEY_PASSWORD:?Missing BLACKLIST_KEY_PASSWORD secret}"
+
+          umask 077
+          KEYSTORE_PATH="$RUNNER_TEMP/blacklist-release.jks"
+          printf '%s' "$BLACKLIST_KEYSTORE_B64" | base64 --decode > "$KEYSTORE_PATH"
+          test -s "$KEYSTORE_PATH"
+
+          EXPECTED_FILE_SHA256="743f49ab2d72fddbc411d2d131180296892e1f6c0602f52d407a2064f42a783a"
+          ACTUAL_FILE_SHA256="$(sha256sum "$KEYSTORE_PATH" | awk '{print $1}')"
+          test "$ACTUAL_FILE_SHA256" = "$EXPECTED_FILE_SHA256"
+
+          EXPECTED_CERT_SHA256="45:56:24:F3:16:FB:CD:72:09:9C:31:60:E0:27:D2:0C:A6:42:F8:4D:5C:45:10:89:EE:E1:C8:8C:C1:BF:B4:27"
+          ACTUAL_CERT_SHA256="$(keytool -list -v -keystore "$KEYSTORE_PATH" -storepass "$BLACKLIST_KEYSTORE_PASSWORD" -alias "$BLACKLIST_KEY_ALIAS" | awk -F': ' '/SHA256:/{print $2; exit}')"
+          test "$ACTUAL_CERT_SHA256" = "$EXPECTED_CERT_SHA256"
+
+          {
+            echo "BLACKLIST_KEYSTORE_PATH=$KEYSTORE_PATH"
+            echo "BLACKLIST_KEYSTORE_PASSWORD=$BLACKLIST_KEYSTORE_PASSWORD"
+            echo "BLACKLIST_KEY_ALIAS=$BLACKLIST_KEY_ALIAS"
+            echo "BLACKLIST_KEY_PASSWORD=$BLACKLIST_KEY_PASSWORD"
+          } >> "$GITHUB_ENV"
+          echo "Permanent release signing certificate verified: $ACTUAL_CERT_SHA256"
+
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
@@ -76,15 +110,6 @@ jobs:
       - name: Run Unit Tests
         run: ./gradlew testDebugUnitTest --stacktrace
 
-      - name: Ensure debug keystore exists (for signed release fallback)
-        run: |
-          mkdir -p ~/.android
-          if [ ! -f ~/.android/debug.keystore ]; then
-            echo "Generating debug keystore..."
-            keytool -genkeypair -v -keystore ~/.android/debug.keystore -alias androiddebugkey -keyalg RSA -keysize 2048 -validity 9125 -storepass android -keypass android -dname "CN=Android Debug, O=Android, C=US" || true
-          fi
-          ls -lh ~/.android/debug.keystore || true
-
       - name: Assemble Debug
         run: ./gradlew assembleDebug --stacktrace --info
 
@@ -103,6 +128,9 @@ jobs:
           echo "Using apksigner: $APKSIGNER"
           "$APKSIGNER" verify --verbose app/build/outputs/apk/debug/*.apk
           "$APKSIGNER" verify --verbose app/build/outputs/apk/release/*.apk
+          APK_CERT_SHA256="$("$APKSIGNER" verify --print-certs app/build/outputs/apk/release/*.apk | awk -F': ' '/certificate SHA-256 digest:/{print $2; exit}')"
+          test "$APK_CERT_SHA256" = "45:56:24:F3:16:FB:CD:72:09:9C:31:60:E0:27:D2:0C:A6:42:F8:4D:5C:45:10:89:EE:E1:C8:8C:C1:BF:B4:27"
+          echo "Release APK certificate verified: $APK_CERT_SHA256"
           echo "APK verification done - both APKs are installable"
 
       - name: Upload Debug APK
