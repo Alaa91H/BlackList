@@ -133,8 +133,12 @@ class CallFirewallEngine(
         }
     }
 
-    private fun isEmergencyNumber(number: PhoneNumber): Boolean =
-        number.digitsOnly in EMERGENCY_NUMBERS
+    private fun isEmergencyNumber(number: PhoneNumber): Boolean {
+        // libphonenumber may normalize a short code with a default country
+        // prefix. Always compare the original dialed digits as well.
+        val candidates = listOf(number.digitsOnly, number.raw.filter(Char::isDigit), number.nationalNumber.orEmpty())
+        return candidates.any { it in EMERGENCY_NUMBERS }
+    }
 
     private fun isSuspiciousPrefix(number: PhoneNumber): Boolean {
         val suspicious = listOf("+216", "+212", "+234", "+92")
