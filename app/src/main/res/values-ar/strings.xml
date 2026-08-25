@@ -271,6 +271,8 @@
     <string name="fp_temp_allow_desc">السماح بمكالمات %1$s للساعة القادمة حتى لو كانت القواعد تحظرها.</string>
     <string name="fp_temp_allow_confirm">سماح لمدة ساعة</string>
 
+    <string name="action_back">رجوع</string>
+
     <!-- نقل القوائم CSV -->
     <string name="settings_csv_transfer">نقل القوائم بصيغة CSV</string>
     <string name="settings_csv_transfer_desc">استورد أو صدّر عناصر القائمتين السوداء والبيضاء فقط. لا يدخل سجل المكالمات أو الإعدادات في هذا الملف.</string>

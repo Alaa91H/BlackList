@@ -3,7 +3,6 @@ package com.blacklist.app.ui.screens.settings
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.spacedBy
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedCard

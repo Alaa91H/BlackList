@@ -24,7 +24,7 @@ data class DecisionSimulatorState(
  */
 class DecisionSimulatorViewModel(context: Context) : ViewModel() {
     private val applicationContext = context.applicationContext
-    private val normalizer = ServiceLocator.providePhoneNumberNormalizer(applicationContext)
+    private val normalizer = ServiceLocator.provideNormalizer(applicationContext)
     private val firewall = ServiceLocator.provideFirewallEngine(applicationContext)
 
     private val _state = MutableStateFlow(DecisionSimulatorState())

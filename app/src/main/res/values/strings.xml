@@ -314,6 +314,8 @@
     <string name="fp_temp_allow_desc">Allow calls from %1$s for the next hour, even if rules would block them.</string>
     <string name="fp_temp_allow_confirm">Allow for 1 hour</string>
 
+    <string name="action_back">Back</string>
+
     <!-- CSV list transfer -->
     <string name="settings_csv_transfer">List CSV transfer</string>
     <string name="settings_csv_transfer_desc">Import or export only blacklist and whitelist entries. Call history and settings are never included.</string>
