@@ -223,7 +223,8 @@ private fun formatRemaining(ms: Long): String {
         Triple("Diagnostics", Icons.Filled.BugReport, Routes.DIAGNOSTICS),
         Triple("Statistics", Icons.Filled.BarChart, Routes.STATISTICS),
         Triple("Security", Icons.Filled.Security, Routes.SECURITY_EVENTS),
-        Triple(stringResource(R.string.settings_permission_center), Icons.Filled.VerifiedUser, Routes.PERMISSIONS)
+        Triple(stringResource(R.string.settings_permission_center), Icons.Filled.VerifiedUser, Routes.PERMISSIONS),
+        Triple(stringResource(R.string.simulator_title), Icons.Filled.Policy, Routes.DECISION_SIMULATOR)
     )
     LazyVerticalGrid(columns = GridCells.Fixed(3), modifier = Modifier.height(320.dp), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalArrangement = Arrangement.spacedBy(12.dp), userScrollEnabled = false) {
         items(items.size) { idx ->

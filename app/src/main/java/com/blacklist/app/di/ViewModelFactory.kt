@@ -7,6 +7,7 @@ import com.blacklist.app.ui.screens.blacklist.BlacklistViewModel
 import com.blacklist.app.ui.screens.blockedlog.BlockedLogViewModel
 import com.blacklist.app.ui.screens.home.HomeViewModel
 import com.blacklist.app.ui.screens.schedule.ScheduleViewModel
+import com.blacklist.app.ui.screens.simulator.DecisionSimulatorViewModel
 import com.blacklist.app.ui.screens.settings.SettingsViewModel
 import com.blacklist.app.ui.screens.whitelist.WhitelistViewModel
 
@@ -23,6 +24,7 @@ class ViewModelFactory(
             modelClass.isAssignableFrom(BlockedLogViewModel::class.java) -> BlockedLogViewModel(repo) as T
             modelClass.isAssignableFrom(ScheduleViewModel::class.java) -> ScheduleViewModel(repo) as T
             modelClass.isAssignableFrom(SettingsViewModel::class.java) -> SettingsViewModel(repo) as T
+            modelClass.isAssignableFrom(DecisionSimulatorViewModel::class.java) -> DecisionSimulatorViewModel(appContext!!) as T
             else -> throw IllegalArgumentException("Unknown ViewModel $modelClass")
         }
     }

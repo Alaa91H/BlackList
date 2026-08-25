@@ -250,7 +250,7 @@
     <string name="blacklist_range_end">نهاية النطاق</string>
     <string name="blacklist_range_hint">يجب أن يكون للبداية والنهاية نفس عدد الأرقام، والبداية قبل النهاية</string>
     <string name="blacklist_country_hint">رمز البلد (ISO 3166، مثال DE)</string>
-    <string name="blacklist_pick_source">اختيار من جهات الاتصال أو سجل المكالمات</string>
+    <string name="blacklist_pick_source">اختيار من جهات الاتصال أو إدخال رقم يدوياً</string>
 
     <!-- Temporary Firewall -->
     <string name="temp_firewall_title">الجدار الزمني المؤقت</string>
@@ -270,4 +270,46 @@
     <string name="fp_temp_allow_title">سماح مؤقت</string>
     <string name="fp_temp_allow_desc">السماح بمكالمات %1$s للساعة القادمة حتى لو كانت القواعد تحظرها.</string>
     <string name="fp_temp_allow_confirm">سماح لمدة ساعة</string>
+
+    <!-- نقل القوائم CSV -->
+    <string name="settings_csv_transfer">نقل القوائم بصيغة CSV</string>
+    <string name="settings_csv_transfer_desc">استورد أو صدّر عناصر القائمتين السوداء والبيضاء فقط. لا يدخل سجل المكالمات أو الإعدادات في هذا الملف.</string>
+    <string name="csv_export_blacklist">تصدير CSV للقائمة السوداء</string>
+    <string name="csv_import_blacklist">استيراد CSV للقائمة السوداء</string>
+    <string name="csv_export_whitelist">تصدير CSV للقائمة البيضاء</string>
+    <string name="csv_import_whitelist">استيراد CSV للقائمة البيضاء</string>
+    <string name="csv_blacklist_file_name">ارقام-القائمة-السوداء.csv</string>
+    <string name="csv_whitelist_file_name">ارقام-القائمة-البيضاء.csv</string>
+    <string name="csv_export_success">تم تصدير CSV: %1$d إدخالاً</string>
+    <string name="csv_import_success">اكتمل استيراد CSV: %1$d أضيف، %2$d تم تجاوزه</string>
+    <string name="csv_operation_failed">فشلت عملية CSV. تحقق من الملف المحدد ثم حاول مجدداً.</string>
+    <string name="csv_import_preview_title">مراجعة استيراد CSV</string>
+    <string name="csv_import_preview_summary">%1$d إدخالات سليمة، %2$d مكررة، %3$d صفوف غير صالحة</string>
+    <string name="csv_import_preview_desc">ستضاف الإدخالات السليمة الموضحة فقط. تتجاوز الأرقام المكررة الحالية بأمان.</string>
+    <string name="csv_import_confirm">استيراد %1$d إدخالات</string>
+
+    <!-- اختصار الإعدادات السريعة -->
+    <string name="tile_temporary_block">حظر المكالمات المؤقت</string>
+    <string name="tile_temporary_block_active">حظر كل المكالمات لمدة ساعة</string>
+
+    <!-- ملفات الحماية -->
+    <string name="settings_protection_profiles">ملفات الحماية</string>
+    <string name="settings_protection_profiles_desc">طبّق سياسة محلية واضحة. تظل حماية الطوارئ والسماح المؤقت والقائمة البيضاء ذات أولوية دائماً.</string>
+    <string name="settings_protection_custom">إعدادات حماية مخصصة</string>
+    <string name="settings_profile_normal">عادي</string>
+    <string name="settings_profile_focus">تركيز — حظر المجهول والخاص</string>
+    <string name="settings_profile_whitelist_only">القائمة البيضاء فقط</string>
+
+    <!-- محاكي القرار -->
+    <string name="simulator_title">اختبار قرار الحظر</string>
+    <string name="simulator_description">اعرض كيف ستتعامل القواعد المحلية الحالية مع رقم. لا تحظر المعاينة مكالمة ولا تكتب سجلاً ولا ترسل إشعاراً.</string>
+    <string name="simulator_number_label">رقم الهاتف</string>
+    <string name="simulator_number_placeholder">+49 151 12345678</string>
+    <string name="simulator_number_hint">يمكنك أيضاً إدخال 112 أو علامة رقم خاص/مخفي للتحقق من الضمانات.</string>
+    <string name="simulator_run">اختبار القرار</string>
+    <string name="simulator_result_block">سيتم حظره</string>
+    <string name="simulator_result_allow">سيُسمح به</string>
+    <string name="simulator_reasons">تفسير القرار</string>
+    <string name="simulator_matched_rules">معرّفات القواعد المطابقة: %1$s</string>
+    <string name="simulator_read_only">معاينة للقراءة فقط — لا يتم تغيير مكالمة أو بيانات.</string>
 </resources>

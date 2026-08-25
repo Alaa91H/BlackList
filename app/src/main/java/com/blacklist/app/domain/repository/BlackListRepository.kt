@@ -50,6 +50,7 @@ interface BlackListRepository {
     // Temporary firewall (auto-expiring; stored as internal TEMP_* rules)
     suspend fun enableTemporaryBlockAll(durationMs: Long)
     suspend fun cancelTemporaryBlockAll()
+    suspend fun isTemporaryBlockAllActive(): Boolean
     suspend fun addTemporaryAllow(rawNumber: String, durationMs: Long): Result<Long>
     suspend fun cleanupExpiredTemporaryRules(): Int
 

@@ -91,22 +91,13 @@ fun WhitelistScreen(nav: NavController) {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     OutlinedTextField(value = inputNumber, onValueChange = { inputNumber = it }, label = { Text(stringResource(R.string.blacklist_add_hint)) }, singleLine = true, modifier = Modifier.fillMaxWidth())
                     OutlinedTextField(value = inputName, onValueChange = { inputName = it }, label = { Text(stringResource(R.string.blacklist_add_name_hint)) }, singleLine = true, modifier = Modifier.fillMaxWidth())
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                        OutlinedButton(onClick = { pickerSource = PickerSource.CONTACTS; showPicker = true }, modifier = Modifier.weight(1f)) {
-                            Icon(Icons.Filled.Contacts, null, modifier = Modifier.size(16.dp))
-                            Spacer(Modifier.width(4.dp))
-                            Text(stringResource(R.string.blacklist_add_from_contacts), style = MaterialTheme.typography.labelSmall)
-                        }
-                        OutlinedButton(onClick = { pickerSource = PickerSource.CALL_LOG; showPicker = true }, modifier = Modifier.weight(1f)) {
-                            Icon(Icons.Filled.History, null, modifier = Modifier.size(16.dp))
-                            Spacer(Modifier.width(4.dp))
-                            Text(stringResource(R.string.blacklist_add_from_log), style = MaterialTheme.typography.labelSmall)
-                        }
-                    }
-                    OutlinedButton(onClick = { pickerSource = PickerSource.MESSAGES; showPicker = true }, modifier = Modifier.fillMaxWidth()) {
-                        Icon(Icons.Filled.Message, null, modifier = Modifier.size(16.dp))
+                    OutlinedButton(
+                        onClick = { pickerSource = PickerSource.CONTACTS; showPicker = true },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(Icons.Filled.Contacts, null, modifier = Modifier.size(16.dp))
                         Spacer(Modifier.width(4.dp))
-                        Text(stringResource(R.string.blacklist_add_from_messages))
+                        Text(stringResource(R.string.blacklist_add_from_contacts), style = MaterialTheme.typography.labelSmall)
                     }
                 }
             },

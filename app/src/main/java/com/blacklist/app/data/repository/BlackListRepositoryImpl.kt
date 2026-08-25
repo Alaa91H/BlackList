@@ -157,6 +157,14 @@ class BlackListRepositoryImpl(
         ruleDao.getAll().filter { it.ruleType == BlacklistRuleEntity.TYPE_TEMP_BLOCK_ALL }.forEach { ruleDao.deleteById(it.id) }
     }
 
+    override suspend fun isTemporaryBlockAllActive(): Boolean {
+        cleanupExpiredTemporaryRules()
+        return ruleDao.getAll().any {
+            it.ruleType == BlacklistRuleEntity.TYPE_TEMP_BLOCK_ALL &&
+                com.blacklist.app.domain.engine.TemporaryFirewall.isActive(it)
+        }
+    }
+
     override suspend fun addTemporaryAllow(rawNumber: String, durationMs: Long): Result<Long> {
         return try {
             val digits = rawNumber.filter { it.isDigit() }

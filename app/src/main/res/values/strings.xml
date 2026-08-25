@@ -293,7 +293,7 @@
     <string name="blacklist_range_end">Range end</string>
     <string name="blacklist_range_hint">Start and end must have the same number of digits, start before end</string>
     <string name="blacklist_country_hint">Country code (ISO 3166, e.g. DE)</string>
-    <string name="blacklist_pick_source">Pick from contacts or call log</string>
+    <string name="blacklist_pick_source">Pick from contacts or enter a number manually</string>
 
     <!-- Temporary Firewall -->
     <string name="temp_firewall_title">Temporary Firewall</string>
@@ -313,4 +313,46 @@
     <string name="fp_temp_allow_title">Temporary allow</string>
     <string name="fp_temp_allow_desc">Allow calls from %1$s for the next hour, even if rules would block them.</string>
     <string name="fp_temp_allow_confirm">Allow for 1 hour</string>
+
+    <!-- CSV list transfer -->
+    <string name="settings_csv_transfer">List CSV transfer</string>
+    <string name="settings_csv_transfer_desc">Import or export only blacklist and whitelist entries. Call history and settings are never included.</string>
+    <string name="csv_export_blacklist">Export blacklist CSV</string>
+    <string name="csv_import_blacklist">Import blacklist CSV</string>
+    <string name="csv_export_whitelist">Export whitelist CSV</string>
+    <string name="csv_import_whitelist">Import whitelist CSV</string>
+    <string name="csv_blacklist_file_name">blacklist-numbers.csv</string>
+    <string name="csv_whitelist_file_name">whitelist-numbers.csv</string>
+    <string name="csv_export_success">CSV exported: %1$d entries</string>
+    <string name="csv_import_success">CSV import finished: %1$d added, %2$d skipped</string>
+    <string name="csv_operation_failed">CSV operation failed. Check the selected file and try again.</string>
+    <string name="csv_import_preview_title">Review CSV import</string>
+    <string name="csv_import_preview_summary">%1$d valid entries, %2$d duplicates, %3$d invalid rows</string>
+    <string name="csv_import_preview_desc">Only the valid entries shown below will be added. Existing duplicate numbers are safely skipped.</string>
+    <string name="csv_import_confirm">Import %1$d entries</string>
+
+    <!-- Quick Settings tile -->
+    <string name="tile_temporary_block">Temporary call block</string>
+    <string name="tile_temporary_block_active">Blocking all calls for 1 hour</string>
+
+    <!-- Protection profiles -->
+    <string name="settings_protection_profiles">Protection profiles</string>
+    <string name="settings_protection_profiles_desc">Apply a clear local policy preset. Emergency safeguards, temporary allows, and whitelists always take priority.</string>
+    <string name="settings_protection_custom">Custom protection settings</string>
+    <string name="settings_profile_normal">Normal</string>
+    <string name="settings_profile_focus">Focus — block unknown and private callers</string>
+    <string name="settings_profile_whitelist_only">Whitelist only</string>
+
+    <!-- Decision simulator -->
+    <string name="simulator_title">Test blocking decision</string>
+    <string name="simulator_description">Preview how the current local rules would handle a number. This does not block a call, write a log, or send a notification.</string>
+    <string name="simulator_number_label">Phone number</string>
+    <string name="simulator_number_placeholder">+49 151 12345678</string>
+    <string name="simulator_number_hint">You can also enter 112 or a hidden/private marker to verify safeguards.</string>
+    <string name="simulator_run">Test decision</string>
+    <string name="simulator_result_block">Would be blocked</string>
+    <string name="simulator_result_allow">Would be allowed</string>
+    <string name="simulator_reasons">Decision explanation</string>
+    <string name="simulator_matched_rules">Matched rule IDs: %1$s</string>
+    <string name="simulator_read_only">Read-only preview — no call or data is changed.</string>
 </resources>

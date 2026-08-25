@@ -4,9 +4,6 @@
 
     <!-- Call blocking permissions -->
     <uses-permission android:name="android.permission.READ_CONTACTS" />
-    <!-- Optional local picker sources; never required for call screening. -->
-    <uses-permission android:name="android.permission.READ_CALL_LOG" />
-    <uses-permission android:name="android.permission.READ_SMS" />
     <!-- For notification of blocked calls -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
@@ -33,6 +30,17 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <service
+            android:name=".service.TemporaryBlockTileService"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher"
+            android:label="@string/tile_temporary_block"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+        </service>
 
         <!-- Modern Call Screening Service - silently blocks before ringing -->
         <service

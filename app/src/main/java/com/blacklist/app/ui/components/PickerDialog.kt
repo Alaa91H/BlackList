@@ -10,12 +10,10 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.CheckBox
 import androidx.compose.material.icons.filled.CheckBoxOutlineBlank
 import androidx.compose.material.icons.filled.Contacts
 import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.Message
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.SearchOff
@@ -33,22 +31,18 @@ import com.blacklist.app.util.PickerItem
 import com.blacklist.app.util.PickerUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import java.text.DateFormat
-import java.util.Date
 
+/**
+ * The Play-distributed app reads contacts only after an explicit user action.
+ * Manual entry remains available in the owning blacklist and whitelist screens.
+ */
 enum class PickerSource(
     val permission: String,
     val titleRes: Int
 ) {
-    CONTACTS(Manifest.permission.READ_CONTACTS, R.string.picker_contacts),
-    CALL_LOG(Manifest.permission.READ_CALL_LOG, R.string.picker_call_log),
-    MESSAGES(Manifest.permission.READ_SMS, R.string.picker_messages)
+    CONTACTS(Manifest.permission.READ_CONTACTS, R.string.picker_contacts)
 }
 
-/**
- * Multi-select local number picker. Each source is loaded only after its own
- * optional runtime permission is granted; no source is required for blocking.
- */
 @Composable
 fun PickerDialog(
     initialSource: PickerSource = PickerSource.CONTACTS,
@@ -56,36 +50,24 @@ fun PickerDialog(
     onConfirm: (List<PickerItem>) -> Unit
 ) {
     val context = LocalContext.current
-    var source by remember { mutableStateOf(initialSource) }
     var items by remember { mutableStateOf<List<PickerItem>>(emptyList()) }
     var query by remember { mutableStateOf("") }
     var loading by remember { mutableStateOf(false) }
-    var hasPermission by remember(source) { mutableStateOf(source.isGranted(context)) }
+    var hasPermission by remember { mutableStateOf(PickerSource.CONTACTS.isGranted(context)) }
     val selectedNumbers = remember { mutableStateListOf<String>() }
 
     val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         hasPermission = granted
     }
 
-    LaunchedEffect(source) {
-        query = ""
-        selectedNumbers.clear()
-        hasPermission = source.isGranted(context)
-    }
-    LaunchedEffect(source, hasPermission) {
+    LaunchedEffect(hasPermission) {
         if (!hasPermission) {
             items = emptyList()
             loading = false
             return@LaunchedEffect
         }
         loading = true
-        items = withContext(Dispatchers.IO) {
-            when (source) {
-                PickerSource.CONTACTS -> PickerUtils.getContacts(context)
-                PickerSource.CALL_LOG -> PickerUtils.getCallLog(context)
-                PickerSource.MESSAGES -> PickerUtils.getSmsSenders(context)
-            }
-        }
+        items = withContext(Dispatchers.IO) { PickerUtils.getContacts(context) }
         loading = false
     }
 
@@ -102,14 +84,19 @@ fun PickerDialog(
         title = { Text(stringResource(R.string.picker_title)) },
         text = {
             Column(modifier = Modifier.fillMaxWidth().heightIn(min = 340.dp, max = 560.dp)) {
-                SourceTabs(selected = source, onSelect = { source = it })
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Filled.Contacts, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                    Spacer(Modifier.width(8.dp))
+                    Text(stringResource(PickerSource.CONTACTS.titleRes), style = MaterialTheme.typography.titleSmall)
+                }
                 Spacer(Modifier.height(8.dp))
                 when {
-                    !hasPermission -> PermissionExplanation(
-                        source = source,
-                        onGrant = { permissionLauncher.launch(source.permission) }
-                    )
-                    loading -> Box(Modifier.fillMaxWidth().height(220.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
+                    !hasPermission -> PermissionExplanation(onGrant = {
+                        permissionLauncher.launch(PickerSource.CONTACTS.permission)
+                    })
+                    loading -> Box(Modifier.fillMaxWidth().height(220.dp), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator()
+                    }
                     else -> {
                         OutlinedTextField(
                             value = query,
@@ -120,19 +107,33 @@ fun PickerDialog(
                             singleLine = true,
                             shape = RoundedCornerShape(12.dp)
                         )
-                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                            Text(stringResource(R.string.picker_selected_count, selectedItems.size), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+                        Row(
+                            Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                stringResource(R.string.picker_selected_count, selectedItems.size),
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.primary
+                            )
                             TextButton(
                                 onClick = {
                                     if (allVisibleSelected) {
                                         selectedNumbers.removeAll(filtered.map { it.number }.toSet())
                                     } else {
-                                        filtered.forEach { if (it.number !in selectedNumbers) selectedNumbers.add(it.number) }
+                                        filtered.forEach { item ->
+                                            if (item.number !in selectedNumbers) selectedNumbers.add(item.number)
+                                        }
                                     }
                                 },
                                 enabled = filtered.isNotEmpty()
                             ) {
-                                Icon(if (allVisibleSelected) Icons.Filled.CheckBoxOutlineBlank else Icons.Filled.CheckBox, null, modifier = Modifier.size(18.dp))
+                                Icon(
+                                    if (allVisibleSelected) Icons.Filled.CheckBoxOutlineBlank else Icons.Filled.CheckBox,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(18.dp)
+                                )
                                 Spacer(Modifier.width(4.dp))
                                 Text(stringResource(if (allVisibleSelected) R.string.picker_clear_all else R.string.picker_select_all))
                             }
@@ -145,8 +146,11 @@ fun PickerDialog(
                                 }
                             }
                         } else {
-                            LazyColumn(verticalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.fillMaxWidth().heightIn(max = 320.dp)) {
-                                items(filtered, key = { "${source.name}_${it.number}" }) { item ->
+                            LazyColumn(
+                                verticalArrangement = Arrangement.spacedBy(4.dp),
+                                modifier = Modifier.fillMaxWidth().heightIn(max = 320.dp)
+                            ) {
+                                items(filtered, key = { it.number }) { item ->
                                     val selected = item.number in selectedNumbers
                                     PickerRow(item = item, selected = selected, onToggle = {
                                         if (selected) selectedNumbers.remove(item.number) else selectedNumbers.add(item.number)
@@ -168,30 +172,6 @@ fun PickerDialog(
 }
 
 @Composable
-private fun SourceTabs(selected: PickerSource, onSelect: (PickerSource) -> Unit) {
-    TabRow(selectedTabIndex = PickerSource.entries.indexOf(selected)) {
-        PickerSource.entries.forEach { source ->
-            Tab(
-                selected = source == selected,
-                onClick = { onSelect(source) },
-                text = { Text(stringResource(source.titleRes), style = MaterialTheme.typography.labelSmall) },
-                icon = {
-                    Icon(
-                        when (source) {
-                            PickerSource.CONTACTS -> Icons.Filled.Contacts
-                            PickerSource.CALL_LOG -> Icons.Filled.Call
-                            PickerSource.MESSAGES -> Icons.Filled.Message
-                        },
-                        null,
-                        modifier = Modifier.size(16.dp)
-                    )
-                }
-            )
-        }
-    }
-}
-
-@Composable
 private fun PickerRow(item: PickerItem, selected: Boolean, onToggle: () -> Unit) {
     Surface(
         shape = RoundedCornerShape(12.dp),
@@ -199,35 +179,39 @@ private fun PickerRow(item: PickerItem, selected: Boolean, onToggle: () -> Unit)
         color = if (selected) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
         modifier = Modifier.fillMaxWidth().clickable(onClick = onToggle)
     ) {
-        Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        Row(
+            Modifier.padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
             Checkbox(checked = selected, onCheckedChange = { onToggle() })
             Icon(Icons.Filled.Person, null, tint = MaterialTheme.colorScheme.primary)
             Column(Modifier.weight(1f)) {
-                item.name?.takeIf { it.isNotBlank() }?.let {
-                    Text(it, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                item.name?.takeIf { it.isNotBlank() }?.let { name ->
+                    Text(name, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
                     Text(item.number, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 } ?: Text(item.number, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
-                val detail = listOfNotNull(item.typeLabel, item.timestamp?.let { DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT).format(Date(it)) }).joinToString(" • ")
-                if (detail.isNotBlank()) Text(detail, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
+                item.typeLabel?.takeIf { it.isNotBlank() }?.let { detail ->
+                    Text(detail, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
+                }
             }
         }
     }
 }
 
 @Composable
-private fun PermissionExplanation(source: PickerSource, onGrant: () -> Unit) {
-    val message = when (source) {
-        PickerSource.CONTACTS -> stringResource(R.string.picker_permission_contacts)
-        PickerSource.CALL_LOG -> stringResource(R.string.picker_permission_call_log)
-        PickerSource.MESSAGES -> stringResource(R.string.picker_permission_messages)
-    }
+private fun PermissionExplanation(onGrant: () -> Unit) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier.fillMaxWidth().padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         Icon(Icons.Filled.Lock, null, modifier = Modifier.size(48.dp), tint = MaterialTheme.colorScheme.primary)
-        Text(message, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(
+            stringResource(R.string.picker_permission_contacts),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
         Button(onClick = onGrant) { Text(stringResource(R.string.picker_grant)) }
     }
 }

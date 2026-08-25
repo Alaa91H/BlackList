@@ -25,6 +25,7 @@ import androidx.navigation.NavController
 import com.blacklist.app.R
 import com.blacklist.app.di.ServiceLocator
 import com.blacklist.app.di.ViewModelFactory
+import com.blacklist.app.domain.importexport.CsvListTarget
 import com.blacklist.app.ui.navigation.Routes
 import kotlinx.coroutines.flow.collectLatest
 
@@ -44,6 +45,9 @@ fun SettingsScreen(nav: NavController) {
     var pendingRestoreUri by remember { mutableStateOf<android.net.Uri?>(null) }
     var exportPassphrase by remember { mutableStateOf<CharArray?>(null) }
     var showNotificationManager by remember { mutableStateOf(false) }
+    var csvExportTarget by remember { mutableStateOf<CsvListTarget?>(null) }
+    var csvImportTarget by remember { mutableStateOf<CsvListTarget?>(null) }
+    val pendingCsvImport by vm.pendingCsvImport.collectAsState()
 
     val exportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/octet-stream")) { uri ->
         val passphrase = exportPassphrase
@@ -57,6 +61,16 @@ fun SettingsScreen(nav: NavController) {
     val restoreLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         pendingRestoreUri = uri
         if (uri != null) pendingAction = BackupUiAction.RESTORE
+    }
+    val csvExportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("text/csv")) { uri ->
+        val target = csvExportTarget
+        csvExportTarget = null
+        if (uri != null && target != null) vm.exportCsv(context.contentResolver, uri, target)
+    }
+    val csvImportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        val target = csvImportTarget
+        csvImportTarget = null
+        if (uri != null && target != null) vm.previewCsvImport(context.contentResolver, uri, target)
     }
 
     LaunchedEffect(settings?.showBlockedNotification) {
@@ -82,6 +96,25 @@ fun SettingsScreen(nav: NavController) {
             }
             snackbarHostState.showSnackbar(message)
         }
+    }
+
+    LaunchedEffect(vm) {
+        vm.csvEvents.collectLatest { event ->
+            val message = when (event) {
+                is SettingsViewModel.CsvEvent.Exported -> context.getString(R.string.csv_export_success, event.count)
+                is SettingsViewModel.CsvEvent.Imported -> context.getString(R.string.csv_import_success, event.added, event.skipped)
+                is SettingsViewModel.CsvEvent.Failed -> context.getString(R.string.csv_operation_failed)
+            }
+            snackbarHostState.showSnackbar(message)
+        }
+    }
+
+    pendingCsvImport?.let { pending ->
+        CsvImportPreviewDialog(
+            pending = pending,
+            onDismiss = vm::dismissCsvImportPreview,
+            onConfirm = vm::confirmCsvImport
+        )
     }
 
     if (showNotificationManager) {
@@ -138,6 +171,9 @@ fun SettingsScreen(nav: NavController) {
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Text(stringResource(R.string.settings_general), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
+            ProtectionProfileCard(settings?.activeProfileId ?: com.blacklist.app.domain.model.ProtectionProfiles.CUSTOM) { profile ->
+                vm.applyProtectionProfile(profile)
+            }
             ElevatedCard(shape = RoundedCornerShape(20.dp)) {
                 Column {
                     SettingSwitch(stringResource(R.string.home_block_unknown), stringResource(R.string.settings_block_unknown_desc), Icons.Filled.PersonOff, settings?.blockUnknown ?: false) { vm.setBlockUnknown(it) }
@@ -188,6 +224,30 @@ fun SettingsScreen(nav: NavController) {
                         ThemeChip(stringResource(R.string.settings_theme_light), settings?.themeMode == "LIGHT") { vm.setTheme("LIGHT") }
                         ThemeChip(stringResource(R.string.settings_theme_dark), settings?.themeMode == "DARK") { vm.setTheme("DARK") }
                     }
+                }
+            }
+
+            Text(stringResource(R.string.settings_csv_transfer), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
+            ElevatedCard(shape = RoundedCornerShape(20.dp)) {
+                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(stringResource(R.string.settings_csv_transfer_desc), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    OutlinedButton(onClick = {
+                        csvExportTarget = CsvListTarget.BLACKLIST
+                        csvExportLauncher.launch(context.getString(R.string.csv_blacklist_file_name))
+                    }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.csv_export_blacklist)) }
+                    OutlinedButton(onClick = {
+                        csvImportTarget = CsvListTarget.BLACKLIST
+                        csvImportLauncher.launch(arrayOf("text/csv", "text/plain", "application/csv"))
+                    }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.csv_import_blacklist)) }
+                    HorizontalDivider()
+                    OutlinedButton(onClick = {
+                        csvExportTarget = CsvListTarget.WHITELIST
+                        csvExportLauncher.launch(context.getString(R.string.csv_whitelist_file_name))
+                    }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.csv_export_whitelist)) }
+                    OutlinedButton(onClick = {
+                        csvImportTarget = CsvListTarget.WHITELIST
+                        csvImportLauncher.launch(arrayOf("text/csv", "text/plain", "application/csv"))
+                    }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.csv_import_whitelist)) }
                 }
             }
 

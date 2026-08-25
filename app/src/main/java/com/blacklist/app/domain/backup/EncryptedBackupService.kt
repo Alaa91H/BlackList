@@ -7,6 +7,7 @@ import com.blacklist.app.data.local.entity.BlacklistRuleEntity
 import com.blacklist.app.data.local.entity.BlockedNumberEntity
 import com.blacklist.app.data.local.entity.ScheduleRuleEntity
 import com.blacklist.app.data.local.entity.WhitelistedNumberEntity
+import com.blacklist.app.domain.model.ProtectionProfiles
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
@@ -151,6 +152,7 @@ class EncryptedBackupService(
         .put("blockPrivate", blockPrivate)
         .put("blockAllExceptWhitelist", blockAllExceptWhitelist)
         .put("showBlockedNotification", showBlockedNotification)
+        .put("activeProfileId", activeProfileId)
         .put("themeMode", themeMode)
 
     private fun BlacklistRuleEntity.toJson(): JSONObject = JSONObject()
@@ -189,11 +191,14 @@ class EncryptedBackupService(
     private fun settingsFromJson(json: JSONObject): AppSettingsEntity {
         val themeMode = json.optString("themeMode", "SYSTEM")
         require(themeMode in ALLOWED_THEME_MODES) { "Unsupported theme mode in backup." }
+        val activeProfileId = json.optString("activeProfileId", ProtectionProfiles.CUSTOM)
+        require(activeProfileId in ALLOWED_PROFILE_IDS) { "Unsupported protection profile in backup." }
         return AppSettingsEntity(
             blockUnknown = json.optBoolean("blockUnknown", false),
             blockPrivate = json.optBoolean("blockPrivate", true),
             blockAllExceptWhitelist = json.optBoolean("blockAllExceptWhitelist", false),
             showBlockedNotification = json.optBoolean("showBlockedNotification", true),
+            activeProfileId = activeProfileId,
             themeMode = themeMode,
         )
     }
@@ -347,6 +352,12 @@ class EncryptedBackupService(
             BlacklistRuleEntity.TYPE_TEMP_ALLOW
         )
         val ALLOWED_THEME_MODES = setOf("SYSTEM", "LIGHT", "DARK")
+        val ALLOWED_PROFILE_IDS = setOf(
+            ProtectionProfiles.CUSTOM,
+            ProtectionProfiles.NORMAL,
+            ProtectionProfiles.FOCUS,
+            ProtectionProfiles.WHITELIST_ONLY
+        )
         val ALLOWED_SCHEDULE_MODES = setOf(
             ScheduleRuleEntity.MODE_ALL,
             ScheduleRuleEntity.MODE_ALL_EXCEPT_WHITELIST,

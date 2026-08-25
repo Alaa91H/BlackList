@@ -304,22 +304,10 @@ private fun AddRuleDialog(
                 if (selectedType == BlacklistRuleEntity.TYPE_EXACT) {
                     HorizontalDivider()
                     Text(stringResource(R.string.blacklist_pick_source), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                        OutlinedButton(onClick = { onPickSource(PickerSource.CONTACTS) }, modifier = Modifier.weight(1f)) {
-                            Icon(Icons.Filled.Contacts, null, modifier = Modifier.size(16.dp))
-                            Spacer(Modifier.width(4.dp))
-                            Text(stringResource(R.string.blacklist_add_from_contacts), style = MaterialTheme.typography.labelSmall)
-                        }
-                        OutlinedButton(onClick = { onPickSource(PickerSource.CALL_LOG) }, modifier = Modifier.weight(1f)) {
-                            Icon(Icons.Filled.History, null, modifier = Modifier.size(16.dp))
-                            Spacer(Modifier.width(4.dp))
-                            Text(stringResource(R.string.blacklist_add_from_log), style = MaterialTheme.typography.labelSmall)
-                        }
-                    }
-                    OutlinedButton(onClick = { onPickSource(PickerSource.MESSAGES) }, modifier = Modifier.fillMaxWidth()) {
-                        Icon(Icons.Filled.Message, null, modifier = Modifier.size(16.dp))
+                    OutlinedButton(onClick = { onPickSource(PickerSource.CONTACTS) }, modifier = Modifier.fillMaxWidth()) {
+                        Icon(Icons.Filled.Contacts, null, modifier = Modifier.size(16.dp))
                         Spacer(Modifier.width(4.dp))
-                        Text(stringResource(R.string.blacklist_add_from_messages), style = MaterialTheme.typography.labelSmall)
+                        Text(stringResource(R.string.blacklist_add_from_contacts), style = MaterialTheme.typography.labelSmall)
                     }
                 }
             }
