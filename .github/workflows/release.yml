@@ -138,7 +138,7 @@ jobs:
           "$APKSIGNER" verify --verbose app/build/outputs/apk/debug/*.apk
           "$APKSIGNER" verify --verbose app/build/outputs/apk/release/*.apk
           echo "--- Verifying release certificate identity ---"
-          APK_CERT_SHA256="$("$APKSIGNER" verify --print-certs app/build/outputs/apk/release/*.apk | awk -F': ' '/certificate SHA-256 digest:/{print $2; exit}')"
+          APK_CERT_SHA256="$("$APKSIGNER" verify --print-certs app/build/outputs/apk/release/*.apk 2>&1 | tr '[:lower:]' '[:upper:]' | grep -Eo '([0-9A-F]{2}:){31}[0-9A-F]{2}' | head -n1)"
           test "$APK_CERT_SHA256" = "45:56:24:F3:16:FB:CD:72:09:9C:31:60:E0:27:D2:0C:A6:42:F8:4D:5C:45:10:89:EE:E1:C8:8C:C1:BF:B4:27"
           echo "Release APK certificate verified: $APK_CERT_SHA256"
 
