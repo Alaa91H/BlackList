@@ -141,6 +141,20 @@
     <string name="settings_privacy_desc">All data stays 100% offline on your device. No cloud, no tracking, no analytics.</string>
     <string name="settings_export">Export Data</string>
     <string name="settings_import">Import Data</string>
+    <string name="settings_backup">Encrypted local backup</string>
+    <string name="settings_backup_desc">Export rules, lists, schedules and settings to an encrypted file. Call history is never included.</string>
+    <string name="settings_backup_export_desc">Create an encrypted offline backup file</string>
+    <string name="settings_backup_import_desc">Restore an encrypted offline backup file</string>
+    <string name="settings_backup_passphrase_title">Backup passphrase</string>
+    <string name="settings_backup_passphrase_desc">Use at least 12 characters. It is not saved and cannot be recovered.</string>
+    <string name="settings_backup_passphrase_label">Passphrase</string>
+    <string name="settings_backup_restore_warning">Restoring replaces your current rules, lists, schedules and settings. Call history remains untouched.</string>
+    <string name="settings_backup_create_file">Create backup</string>
+    <string name="settings_backup_restore_file">Restore backup</string>
+    <string name="settings_backup_export_success">Encrypted backup created: %1$d rules, %2$d blocked numbers</string>
+    <string name="settings_backup_restore_success">Backup restored: %1$d rules, %2$d blocked numbers</string>
+    <string name="settings_backup_failed">Backup operation failed. Check the file and passphrase.</string>
+    <string name="settings_backup_file_name">blacklist-backup.blbackup</string>
 
     <!-- Permissions &amp; Capabilities -->
     <string name="settings_permissions">Permissions &amp; Capabilities</string>

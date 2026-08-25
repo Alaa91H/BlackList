@@ -8,7 +8,7 @@ data class CallEvent(
     val callId: String, // telecom call ID or timestamp-based
     val timestamp: Long = System.currentTimeMillis(),
     val phoneNumber: PhoneNumber,
-    val subscriptionId: Int? = null, // SIM id if available (requires READ_PHONE_STATE)
+    val subscriptionId: Int? = null, // Best-effort Telecom account metadata; no phone-state permission is required.
     val simSlot: Int? = null,
     val contact: CallerContact? = null,
     val isIncoming: Boolean = true,

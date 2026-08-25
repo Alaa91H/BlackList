@@ -152,22 +152,10 @@ class SettingsNavigator(private val context: Context) {
      */
     fun openBestSettingsFor(capability: String): Boolean {
         return when (capability) {
-            "CALL_SCREENING", "role_call_screening" -> openCallScreeningRoleSettings()
-            "POST_NOTIFICATIONS" -> openNotificationSettings()
-            "battery_optimization" -> openBatteryOptimizationSettings()
-            "android.permission.MANAGE_EXTERNAL_STORAGE" -> openManageAllFilesAccess()
-            "android.permission.READ_CONTACTS" -> openAppSettings()
-            "android.permission.READ_CALL_LOG" -> openAppSettings()
-            "android.permission.READ_PHONE_STATE" -> openAppSettings()
-            "android.permission.READ_SMS" -> openAppSettings()
-            "android.permission.CALL_PHONE" -> openAppSettings()
-            "android.permission.READ_EXTERNAL_STORAGE" -> openAppSettings()
-            "android.permission.WRITE_EXTERNAL_STORAGE" -> openAppSettings()
-            "android.permission.MANAGE_EXTERNAL_STORAGE" -> openManageAllFilesAccess()
-            "android.permission.READ_MEDIA_AUDIO" -> openAppSettings()
-            "battery_optimization" -> openBatteryOptimizationSettings()
-            "root" -> openAppSettings()
-            "shizuku" -> openAppSettings()
+            "CALL_SCREENING", "CALL_FIREWALL", "role_call_screening" -> openCallScreeningRoleSettings()
+            "NOTIFICATIONS", "android.permission.POST_NOTIFICATIONS" -> openNotificationSettings()
+            "BATTERY_OPTIMIZATION", "battery_optimization" -> openBatteryOptimizationSettings()
+            "CONTACTS_INTEGRATION", "android.permission.READ_CONTACTS" -> openAppSettings()
             else -> openAppSettings()
         }
     }

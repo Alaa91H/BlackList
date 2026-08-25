@@ -17,7 +17,11 @@ object ScheduleEvaluator {
 
         for (rule in rules) {
             if (!rule.isEnabled) continue
-            if ((rule.daysOfWeek and dayBit) == 0) continue
+            val isOvernight = rule.startMinutes > rule.endMinutes
+            // For the after-midnight portion of an overnight window, the rule
+            // belongs to the preceding calendar day (e.g. Mon 22:00–06:00).
+            val effectiveDayBit = if (isOvernight && minutes <= rule.endMinutes) previousDayBit(cal) else dayBit
+            if ((rule.daysOfWeek and effectiveDayBit) == 0) continue
             if (isInTimeWindow(minutes, rule.startMinutes, rule.endMinutes)) {
                 return rule
             }
@@ -32,6 +36,12 @@ object ScheduleEvaluator {
             // Overnight span e.g. 22:00-06:00
             currentMin >= startMin || currentMin <= endMin
         }
+    }
+
+    private fun previousDayBit(calendar: Calendar): Int = Calendar.getInstance().run {
+        timeInMillis = calendar.timeInMillis
+        add(Calendar.DAY_OF_YEAR, -1)
+        dayToBit(get(Calendar.DAY_OF_WEEK))
     }
 
     private fun dayToBit(calendarDay: Int): Int = when (calendarDay) {

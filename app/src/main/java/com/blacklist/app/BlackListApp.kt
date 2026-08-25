@@ -4,11 +4,15 @@ import android.app.Application
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.os.Build
+import com.blacklist.app.di.ServiceLocator
 
 class BlackListApp : Application() {
     override fun onCreate() {
         super.onCreate()
         createNotificationChannels()
+        // Hydrate protection policy in the background. CallScreeningService only
+        // reads the immutable result and never waits for Room or ContactsProvider.
+        ServiceLocator.providePolicySnapshotStore(this).start()
     }
 
     private fun createNotificationChannels() {

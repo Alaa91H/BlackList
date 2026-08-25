@@ -15,6 +15,9 @@ interface CallerReputationDao {
     @Query("SELECT * FROM caller_reputation ORDER BY riskScore DESC LIMIT 50")
     suspend fun topRisk(): List<CallerReputationEntity>
 
+    @Query("SELECT * FROM caller_reputation")
+    suspend fun getAll(): List<CallerReputationEntity>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsert(entity: CallerReputationEntity)
 

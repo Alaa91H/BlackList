@@ -18,51 +18,72 @@ data class DiagnosticResult(
     enum class Status { PASS, WARNING, FAIL }
 }
 
+/** Local-only protection health checks. */
 class DiagnosticsService(
     private val context: Context,
     private val db: BlackListDatabase
 ) {
     suspend fun runDiagnostics(): List<DiagnosticResult> {
         val results = mutableListOf<DiagnosticResult>()
-        // Call Screening
+
         val roleHeld = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            val rm = context.getSystemService(RoleManager::class.java)
-            rm?.isRoleHeld(RoleManager.ROLE_CALL_SCREENING) == true
-        } else false
-        results.add(DiagnosticResult("Call Screening", if (roleHeld) DiagnosticResult.Status.PASS else DiagnosticResult.Status.FAIL, if (roleHeld) "Role granted" else "Call screening role not held", "Grant via Settings"))
+            context.getSystemService(RoleManager::class.java)?.isRoleHeld(RoleManager.ROLE_CALL_SCREENING) == true
+        } else {
+            false
+        }
+        results += DiagnosticResult(
+            check = "Call screening role",
+            status = if (roleHeld) DiagnosticResult.Status.PASS else DiagnosticResult.Status.FAIL,
+            message = if (roleHeld) "Call screening role is active." else "Call screening role is not held.",
+            fix = if (roleHeld) null else "Choose BlackList as the call screening app in Android settings."
+        )
 
-        // Permissions
-        listOf(Manifest.permission.READ_CONTACTS, Manifest.permission.READ_CALL_LOG, Manifest.permission.READ_PHONE_STATE).forEach { perm ->
-            val granted = ContextCompat.checkSelfPermission(context, perm) == PackageManager.PERMISSION_GRANTED
-            results.add(DiagnosticResult("Permission $perm", if (granted) DiagnosticResult.Status.PASS else DiagnosticResult.Status.WARNING, if (granted) "Granted" else "Not granted", if (!granted) "Grant permission" else null))
+        val contactsGranted = ContextCompat.checkSelfPermission(context, Manifest.permission.READ_CONTACTS) == PackageManager.PERMISSION_GRANTED
+        results += DiagnosticResult(
+            check = "Contacts matching (optional)",
+            status = if (contactsGranted) DiagnosticResult.Status.PASS else DiagnosticResult.Status.WARNING,
+            message = if (contactsGranted) "Saved-contact matching is available." else "Unsaved-number matching is disabled; other local rules continue working.",
+            fix = if (contactsGranted) null else "Grant Contacts permission only if you use the unsaved-number rule."
+        )
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            val notificationsGranted = ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
+            results += DiagnosticResult(
+                check = "Blocked-call summaries (optional)",
+                status = if (notificationsGranted) DiagnosticResult.Status.PASS else DiagnosticResult.Status.WARNING,
+                message = if (notificationsGranted) "Private notification summaries are available." else "Notifications are disabled; blocking continues normally.",
+                fix = if (notificationsGranted) null else "Grant Notifications permission if you want summaries."
+            )
         }
 
-        // Database
         try {
-            db.blockedNumberDao().getAll()
-            results.add(DiagnosticResult("Database", DiagnosticResult.Status.PASS, "Room accessible"))
-        } catch (e: Exception) {
-            results.add(DiagnosticResult("Database", DiagnosticResult.Status.FAIL, "Error: ${e.message}"))
+            db.blacklistRuleDao().getAll()
+            results += DiagnosticResult("Local policy database", DiagnosticResult.Status.PASS, "Local rules database is accessible.")
+        } catch (_: Exception) {
+            results += DiagnosticResult(
+                "Local policy database",
+                DiagnosticResult.Status.FAIL,
+                "Local rules database could not be read.",
+                "Restart the app or restore a manual encrypted backup."
+            )
         }
 
-        // Battery optimization
-        val pm = context.getSystemService(PowerManager::class.java)
-        val ignoring = pm?.isIgnoringBatteryOptimizations(context.packageName) == true
-        results.add(DiagnosticResult("Battery Optimization", if (ignoring) DiagnosticResult.Status.PASS else DiagnosticResult.Status.WARNING, if (ignoring) "Ignoring optimizations" else "Battery optimization active", "Disable battery optimization for reliable screening"))
+        val powerManager = context.getSystemService(PowerManager::class.java)
+        val ignoringOptimization = powerManager?.isIgnoringBatteryOptimizations(context.packageName) == true
+        results += DiagnosticResult(
+            "Battery optimization (optional)",
+            if (ignoringOptimization) DiagnosticResult.Status.PASS else DiagnosticResult.Status.WARNING,
+            if (ignoringOptimization) "Battery optimization exemption is active." else "Most devices work without this exemption.",
+            if (ignoringOptimization) null else "Change this only if Android reports a reliability issue."
+        )
 
-        // Backend availability
-        results.add(DiagnosticResult("Root Backend", DiagnosticResult.Status.WARNING, "Optional - not required", "Install Magisk for privileged enforcement"))
-        results.add(DiagnosticResult("Shizuku Backend", DiagnosticResult.Status.WARNING, "Optional - not required", "Install Shizuku"))
-
-        // OEM
         val manufacturer = Build.MANUFACTURER.lowercase()
         val oemRisk = when {
-            manufacturer.contains("xiaomi") -> DiagnosticResult.Status.WARNING to "Xiaomi MIUI aggressive battery"
-            manufacturer.contains("samsung") -> DiagnosticResult.Status.PASS to "Samsung OneUI OK"
-            manufacturer.contains("huawei") -> DiagnosticResult.Status.WARNING to "Huawei EMUI background limits"
-            else -> DiagnosticResult.Status.PASS to "Standard Android"
+            manufacturer.contains("xiaomi") -> DiagnosticResult.Status.WARNING to "This device vendor may apply aggressive background limits."
+            manufacturer.contains("huawei") -> DiagnosticResult.Status.WARNING to "This device vendor may apply aggressive background limits."
+            else -> DiagnosticResult.Status.PASS to "No vendor-specific reliability warning is configured."
         }
-        results.add(DiagnosticResult("OEM Compatibility (${Build.MANUFACTURER})", oemRisk.first, oemRisk.second))
+        results += DiagnosticResult("Device compatibility", oemRisk.first, oemRisk.second)
 
         return results
     }

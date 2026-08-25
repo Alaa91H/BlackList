@@ -1,7 +1,10 @@
 package com.blacklist.app.domain.repository
 
 import com.blacklist.app.data.local.entity.*
+import com.blacklist.app.domain.backup.EncryptedBackupService
 import kotlinx.coroutines.flow.Flow
+import java.io.InputStream
+import java.io.OutputStream
 
 interface BlackListRepository {
     // Blocked numbers
@@ -48,4 +51,8 @@ interface BlackListRepository {
     suspend fun cancelTemporaryBlockAll()
     suspend fun addTemporaryAllow(rawNumber: String, durationMs: Long): Result<Long>
     suspend fun cleanupExpiredTemporaryRules(): Int
+
+    // User-controlled local backup. The passphrase is never persisted by the app.
+    suspend fun exportEncryptedBackup(output: OutputStream, passphrase: CharArray): Result<EncryptedBackupService.ExportResult>
+    suspend fun restoreEncryptedBackup(input: InputStream, passphrase: CharArray): Result<EncryptedBackupService.RestoreResult>
 }

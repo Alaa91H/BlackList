@@ -14,205 +14,257 @@ import com.blacklist.app.di.ServiceLocator
 import com.blacklist.app.domain.events.FirewallEvent
 import com.blacklist.app.domain.events.FirewallEventBus
 import com.blacklist.app.domain.model.Decision
-import kotlinx.coroutines.*
+import com.blacklist.app.domain.model.EnforcementDecision
+import com.blacklist.app.domain.model.Presentation
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeout
 
 /**
- * Thin adapter: only translates Call.Details -> CallEvent and delegates to CallFirewallEngine.
- * No business logic here. All decisions via engine (Rule -> Reputation -> Behavior -> Risk -> Policy).
+ * Android adapter for the local firewall.
+ *
+ * The critical path is deliberately limited to: framework details -> immutable
+ * policy snapshot -> respondToCall. Database writes, contact-name lookup,
+ * reputation updates, diagnostics and notifications run only after Telecom has
+ * received the answer.
  */
 class BlackListCallScreeningService : CallScreeningService() {
 
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
     override fun onScreenCall(callDetails: Call.Details) {
-        val isIncoming = callDetails.callDirection == Call.Details.DIRECTION_INCOMING
-        if (!isIncoming) { respondAllow(callDetails); return }
+        if (callDetails.callDirection != Call.Details.DIRECTION_INCOMING) {
+            respondAllow(callDetails)
+            return
+        }
+
+        val event = try {
+            CallEventAdapter.fromDetails(applicationContext, callDetails)
+        } catch (error: Exception) {
+            Log.w(TAG, "Could not adapt call details; allowing safely", error)
+            respondAllow(callDetails)
+            return
+        }
 
         scope.launch {
-            try {
-                withTimeout(1500) {
-                    // 1. Adapter: build CallEvent (contains only system-provided data)
-                    val event = CallEventAdapter.fromDetails(applicationContext, callDetails)
-                    val rawNumber = event.phoneNumber.raw
-
-                    // 2. Delegate to firewall engine (local-first, no network)
-                    val engine = ServiceLocator.provideFirewallEngine(applicationContext)
-                    val decision = try {
-                        engine.evaluate(event)
-                    } catch (e: Exception) {
-                        Log.e("BlackListService", "Engine failed, fallback to legacy", e)
-                        // Fail-safe: allow on engine error (never crash)
-                        null
-                    }
-
-                    // 3. Fallback to legacy if engine unavailable (preserves existing behavior)
-                    val finalDecision = decision ?: legacyEvaluate(rawNumber)
-
-                    // 4. Enforcement via resolver (CallScreening primary, fallback chain)
-                    val shouldBlock = finalDecision.decision == Decision.BLOCK
-                    if (shouldBlock) {
-                        Log.i("BlackListService", "BLOCK ${rawNumber} risk=${finalDecision.riskScore} reasons=${finalDecision.reasons} backend=${finalDecision.backend}")
-
-                        // 5. Durable result + verification
-                        try {
-                            val db = ServiceLocator.provideDatabase(applicationContext)
-                            val contactUtils = ServiceLocator.provideContactUtils(applicationContext)
-
-                            // Log
-                            db.blockedCallLogDao().insert(
-                                BlockedCallLogEntity(
-                                    phoneNumber = rawNumber,
-                                    reason = finalDecision.explainable.summary.take(100),
-                                    displayName = event.contact?.displayName ?: contactUtils.getContactName(rawNumber)
-                                )
-                            )
-
-                            // Reputation update
-                            try {
-                                val normalized = event.phoneNumber.normalized
-                                ServiceLocator.provideReputationEngine(applicationContext).recordBlocked(normalized)
-                            } catch (_: Exception) {}
-
-                            // Behavior record
-                            try {
-                                ServiceLocator.provideBehaviorEngine(applicationContext).recordAttempt(event.phoneNumber.digitsOnly)
-                                val campaign = ServiceLocator.provideBehaviorEngine(applicationContext).detectCampaign()
-                                if (campaign != null) {
-                                    db.securityEventDao().insert(
-                                        SecurityEventEntity(
-                                            severity = "HIGH",
-                                            title = "Possible Spam Campaign",
-                                            description = "Prefix $campaign detected burst",
-                                            relatedNumber = rawNumber,
-                                            campaignId = campaign,
-                                            riskScore = finalDecision.riskScore
-                                        )
-                                    )
-                                    FirewallEventBus.emit(FirewallEvent.CampaignDetected(campaign, 5))
-                                }
-                            } catch (_: Exception) {}
-
-                            // Security event for high risk
-                            if (finalDecision.riskScore >= 80) {
-                                try {
-                                    db.securityEventDao().insert(
-                                        SecurityEventEntity(
-                                            severity = "CRITICAL",
-                                            title = "High Risk Call Blocked",
-                                            description = finalDecision.reasons.joinToString(", "),
-                                            relatedNumber = rawNumber,
-                                            riskScore = finalDecision.riskScore
-                                        )
-                                    )
-                                    FirewallEventBus.emit(FirewallEvent.CallBlocked(rawNumber ?: "unknown", finalDecision.reasons.firstOrNull() ?: "high_risk", finalDecision.riskScore))
-                                } catch (_: Exception) {}
-                            }
-
-                            // Notification (global + per-number)
-                            val settings = db.appSettingsDao().get()
-                            val globalEnabled = settings?.showBlockedNotification != false
-                            var perNumberEnabled = true
-                            if (finalDecision.matchedRules.isNotEmpty() || rawNumber != null) {
-                                try {
-                                    val matched = ServiceLocator.provideRepository(applicationContext).findBlockedMatches(rawNumber ?: "")
-                                    perNumberEnabled = matched?.showNotification ?: true
-                                } catch (_: Exception) {}
-                            }
-                            if (globalEnabled && perNumberEnabled) {
-                                showBlockedNotification(rawNumber, finalDecision.explainable.summary, finalDecision.riskScore, finalDecision)
-                            }
-                        } catch (_: Exception) {}
-
-                        // 6. Enforce via CallScreening (resolver will fallback to Root/Shizuku if needed in future)
-                        try {
-                            val resolver = ServiceLocator.provideEnforcementResolver(applicationContext)
-                            val result = resolver.enforceWithFallback(event, Decision.BLOCK)
-                            Log.i("BlackListService", "Enforcement ${result.backend} success=${result.success} verify=${result.verification}")
-                        } catch (_: Exception) {}
-
-                        val response = CallResponse.Builder()
-                            .setDisallowCall(true).setRejectCall(true).setSkipCallLog(false).setSkipNotification(false).build()
-                        respondToCall(callDetails, response)
-                    } else {
-                        // Allow + reputation decay
-                        try {
-                            val normalized = event.phoneNumber.normalized
-                            if (event.phoneNumber.presentation == com.blacklist.app.domain.model.Presentation.ALLOWED) {
-                                ServiceLocator.provideReputationEngine(applicationContext).recordAllowed(normalized)
-                            }
-                        } catch (_: Exception) {}
-                        respondAllow(callDetails)
-                    }
+            val decision = try {
+                // Android allows up to five seconds. The local engine has a much
+                // smaller budget so a delayed process never delays the ringer.
+                withTimeout(HOT_PATH_TIMEOUT_MS) {
+                    ServiceLocator.provideFirewallEngine(applicationContext).evaluate(event)
                 }
-            } catch (e: TimeoutCancellationException) {
-                Log.w("BlackListService", "Timeout, allowing")
-                respondAllow(callDetails)
-            } catch (e: Exception) {
-                Log.e("BlackListService", "Error", e)
-                respondAllow(callDetails)
+            } catch (error: TimeoutCancellationException) {
+                Log.w(TAG, "Policy evaluation exceeded local budget; allowing safely")
+                null
+            } catch (error: Exception) {
+                Log.e(TAG, "Policy evaluation failed; allowing safely", error)
+                null
             }
+
+            // This is the only enforcement point. Do not call Room, Contacts,
+            // notifications, Root, Shizuku, or a secondary backend before it.
+            if (decision == null) {
+                respondAllow(callDetails)
+                recordScreeningHealthFailure("Policy evaluation fallback")
+                return@launch
+            }
+
+            respond(callDetails, decision)
+            scope.launch(Dispatchers.IO) { persistPostDecisionEffects(decision) }
         }
     }
 
-    private suspend fun legacyEvaluate(rawNumber: String?): com.blacklist.app.domain.model.EnforcementDecision {
-        // Minimal fallback that mirrors old logic to keep existing features working if engine fails
-        val normalized = ServiceLocator.provideNormalizer(applicationContext).normalize(rawNumber)
-        val event = com.blacklist.app.domain.model.CallEvent(
-            callId = "legacy",
-            phoneNumber = normalized,
-            contact = com.blacklist.app.domain.model.CallerContact(null, false),
-            isIncoming = true
-        )
-        return com.blacklist.app.domain.model.EnforcementDecision(
-            callEvent = event,
-            decision = Decision.ALLOW,
-            riskScore = 0,
-            reputation = com.blacklist.app.domain.model.ReputationLevel.NEUTRAL,
-            reasons = listOf("Legacy fallback"),
-            matchedRules = emptyList(),
-            backend = com.blacklist.app.domain.model.EnforcementBackendType.CALL_SCREENING,
-            verification = com.blacklist.app.domain.model.VerificationStatus.UNKNOWN,
-            explainable = com.blacklist.app.domain.model.ExplainableDecision("ALLOW - fallback", com.blacklist.app.domain.model.RiskLevel.SAFE, listOf("fallback"), emptyList(), "fallback", "UNKNOWN")
-        )
+    private fun respond(callDetails: Call.Details, decision: EnforcementDecision) {
+        try {
+            val response = when (decision.decision) {
+                Decision.BLOCK -> CallResponse.Builder()
+                    .setDisallowCall(true)
+                    .setRejectCall(true)
+                    .setSkipCallLog(false)
+                    .setSkipNotification(false)
+                    .build()
+                Decision.SILENCE -> CallResponse.Builder()
+                    .setDisallowCall(false)
+                    .setRejectCall(false)
+                    .setSilenceCall(true)
+                    .setSkipCallLog(false)
+                    .setSkipNotification(false)
+                    .build()
+                Decision.ALLOW -> CallResponse.Builder()
+                    .setDisallowCall(false)
+                    .setRejectCall(false)
+                    .setSkipCallLog(false)
+                    .setSkipNotification(false)
+                    .build()
+            }
+            respondToCall(callDetails, response)
+        } catch (error: Exception) {
+            Log.e(TAG, "respondToCall failed", error)
+        }
+    }
+
+    private suspend fun persistPostDecisionEffects(decision: EnforcementDecision) {
+        val event = decision.callEvent
+        val number = event.phoneNumber.raw
+        val database = ServiceLocator.provideDatabase(applicationContext)
+
+        try {
+            if (decision.decision == Decision.BLOCK) {
+                val displayName = if (event.phoneNumber.presentation == Presentation.ALLOWED) {
+                    ServiceLocator.provideContactUtils(applicationContext).getContactName(number)
+                } else {
+                    null
+                }
+                database.blockedCallLogDao().insert(
+                    BlockedCallLogEntity(
+                        phoneNumber = number,
+                        reason = decision.explainable.summary.take(MAX_REASON_LENGTH),
+                        displayName = displayName
+                    )
+                )
+
+                runCatching {
+                    ServiceLocator.provideReputationEngine(applicationContext)
+                        .recordBlocked(event.phoneNumber.normalized)
+                }
+                runCatching {
+                    val behavior = ServiceLocator.provideBehaviorEngine(applicationContext)
+                    val campaign = behavior.detectCampaign()
+                    if (campaign != null) {
+                        database.securityEventDao().insert(
+                            SecurityEventEntity(
+                                severity = "HIGH",
+                                title = "Local call burst detected",
+                                description = "Multiple recent calls matched a local behavior rule.",
+                                relatedNumber = number,
+                                campaignId = campaign,
+                                riskScore = decision.riskScore
+                            )
+                        )
+                        FirewallEventBus.emit(FirewallEvent.CampaignDetected(campaign, 5))
+                    }
+                }
+
+                if (decision.riskScore >= HIGH_RISK_THRESHOLD) {
+                    database.securityEventDao().insert(
+                        SecurityEventEntity(
+                            severity = "HIGH",
+                            title = "High-risk call blocked",
+                            description = decision.reasons.joinToString(", ").take(MAX_REASON_LENGTH),
+                            relatedNumber = number,
+                            riskScore = decision.riskScore
+                        )
+                    )
+                    FirewallEventBus.emit(
+                        FirewallEvent.CallBlocked(
+                            number.ifBlank { "private" },
+                            decision.reasons.firstOrNull() ?: "local policy",
+                            decision.riskScore
+                        )
+                    )
+                }
+
+                notifyBlockedIfEnabled(number, decision)
+            } else if (decision.decision == Decision.ALLOW && event.phoneNumber.presentation == Presentation.ALLOWED) {
+                runCatching {
+                    ServiceLocator.provideReputationEngine(applicationContext)
+                        .recordAllowed(event.phoneNumber.normalized)
+                }
+            }
+        } catch (error: Exception) {
+            // Post-decision failures never alter the Telecom response.
+            Log.e(TAG, "Post-decision persistence failed", error)
+            recordScreeningHealthFailure("Post-decision persistence failure")
+        }
+    }
+
+    private suspend fun notifyBlockedIfEnabled(number: String?, decision: EnforcementDecision) {
+        val settings = ServiceLocator.provideDatabase(applicationContext).appSettingsDao().get()
+        if (settings?.showBlockedNotification == false) return
+
+        val perNumberEnabled = runCatching {
+            ServiceLocator.provideRepository(applicationContext)
+                .findBlockedMatches(number.orEmpty())
+                ?.showNotification ?: true
+        }.getOrDefault(true)
+        if (!perNumberEnabled) return
+
+        runCatching {
+            ServiceLocator.provideNotificationManager(applicationContext).notifyCallBlocked(
+                number = number,
+                reason = decision.explainable.summary,
+                riskScore = decision.riskScore,
+                decision = decision
+            )
+        }.onFailure {
+            legacyBlockedNotification(number, decision.explainable.summary)
+        }
+    }
+
+    private suspend fun recordScreeningHealthFailure(reason: String) {
+        runCatching {
+            ServiceLocator.provideDatabase(applicationContext).securityEventDao().insert(
+                SecurityEventEntity(
+                    severity = "WARNING",
+                    title = "Protection decision degraded",
+                    description = reason,
+                    riskScore = 0
+                )
+            )
+        }
     }
 
     private fun respondAllow(details: Call.Details) {
         try {
-            val response = CallResponse.Builder().setDisallowCall(false).setRejectCall(false).setSkipCallLog(false).setSkipNotification(false).build()
-            respondToCall(details, response)
-        } catch (e: Exception) { Log.e("BlackListService", "respondAllow failed", e) }
-    }
-
-    private suspend fun showBlockedNotification(
-        number: String?,
-        reason: String,
-        riskScore: Int,
-        decision: com.blacklist.app.domain.model.EnforcementDecision
-    ) {
-        try {
-            // Central notification path (channels, rate-limiting, dedup, history)
-            ServiceLocator.provideNotificationManager(applicationContext).notifyCallBlocked(
-                number = number,
-                reason = reason,
-                riskScore = riskScore,
-                decision = decision
+            respondToCall(
+                details,
+                CallResponse.Builder()
+                    .setDisallowCall(false)
+                    .setRejectCall(false)
+                    .setSkipCallLog(false)
+                    .setSkipNotification(false)
+                    .build()
             )
-        } catch (_: Exception) {
-            // Fail-safe fallback to legacy notification if manager fails
-            legacyBlockedNotification(number, reason)
+        } catch (error: Exception) {
+            Log.e(TAG, "Safe fallback response failed", error)
         }
     }
 
     private fun legacyBlockedNotification(number: String?, reason: String) {
         try {
-            val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            val text = getString(R.string.notification_blocked_text, number ?: getString(R.string.blocked_log_private_hidden), reason)
-            val notif = NotificationCompat.Builder(this, BlackListApp.CHANNEL_BLOCKED)
-                .setSmallIcon(R.drawable.ic_block).setContentTitle(getString(R.string.notification_blocked_title))
-                .setContentText(text).setStyle(NotificationCompat.BigTextStyle().bigText(text)).setAutoCancel(true).setPriority(NotificationCompat.PRIORITY_LOW).build()
-            nm.notify((System.currentTimeMillis() % Int.MAX_VALUE).toInt(), notif)
-        } catch (_: Exception) {}
+            val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            val text = getString(
+                R.string.notification_blocked_text,
+                number ?: getString(R.string.blocked_log_private_hidden),
+                reason
+            )
+            val notification = NotificationCompat.Builder(this, BlackListApp.CHANNEL_BLOCKED)
+                .setSmallIcon(R.drawable.ic_block)
+                .setContentTitle(getString(R.string.notification_blocked_title))
+                .setContentText(text)
+                .setStyle(NotificationCompat.BigTextStyle().bigText(text))
+                .setAutoCancel(true)
+                .setPriority(NotificationCompat.PRIORITY_LOW)
+                .build()
+            manager.notify((System.currentTimeMillis() % Int.MAX_VALUE).toInt(), notification)
+        } catch (_: Exception) {
+            // Notification permission is optional and must not affect blocking.
+        }
     }
 
-    override fun onDestroy() { super.onDestroy(); scope.cancel() }
+    override fun onDestroy() {
+        super.onDestroy()
+        scope.cancel()
+    }
+
+    private companion object {
+        const val TAG = "BlackListService"
+        const val HOT_PATH_TIMEOUT_MS = 750L
+        const val HIGH_RISK_THRESHOLD = 80
+        const val MAX_REASON_LENGTH = 100
+    }
 }

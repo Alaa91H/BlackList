@@ -1,3 +1,7 @@
-<?xml version="1.0" encoding="utf-8"?><full-backup-content>
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Defense in depth: automatic backup is disabled in AndroidManifest. -->
+<full-backup-content>
     <exclude domain="database" path="blacklist.db" />
+    <exclude domain="database" path="blacklist.db-wal" />
+    <exclude domain="database" path="blacklist.db-shm" />
 </full-backup-content>

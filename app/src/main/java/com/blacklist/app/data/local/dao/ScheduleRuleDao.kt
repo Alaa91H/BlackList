@@ -26,4 +26,7 @@ interface ScheduleRuleDao {
 
     @Query("DELETE FROM schedule_rules WHERE id = :id")
     suspend fun deleteById(id: Long)
+
+    @Query("DELETE FROM schedule_rules")
+    suspend fun clearAll()
 }

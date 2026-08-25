@@ -6,8 +6,8 @@ import com.blacklist.app.domain.model.Decision
 import com.blacklist.app.domain.model.VerificationStatus
 
 /**
- * Typed, constrained, auditable privileged operation.
- * No raw Runtime.exec("su ...") spread.
+ * Typed, constrained Android call-enforcement contract.
+ * The product uses only standard CallScreening and Telecom capabilities.
  */
 interface CallEnforcementBackend {
     val type: BackendType

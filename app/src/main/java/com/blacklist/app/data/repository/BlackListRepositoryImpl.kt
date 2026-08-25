@@ -2,9 +2,12 @@ package com.blacklist.app.data.repository
 
 import com.blacklist.app.data.local.BlackListDatabase
 import com.blacklist.app.data.local.entity.*
+import com.blacklist.app.domain.backup.EncryptedBackupService
 import com.blacklist.app.domain.repository.BlackListRepository
 import com.blacklist.app.util.PhoneNumberUtils
 import kotlinx.coroutines.flow.Flow
+import java.io.InputStream
+import java.io.OutputStream
 
 class BlackListRepositoryImpl(
     private val db: BlackListDatabase
@@ -16,6 +19,7 @@ class BlackListRepositoryImpl(
     private val settingsDao get() = db.appSettingsDao()
     private val scheduleDao get() = db.scheduleRuleDao()
     private val ruleDao get() = db.blacklistRuleDao()
+    private val backupService by lazy { EncryptedBackupService(db) }
 
     override fun observeBlockedNumbers(): Flow<List<BlockedNumberEntity>> = blockedDao.observeAll()
 
@@ -186,4 +190,14 @@ class BlackListRepositoryImpl(
         expired.forEach { ruleDao.deleteById(it.id) }
         return expired.size
     }
+
+    override suspend fun exportEncryptedBackup(
+        output: OutputStream,
+        passphrase: CharArray
+    ): Result<EncryptedBackupService.ExportResult> = backupService.exportTo(output, passphrase)
+
+    override suspend fun restoreEncryptedBackup(
+        input: InputStream,
+        passphrase: CharArray
+    ): Result<EncryptedBackupService.RestoreResult> = backupService.restoreFrom(input, passphrase)
 }

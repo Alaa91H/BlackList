@@ -29,4 +29,7 @@ interface BlacklistRuleDao {
 
     @Query("UPDATE blacklist_rules SET isEnabled = :enabled WHERE id = :id")
     suspend fun setEnabled(id: Long, enabled: Boolean)
+
+    @Query("DELETE FROM blacklist_rules")
+    suspend fun clearAll()
 }

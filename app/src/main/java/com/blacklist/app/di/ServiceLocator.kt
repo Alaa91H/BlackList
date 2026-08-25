@@ -28,6 +28,7 @@ object ServiceLocator {
     @Volatile private var reputationEngine: ReputationEngine? = null
     @Volatile private var behaviorEngine: BehaviorEngine? = null
     @Volatile private var floodProtector: CallFloodProtector? = null
+    @Volatile private var policySnapshotStore: PolicySnapshotStore? = null
     @Volatile private var firewallEngine: CallFirewallEngine? = null
     @Volatile private var enforcementResolver: EnforcementResolver? = null
     @Volatile private var permissionManager: com.blacklist.app.domain.permission.PermissionManager? = null
@@ -70,7 +71,7 @@ object ServiceLocator {
 
     fun provideBehaviorEngine(context: Context): BehaviorEngine =
         behaviorEngine ?: synchronized(this) {
-            behaviorEngine ?: BehaviorEngine(provideDatabase(context).blockedCallLogDao()).also { behaviorEngine = it }
+            behaviorEngine ?: BehaviorEngine().also { behaviorEngine = it }
         }
 
     fun provideFloodProtector(): CallFloodProtector =
@@ -78,14 +79,22 @@ object ServiceLocator {
             floodProtector ?: CallFloodProtector().also { floodProtector = it }
         }
 
+    fun providePolicySnapshotStore(context: Context): PolicySnapshotStore =
+        policySnapshotStore ?: synchronized(this) {
+            policySnapshotStore ?: PolicySnapshotStore(
+                database = provideDatabase(context),
+                normalizer = provideNormalizer(context),
+                contactUtils = provideContactUtils(context)
+            ).also { policySnapshotStore = it }
+        }
+
     fun provideFirewallEngine(context: Context): CallFirewallEngine =
         firewallEngine ?: synchronized(this) {
             firewallEngine ?: CallFirewallEngine(
-                db = provideDatabase(context),
+                policySnapshots = providePolicySnapshotStore(context),
                 normalizer = provideNormalizer(context),
                 blacklistEngine = provideBlacklistEngine(context),
                 riskEngine = provideRiskEngine(),
-                reputationEngine = provideReputationEngine(context),
                 behaviorEngine = provideBehaviorEngine(context)
             ).also { firewallEngine = it }
         }
@@ -95,9 +104,7 @@ object ServiceLocator {
             enforcementResolver ?: EnforcementResolver(
                 listOf(
                     AndroidCallScreeningBackend(context.applicationContext),
-                    TelecomBackend(context.applicationContext),
-                    ShizukuBackend(context.applicationContext),
-                    RootBackend(context.applicationContext)
+                    TelecomBackend(context.applicationContext)
                 )
             ).also { enforcementResolver = it }
         }
@@ -135,7 +142,7 @@ object ServiceLocator {
     fun clearForTest() {
         db = null; repo = null; contactUtils = null; normalizer = null; blacklistEngine = null
         riskEngine = null; reputationEngine = null; behaviorEngine = null; floodProtector = null
-        firewallEngine = null; enforcementResolver = null; permissionManager = null
+        policySnapshotStore = null; firewallEngine = null; enforcementResolver = null; permissionManager = null
         capabilityManager = null; notificationManager = null
     }
 }

@@ -1,17 +1,14 @@
 package com.blacklist.app.domain.engine
 
-import com.blacklist.app.data.local.dao.BlockedCallLogDao
 import com.blacklist.app.domain.model.PhoneNumber
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
 /**
  * Local behavioral detection: bursts, repeated calls, sequential numbers, campaign hints.
- * All in-memory + lightweight DB queries, no network, deterministic.
+ * All state is in memory, with no database or network access on the screening path.
  */
-class BehaviorEngine(
-    private val logDao: BlockedCallLogDao
-) {
+class BehaviorEngine {
     private val recentCalls = ArrayDeque<Pair<String, Long>>() // (digits, timestamp)
     private val mutex = Mutex()
 
