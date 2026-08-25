@@ -24,19 +24,31 @@ android {
 
     signingConfigs {
         create("release") {
-            // Priority: env-provided release keystore (CI secrets) → local release.keystore → debug keystore fallback
-            // This ensures every release APK is installable (signed) even without CI secrets.
-            val envKs = System.getenv("BLACKLIST_KEYSTORE_PATH") ?: findProperty("BLACKLIST_KEYSTORE_PATH") as String?
-            val envFile = envKs?.let { file(it) }?.takeIf { it.exists() }
-            val localFile = file(rootProject.file("release.keystore")).takeIf { it.exists() }
-            val chosen = envFile ?: localFile
-            if (chosen != null) {
-                storeFile = chosen
-                storePassword = System.getenv("BLACKLIST_KEYSTORE_PASSWORD") ?: findProperty("BLACKLIST_KEYSTORE_PASSWORD") as String? ?: "blacklist123"
-                keyAlias = System.getenv("BLACKLIST_KEY_ALIAS") ?: findProperty("BLACKLIST_KEY_ALIAS") as String? ?: "blacklist"
-                keyPassword = System.getenv("BLACKLIST_KEY_PASSWORD") ?: findProperty("BLACKLIST_KEY_PASSWORD") as String? ?: "blacklist123"
+            // CI releases must use the permanent key restored from GitHub Actions secrets.
+            // A debug key is permitted only for local developer builds and can never sign a CI release.
+            fun signingValue(name: String): String? =
+                System.getenv(name)?.takeIf { it.isNotBlank() }
+                    ?: (findProperty(name) as String?)?.takeIf { it.isNotBlank() }
+
+            val isCi = System.getenv("CI") == "true" || System.getenv("GITHUB_ACTIONS") == "true"
+            val keyStorePath = signingValue("BLACKLIST_KEYSTORE_PATH")
+            val secretKeyStore = keyStorePath?.let { file(it) }?.takeIf { it.exists() }
+            val localKeyStore = file(rootProject.file("release.keystore")).takeIf { it.exists() }
+            val selectedKeyStore = secretKeyStore ?: localKeyStore
+
+            if (selectedKeyStore != null) {
+                storeFile = selectedKeyStore
+                storePassword = signingValue("BLACKLIST_KEYSTORE_PASSWORD")
+                    ?: error("Missing BLACKLIST_KEYSTORE_PASSWORD for release signing")
+                keyAlias = signingValue("BLACKLIST_KEY_ALIAS")
+                    ?: error("Missing BLACKLIST_KEY_ALIAS for release signing")
+                keyPassword = signingValue("BLACKLIST_KEY_PASSWORD")
+                    ?: error("Missing BLACKLIST_KEY_PASSWORD for release signing")
             } else {
-                // Fallback: debug keystore (installable, verified on device). AGP will auto-create if missing.
+                check(!isCi) {
+                    "CI release signing requires BLACKLIST_KEYSTORE_PATH and the GitHub Actions signing secrets."
+                }
+                // Local-only fallback. This branch is prohibited in GitHub Actions by the check above.
                 val debugKs = file(System.getProperty("user.home") + "/.android/debug.keystore")
                 storeFile = debugKs
                 storePassword = "android"

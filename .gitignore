@@ -15,6 +15,8 @@
 
 app/schemas/
 
-# Signing keystore (local, CI generates its own)
+# Signing keys and manual secret material must never enter Git.
 release.keystore
+*.keystore
 *.jks
+/.signing-private/
