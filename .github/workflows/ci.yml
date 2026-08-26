@@ -32,17 +32,14 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up JDK 17 (Temurin)
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '17'
           cache: gradle
-
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
 
       - name: Cache Gradle
         uses: gradle/actions/setup-gradle@v4
@@ -96,12 +93,15 @@ jobs:
           echo "ANDROID_HOME=$ANDROID_HOME"
           sdkmanager --version || true
 
-      - name: Accept Android licenses & install platforms
+      - name: Verify Android SDK and install required platforms
         run: |
-          yes | sdkmanager --licenses || true
-          sdkmanager --install "platform-tools" "platforms;android-36" "build-tools;36.0.0" || true
-          sdkmanager --list_installed || true
-          ls -lh "$ANDROID_HOME/platforms" || true
+          set -euo pipefail
+          : "${ANDROID_HOME:?GitHub runner did not expose ANDROID_HOME}"
+          command -v sdkmanager
+          yes | sdkmanager --licenses
+          sdkmanager --install "platform-tools" "platforms;android-36" "build-tools;36.0.0"
+          sdkmanager --list_installed
+          ls -lh "$ANDROID_HOME/platforms"
 
       - name: Lint
         run: ./gradlew lintDebug --stacktrace
