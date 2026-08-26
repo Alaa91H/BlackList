@@ -119,6 +119,10 @@ jobs:
           echo "Permanent release signing certificate verified: $ACTUAL_CERT_SHA256"
 
       - name: Run Unit Tests & Lint
+        env:
+          BLACKLIST_KEYSTORE_PASSWORD: ${{ secrets.BLACKLIST_KEYSTORE_PASSWORD }}
+          BLACKLIST_KEY_ALIAS: ${{ secrets.BLACKLIST_KEY_ALIAS }}
+          BLACKLIST_KEY_PASSWORD: ${{ secrets.BLACKLIST_KEY_PASSWORD }}
         run: ./gradlew testDebugUnitTest lintDebug --stacktrace
 
       - name: Assemble Release & Debug (tag-linked version, signed)
