@@ -7,7 +7,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/Alaa91H/BlackList/releases/tag/v1.0.0"><img alt="Release" src="https://img.shields.io/github/v/release/Alaa91H/BlackList?style=for-the-badge&label=Release" /></a>
+  <a href="https://github.com/Alaa91H/BlackList/releases/latest"><img alt="Release" src="https://img.shields.io/github/v/release/Alaa91H/BlackList?style=for-the-badge&label=Release" /></a>
   <img alt="Platform" src="https://img.shields.io/badge/Platform-Android%2026%2B-3DDC84?style=for-the-badge" />
   <img alt="Kotlin" src="https://img.shields.io/badge/Kotlin-2.0.21-7F52FF?style=for-the-badge" />
   <img alt="Compose" src="https://img.shields.io/badge/Jetpack%20Compose-Material%203-4285F4?style=for-the-badge" />
@@ -20,6 +20,12 @@
 ## Why BlackList?
 
 Most call blockers send your contacts and call history to remote servers. **BlackList never does.**
+
+### New in 1.5.0
+
+- **Network verification awareness** — Android Telecom's caller-number verification result is now reflected in local risk scoring and decision diagnostics. A failed verification is a risk signal, not an automatic cloud lookup.
+- **Regional emergency safeguard** — local emergency short numbers are resolved offline through libphonenumber before any blacklist, schedule, or broad blocking policy is applied.
+- **Device-region normalization** — local number parsing uses the device's configured region as its fallback, improving accuracy for national-format numbers.
 
 - **Room Database only** — everything stays on your device.
 - **Zero network permission** — the app cannot exfiltrate data even if it wanted to.
@@ -57,7 +63,7 @@ com.blacklist.app
 │   │   └── entity (BlockedNumberEntity, WhitelistedNumberEntity, BlockedCallLogEntity, ScheduleRuleEntity, AppSettingsEntity)
 │   └── repository (BlackListRepositoryImpl)
 ├── domain
-│   ├── model (BlockReason)
+│   ├── model (CallEvent, VerificationStatus, Decision)
 │   └── repository (BlackListRepository interface)
 ├── service (BlackListCallScreeningService — CallScreeningService)
 ├── util (PhoneNumberUtils, ContactUtils, ScheduleEvaluator)
@@ -79,12 +85,13 @@ com.blacklist.app
 2. `BlackListCallScreeningService` extends `CallScreeningService` — the OS delivers every incoming call to `onScreenCall()` **before ringing**.
 3. Evaluation order (all in <1.5 s, timeout-safe):
    ```
-   Whitelist? → ALLOW (always wins)
-   Private/Hidden? → check schedule or blockPrivate setting
+   Emergency short number? → ALLOW (always wins)
+   Temporary allow / whitelist? → ALLOW
    Schedule active? → evaluate schedule mode (ALL / ALL_EXCEPT_WHITELIST / UNKNOWN_PRIVATE / BLACKLIST)
-   blockAllExceptWhitelist? → BLOCK
-   Blacklist match? (suffix-aware) → BLOCK
-   blockUnknown? (not in contacts) → BLOCK
+   Temporary firewall or policy? → BLOCK
+   Blacklist match? → BLOCK
+   Unknown/private policy? → BLOCK when enabled
+   Local risk and behavior signals (including failed network verification)? → BLOCK only at the configured threshold
    otherwise → ALLOW
    ```
 4. If blocked → `CallResponse.Builder().setDisallowCall(true).setRejectCall(true)` + optional log + optional notification.
@@ -169,11 +176,14 @@ BlackList/
 
 ## Roadmap
 
-- [ ] Import/export (JSON) for blacklist/whitelist
-- [ ] Wildcard patterns (`+1 800 *`)
-- [ ] Backup to local file (encrypted)
-- [ ] Per-number schedule override
-- [ ] Widget with today’s stats
+- [x] Local CSV import/export for blacklist and whitelist, with size limits, duplicate detection, and spreadsheet-formula safety.
+- [x] Exact, prefix, range, country, temporary, and other local rule types in the firewall engine.
+- [ ] Encrypted local backup and restore.
+- [ ] Per-number schedule override.
+- [ ] Home-screen widget with today’s statistics.
+- [ ] Optional offline reputation-list import with transparent provenance and no background network access.
+
+See [CHANGELOG.md](CHANGELOG.md) for the complete release history.
 
 ---
 

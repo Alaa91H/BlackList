@@ -26,7 +26,7 @@ class CallFirewallEngine(
         val enrichedEvent = enrichContactFromSnapshot(event, snapshot)
 
         // Emergency routing must always win over user-defined broad rules.
-        if (isEmergencyNumber(enrichedEvent.phoneNumber)) {
+        if (normalizer.isEmergencyNumber(enrichedEvent.phoneNumber)) {
             return decision(enrichedEvent, Decision.ALLOW, 0, ReputationLevel.TRUSTED, listOf("Emergency safeguard"), emptyList(), "emergency")
         }
 
@@ -133,13 +133,6 @@ class CallFirewallEngine(
         }
     }
 
-    private fun isEmergencyNumber(number: PhoneNumber): Boolean {
-        // libphonenumber may normalize a short code with a default country
-        // prefix. Always compare the original dialed digits as well.
-        val candidates = listOf(number.digitsOnly, number.raw.filter(Char::isDigit), number.nationalNumber.orEmpty())
-        return candidates.any { it in EMERGENCY_NUMBERS }
-    }
-
     private fun isSuspiciousPrefix(number: PhoneNumber): Boolean {
         val suspicious = listOf("+216", "+212", "+234", "+92")
         return suspicious.any { number.normalized.startsWith(it) }
@@ -161,14 +154,14 @@ class CallFirewallEngine(
         reasons = reasons,
         matchedRules = rules,
         backend = EnforcementBackendType.CALL_SCREENING,
-        verification = VerificationStatus.UNKNOWN,
+        verification = event.verificationStatus,
         explainable = ExplainableDecision(
             summary = "${decision.name} - $backendHint - Risk ${risk}/100 (${riskLevel(risk).name})",
             riskLevel = riskLevel(risk),
             details = reasons,
             matchedRuleIds = rules.map { it.id },
             backend = backendHint,
-            verification = "UNKNOWN"
+            verification = event.verificationStatus.name
         )
     )
 
@@ -192,7 +185,4 @@ class CallFirewallEngine(
         )
     }
 
-    private companion object {
-        val EMERGENCY_NUMBERS = setOf("112", "911")
-    }
 }

@@ -1,5 +1,6 @@
 package com.blacklist.app.service
 
+import android.os.Build
 import android.telecom.Call
 import android.telecom.CallScreeningService
 import android.util.Log
@@ -33,7 +34,9 @@ class BlackListCallScreeningService : CallScreeningService() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
     override fun onScreenCall(callDetails: Call.Details) {
-        if (callDetails.callDirection != Call.Details.DIRECTION_INCOMING) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q &&
+            callDetails.callDirection != Call.Details.DIRECTION_INCOMING
+        ) {
             respondAllow(callDetails)
             return
         }
@@ -85,13 +88,15 @@ class BlackListCallScreeningService : CallScreeningService() {
                     // system fallback so a muted configuration stays muted.
                     .setSkipNotification(true)
                     .build()
-                Decision.SILENCE -> CallResponse.Builder()
-                    .setDisallowCall(false)
-                    .setRejectCall(false)
-                    .setSilenceCall(true)
-                    .setSkipCallLog(false)
-                    .setSkipNotification(false)
-                    .build()
+                Decision.SILENCE -> CallResponse.Builder().apply {
+                    setDisallowCall(false)
+                    setRejectCall(false)
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                        setSilenceCall(true)
+                    }
+                    setSkipCallLog(false)
+                    setSkipNotification(false)
+                }.build()
                 Decision.ALLOW -> CallResponse.Builder()
                     .setDisallowCall(false)
                     .setRejectCall(false)

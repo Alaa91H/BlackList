@@ -13,6 +13,8 @@ data class CallEvent(
     val contact: CallerContact? = null,
     val isIncoming: Boolean = true,
     val presentationRaw: Int? = null, // Telecom presentation (PRESENTATION_* )
+    /** Network-provided caller-number verification when Android exposes it. */
+    val verificationStatus: VerificationStatus = VerificationStatus.UNKNOWN,
     val source: CallSource = CallSource.TELECOM
 )
 

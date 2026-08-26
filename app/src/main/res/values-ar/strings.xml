@@ -314,4 +314,36 @@
     <string name="simulator_reasons">تفسير القرار</string>
     <string name="simulator_matched_rules">معرّفات القواعد المطابقة: %1$s</string>
     <string name="simulator_read_only">معاينة للقراءة فقط — لا يتم تغيير مكالمة أو بيانات.</string>
+
+    <!-- النسخ الاحتياطي المشفّر -->
+    <string name="settings_backup">نسخة احتياطية محلية مشفّرة</string>
+    <string name="settings_backup_desc">صدّر القواعد والقوائم والجداول والإعدادات إلى ملف مشفّر. لا يُضمَّن سجل المكالمات أبداً.</string>
+    <string name="settings_backup_export_desc">إنشاء ملف نسخة احتياطية محلية مشفّرة</string>
+    <string name="settings_backup_import_desc">استعادة ملف نسخة احتياطية محلية مشفّرة</string>
+    <string name="settings_backup_passphrase_title">عبارة مرور النسخة الاحتياطية</string>
+    <string name="settings_backup_passphrase_desc">استخدم 12 حرفاً على الأقل. لا تُحفظ العبارة ولا يمكن استعادتها.</string>
+    <string name="settings_backup_passphrase_label">عبارة المرور</string>
+    <string name="settings_backup_restore_warning">تستبدل الاستعادة القواعد والقوائم والجداول والإعدادات الحالية. يبقى سجل المكالمات دون تغيير.</string>
+    <string name="settings_backup_create_file">إنشاء نسخة احتياطية</string>
+    <string name="settings_backup_restore_file">استعادة نسخة احتياطية</string>
+    <string name="settings_backup_export_success">تم إنشاء نسخة احتياطية مشفّرة: %1$d قاعدة، %2$d رقماً محظوراً</string>
+    <string name="settings_backup_restore_success">تمت استعادة النسخة الاحتياطية: %1$d قاعدة، %2$d رقماً محظوراً</string>
+    <string name="settings_backup_failed">فشلت عملية النسخ الاحتياطي. تحقّق من الملف وعبارة المرور.</string>
+    <string name="settings_backup_file_name">blacklist-backup.blbackup</string>
+
+    <!-- إدارة الإشعارات والأذونات -->
+    <string name="settings_notification_manager">إدارة الإشعارات</string>
+    <string name="settings_notification_manager_desc">اضبط ملخصات المكالمات المحظورة العامة أو الجماعية أو لكل رقم</string>
+    <string name="settings_notification_manager_empty">لا توجد أرقام محظورة لتخصيصها بعد</string>
+    <string name="settings_notification_enable_all">تفعيل الكل</string>
+    <string name="settings_notification_mute_all">كتم الكل</string>
+    <string name="settings_notification_global_desc">الإشعارات اختيارية ولا تؤخر حظر المكالمات أو تغيره مطلقاً.</string>
+    <string name="settings_permission_manager">إدارة الأذونات</string>
+    <string name="settings_permission_manager_desc">امنح الأذونات الاختيارية من مطالبات النظام وتحقق من جاهزية فحص المكالمات</string>
+
+    <!-- الاختيار الجماعي -->
+    <string name="picker_select_all">تحديد الكل</string>
+    <string name="picker_clear_all">مسح التحديد</string>
+    <string name="picker_selected_count">تم تحديد %1$d</string>
+    <string name="picker_add_selected">إضافة (%1$d)</string>
 </resources>

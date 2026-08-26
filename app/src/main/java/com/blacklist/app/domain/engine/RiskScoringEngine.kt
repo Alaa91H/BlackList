@@ -36,7 +36,10 @@ class RiskScoringEngine(
         if (signals.repeatedCount >= 2) { s += config.repeatedCalls; reasons.add("repeated") }
         if (signals.isBurst) { s += config.callBurst; reasons.add("burst") }
         if (isSuspiciousPrefix) { s += config.suspiciousPrefix; reasons.add("suspicious_prefix") }
-        if (signals.verificationFailed) { s += config.failedVerification; reasons.add("verification_failed") }
+        if (event.verificationStatus == VerificationStatus.FAILED || signals.verificationFailed) {
+            s += config.failedVerification
+            reasons.add("verification_failed")
+        }
         if (reputation != null) {
             when (reputation.level) {
                 ReputationLevel.MALICIOUS -> { s += config.knownSpamReputation; reasons.add("spam_reputation") }

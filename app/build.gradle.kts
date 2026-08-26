@@ -89,8 +89,8 @@ android {
     androidResources { generateLocaleConfig = false }
 
     lint {
-        abortOnError = false
-        checkReleaseBuilds = false
+        abortOnError = true
+        checkReleaseBuilds = true
     }
 }
 

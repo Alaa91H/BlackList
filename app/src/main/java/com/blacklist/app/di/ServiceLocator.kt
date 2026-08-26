@@ -16,6 +16,7 @@ import com.blacklist.app.domain.capability.CapabilityManager
 import com.blacklist.app.domain.capability.CapabilityManagerImpl
 import com.blacklist.app.domain.normalization.PhoneNumberNormalizer
 import com.blacklist.app.domain.repository.BlackListRepository
+import java.util.Locale
 import com.blacklist.app.util.ContactUtils
 
 object ServiceLocator {
@@ -52,8 +53,19 @@ object ServiceLocator {
 
     fun provideNormalizer(context: Context): PhoneNumberNormalizer =
         normalizer ?: synchronized(this) {
-            normalizer ?: PhoneNumberNormalizer().also { normalizer = it }
+            normalizer ?: PhoneNumberNormalizer(defaultRegion = deviceRegion(context)).also { normalizer = it }
         }
+
+    private fun deviceRegion(context: Context): String {
+        val configuredRegion = runCatching {
+            context.resources.configuration.locales.get(0).country
+        }.getOrNull()
+        return configuredRegion
+            ?.uppercase()
+            ?.takeIf { it.length == 2 }
+            ?: Locale.getDefault().country.uppercase().takeIf { it.length == 2 }
+            ?: "DE"
+    }
 
     fun provideBlacklistEngine(context: Context): BlacklistEngine =
         blacklistEngine ?: synchronized(this) {

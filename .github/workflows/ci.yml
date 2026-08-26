@@ -103,9 +103,8 @@ jobs:
           sdkmanager --list_installed || true
           ls -lh "$ANDROID_HOME/platforms" || true
 
-      - name: Lint (non-blocking)
-        run: ./gradlew lintDebug --stacktrace --continue
-        continue-on-error: true
+      - name: Lint
+        run: ./gradlew lintDebug --stacktrace
 
       - name: Run Unit Tests
         run: ./gradlew testDebugUnitTest --stacktrace

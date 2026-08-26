@@ -3,9 +3,11 @@ package com.blacklist.app.service
 import android.content.Context
 import android.os.Build
 import android.telecom.Call
+import android.telecom.Connection
 import com.blacklist.app.di.ServiceLocator
 import com.blacklist.app.domain.model.CallEvent
 import com.blacklist.app.domain.model.CallSource
+import com.blacklist.app.domain.model.VerificationStatus
 import java.util.UUID
 
 /**
@@ -31,18 +33,34 @@ object CallEventAdapter {
             null
         }
 
+        val verificationStatus = try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                when (details.callerNumberVerificationStatus) {
+                    Connection.VERIFICATION_STATUS_PASSED -> VerificationStatus.SUCCESS
+                    Connection.VERIFICATION_STATUS_FAILED -> VerificationStatus.FAILED
+                    else -> VerificationStatus.UNKNOWN
+                }
+            } else {
+                VerificationStatus.UNKNOWN
+            }
+        } catch (_: Exception) {
+            VerificationStatus.UNKNOWN
+        }
+
         return CallEvent(
             callId = UUID.randomUUID().toString(),
             timestamp = System.currentTimeMillis(),
             phoneNumber = phone,
             subscriptionId = subscriptionId,
             contact = null,
-            isIncoming = details.callDirection == Call.Details.DIRECTION_INCOMING,
+            isIncoming = Build.VERSION.SDK_INT < Build.VERSION_CODES.Q ||
+                details.callDirection == Call.Details.DIRECTION_INCOMING,
             presentationRaw = try {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) details.handlePresentation else 1
             } catch (_: Exception) {
                 null
             },
+            verificationStatus = verificationStatus,
             source = CallSource.TELECOM
         )
     }

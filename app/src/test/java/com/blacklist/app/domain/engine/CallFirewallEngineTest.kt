@@ -4,6 +4,7 @@ import com.blacklist.app.data.local.entity.AppSettingsEntity
 import com.blacklist.app.data.local.entity.BlacklistRuleEntity
 import com.blacklist.app.domain.model.CallEvent
 import com.blacklist.app.domain.model.Decision
+import com.blacklist.app.domain.model.VerificationStatus
 import com.blacklist.app.domain.normalization.PhoneNumberNormalizer
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -32,6 +33,38 @@ class CallFirewallEngineTest {
         assertEquals(Decision.ALLOW, decision.decision)
         assertEquals("emergency", decision.explainable.backend)
         assertTrue(decision.reasons.single().contains("Emergency"))
+    }
+
+    @Test
+    fun `regional emergency number is allowed even when a broad policy is enabled`() = runTest {
+        val number = normalizer.normalize("110")
+        val snapshot = PolicySnapshotStore.Snapshot(
+            rules = listOf(
+                BlacklistRuleEntity(
+                    id = 5,
+                    ruleType = BlacklistRuleEntity.TYPE_EXACT,
+                    pattern = number.normalized
+                )
+            ),
+            settings = AppSettingsEntity(blockAllExceptWhitelist = true)
+        )
+
+        val decision = engine(snapshot).evaluate(event("regional-emergency", number.raw))
+
+        assertEquals(Decision.ALLOW, decision.decision)
+        assertEquals("emergency", decision.explainable.backend)
+    }
+
+    @Test
+    fun `failed caller verification contributes risk and remains explainable`() = runTest {
+        val decision = engine(PolicySnapshotStore.Snapshot()).evaluate(
+            event("failed-verification", "+49 151 23456789", VerificationStatus.FAILED)
+        )
+
+        assertEquals(25, decision.riskScore)
+        assertEquals(VerificationStatus.FAILED, decision.verification)
+        assertEquals("FAILED", decision.explainable.verification)
+        assertTrue(decision.reasons.contains("No matching block rule"))
     }
 
     @Test
@@ -116,8 +149,13 @@ class CallFirewallEngineTest {
         behaviorEngine = BehaviorEngine()
     )
 
-    private fun event(id: String, number: String): CallEvent = CallEvent(
+    private fun event(
+        id: String,
+        number: String,
+        verificationStatus: VerificationStatus = VerificationStatus.UNKNOWN
+    ): CallEvent = CallEvent(
         callId = id,
-        phoneNumber = normalizer.normalize(number)
+        phoneNumber = normalizer.normalize(number),
+        verificationStatus = verificationStatus
     )
 }

@@ -5,6 +5,7 @@ import com.blacklist.app.domain.model.Presentation
 import com.blacklist.app.util.PhoneNumberUtils
 import com.google.i18n.phonenumbers.NumberParseException
 import com.google.i18n.phonenumbers.PhoneNumberUtil
+import com.google.i18n.phonenumbers.ShortNumberInfo
 
 /**
  * Single source of truth for number normalization.
@@ -12,9 +13,10 @@ import com.google.i18n.phonenumbers.PhoneNumberUtil
  * No duplicate normalization logic anywhere else.
  */
 class PhoneNumberNormalizer(
-    private val defaultRegion: String = "DE" // fallback, overridden by SIM locale when available
+    private val defaultRegion: String = "DE"
 ) {
     private val phoneUtil: PhoneNumberUtil by lazy { PhoneNumberUtil.getInstance() }
+    private val shortNumberInfo: ShortNumberInfo by lazy { ShortNumberInfo.getInstance() }
 
     fun normalize(raw: String?, presentation: Int? = null): PhoneNumber {
         if (raw.isNullOrBlank() || PhoneNumberUtils.isPrivateOrHidden(raw)) {
@@ -65,6 +67,21 @@ class PhoneNumberNormalizer(
             nationalNumber = national,
             presentation = Presentation.ALLOWED
         )
+    }
+
+    /**
+     * Keeps emergency short codes outside all user-defined blocking rules.
+     * The number's parsed region is preferred; the device locale region is used
+     * as a safe fallback for short codes that cannot be formatted as E.164.
+     */
+    fun isEmergencyNumber(number: PhoneNumber): Boolean {
+        val raw = number.raw.filter(Char::isDigit)
+        if (raw.isBlank()) return false
+        val regions = linkedSetOf<String>().apply {
+            number.countryIso?.uppercase()?.takeIf { it.length == 2 }?.let(::add)
+            defaultRegion.uppercase().takeIf { it.length == 2 }?.let(::add)
+        }
+        return regions.any { region -> shortNumberInfo.isEmergencyNumber(raw, region) }
     }
 
     fun matches(a: PhoneNumber, b: PhoneNumber): Boolean {

@@ -283,7 +283,7 @@ class NotificationManagerImpl(
     private fun recordHistory(record: NotificationRecord) {
         synchronized(historyList) {
             historyList.add(0, record)
-            if (historyList.size > MAX_HISTORY) historyList.removeLast()
+            if (historyList.size > MAX_HISTORY) historyList.removeAt(historyList.lastIndex)
             _history.value = historyList.toList()
         }
     }

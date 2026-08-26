@@ -118,6 +118,9 @@ jobs:
           echo "BLACKLIST_KEYSTORE_PATH=$KEYSTORE_PATH" >> "$GITHUB_ENV"
           echo "Permanent release signing certificate verified: $ACTUAL_CERT_SHA256"
 
+      - name: Run Unit Tests & Lint
+        run: ./gradlew testDebugUnitTest lintDebug --stacktrace
+
       - name: Assemble Release & Debug (tag-linked version, signed)
         env:
           BLACKLIST_KEYSTORE_PASSWORD: ${{ secrets.BLACKLIST_KEYSTORE_PASSWORD }}
@@ -155,18 +158,23 @@ jobs:
           echo "release_apk=BlackList-${TAG}-release.apk" >> $GITHUB_OUTPUT
           echo "debug_apk=BlackList-${TAG}-debug.apk" >> $GITHUB_OUTPUT
 
-      - name: Generate release notes
+      - name: Generate professional release notes
         run: |
+          set -euo pipefail
           TAG="${{ steps.tag.outputs.tag }}"
-          PREV=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
-          echo "Previous tag: $PREV"
-          if [ -n "$PREV" ]; then
-            echo "## Changes since $PREV" > release_notes.md
-            git log --pretty=format:"- %s (%h)" "$PREV..HEAD" >> release_notes.md || echo "- Initial release" >> release_notes.md
-          else
-            echo "## Initial Release" > release_notes.md
-            git log --pretty=format:"- %s (%h)" >> release_notes.md
-          fi
+          VERSION="${{ steps.tag.outputs.version }}"
+          awk -v version="$VERSION" '
+            $0 ~ "^## \\[" version "\\]" { capture = 1; next }
+            capture && /^## \[/ { exit }
+            capture { print }
+          ' CHANGELOG.md > release_notes.md
+          test -s release_notes.md
+          {
+            echo "## BlackList $TAG"
+            echo
+            cat release_notes.md
+          } > release_notes.final.md
+          mv release_notes.final.md release_notes.md
           cat release_notes.md
 
       - name: Create GitHub Release
@@ -177,37 +185,23 @@ jobs:
           body_path: release_notes.md
           append_body: true
           body: |
-            ## BlackList ${{ steps.tag.outputs.tag }} - Professional Offline Call Blocker
+            ## Download and verification
 
-            > 100% Offline • No cloud • No AI • No trackers • Material Design 3 • Jetpack Compose
+            Download **BlackList-${{ steps.tag.outputs.tag }}-release.apk** for the signed, R8-minified build, or **BlackList-${{ steps.tag.outputs.tag }}-debug.apk** for development use. After installation, select BlackList as the device's **Call Screening** app when prompted.
 
-            ### 📦 Installation
-            Download **BlackList-${{ steps.tag.outputs.tag }}-release.apk** (R8 minified, ~1.5 MB, **signed - installable**) or **-debug.apk** (~18 MB) below.
-            Allow “Install unknown apps”, then set as **Call Screening** app when prompted. Both APKs are signed and verified with `apksigner verify`.
+            The release workflow verifies both APK signatures with `apksigner verify`. SHA-256 checksums are included as `checksums.txt`. CI built commit `${{ github.sha }}` with JDK 17 and Android API 36.
 
-            ### ✨ Highlights
-            - Silent blocking via `CallScreeningService` (before ringing)
-            - Blacklist / Whitelist / Unknown / Private / All-except-Whitelist
-            - Advanced Scheduling (time + weekday bitmask, overnight support)
-            - Blocked Log with reason & timestamp
-            - Dynamic Colors (Material You), Light/Dark/System, RTL Arabic
+            ## Privacy commitment
 
-            ### 🔧 Technical
-            - Clean Architecture + MVVM • Room 2.6.1 • Compose BOM 2024.09.02 • Kotlin 2.0.21
-            - Min 26 / Target 36 / Gradle 8.13 / AGP 8.13.2 / JDK 17
-            - CI built on `${{ github.sha }}` via GitHub Actions
+            BlackList remains fully local: this release introduces no cloud service, analytics SDK, tracker, network permission, or new runtime permission.
 
-            ### 👨‍💻 Developer
-            Alaa (Alaa91H) — Creator of ADM (Advanced Download Manager in Rust) • https://github.com/Alaa91H/Alaa91H
-
-            ---
             **Checksums (SHA-256):**
           files: |
             BlackList-*.apk
             checksums.txt
           draft: false
           prerelease: ${{ inputs.prerelease || false }}
-          generate_release_notes: true
+          generate_release_notes: false
           fail_on_unmatched_files: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
