@@ -4,9 +4,11 @@ import android.os.Build
 import android.telecom.Call
 import android.telecom.CallScreeningService
 import android.util.Log
+import com.blacklist.app.data.local.entity.AppSettingsEntity
 import com.blacklist.app.data.local.entity.BlockedCallLogEntity
 import com.blacklist.app.data.local.entity.SecurityEventEntity
 import com.blacklist.app.di.ServiceLocator
+import com.blacklist.app.domain.engine.EmergencyCallbackGrace
 import com.blacklist.app.domain.events.FirewallEvent
 import com.blacklist.app.domain.events.FirewallEventBus
 import com.blacklist.app.domain.model.Decision
@@ -37,6 +39,7 @@ class BlackListCallScreeningService : CallScreeningService() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q &&
             callDetails.callDirection != Call.Details.DIRECTION_INCOMING
         ) {
+            recordOutgoingEmergencyCall(callDetails)
             respondAllow(callDetails)
             return
         }
@@ -74,6 +77,35 @@ class BlackListCallScreeningService : CallScreeningService() {
 
             respond(callDetails, decision)
             scope.launch(Dispatchers.IO) { persistPostDecisionEffects(decision) }
+        }
+    }
+
+    /**
+     * Android routes outgoing calls through the screening service on supported
+     * devices. After an emergency call, allow a short local-only callback
+     * window so dispatch or responders are not caught by broad block policies.
+     */
+    private fun recordOutgoingEmergencyCall(callDetails: Call.Details) {
+        val event = runCatching {
+            CallEventAdapter.fromDetails(applicationContext, callDetails)
+        }.getOrNull() ?: return
+        if (!ServiceLocator.provideNormalizer(applicationContext).isEmergencyNumber(event.phoneNumber)) return
+
+        val expiry = EmergencyCallbackGrace.activate()
+        scope.launch(Dispatchers.IO) {
+            runCatching {
+                val settingsDao = ServiceLocator.provideDatabase(applicationContext).appSettingsDao()
+                val current = settingsDao.get()
+                if (current == null) {
+                    settingsDao.upsert(AppSettingsEntity(emergencyCallbackGraceUntil = expiry))
+                } else if (current.emergencyCallbackGraceUntil < expiry) {
+                    settingsDao.setEmergencyCallbackGraceUntil(expiry)
+                }
+            }.onFailure { error ->
+                // The in-memory grace remains active for this process; a write
+                // failure must never delay or change the outgoing call response.
+                Log.w(TAG, "Could not persist emergency callback grace", error)
+            }
         }
     }
 

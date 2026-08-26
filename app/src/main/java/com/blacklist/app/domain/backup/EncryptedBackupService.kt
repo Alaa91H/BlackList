@@ -7,6 +7,7 @@ import com.blacklist.app.data.local.entity.BlacklistRuleEntity
 import com.blacklist.app.data.local.entity.BlockedNumberEntity
 import com.blacklist.app.data.local.entity.ScheduleRuleEntity
 import com.blacklist.app.data.local.entity.WhitelistedNumberEntity
+import com.blacklist.app.domain.engine.EmergencyCallbackGrace
 import com.blacklist.app.domain.model.ProtectionProfiles
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -154,6 +155,7 @@ class EncryptedBackupService(
         .put("showBlockedNotification", showBlockedNotification)
         .put("activeProfileId", activeProfileId)
         .put("themeMode", themeMode)
+        .put("emergencyCallbackGraceUntil", emergencyCallbackGraceUntil)
 
     private fun BlacklistRuleEntity.toJson(): JSONObject = JSONObject()
         .put("enabled", isEnabled)
@@ -193,6 +195,10 @@ class EncryptedBackupService(
         require(themeMode in ALLOWED_THEME_MODES) { "Unsupported theme mode in backup." }
         val activeProfileId = json.optString("activeProfileId", ProtectionProfiles.CUSTOM)
         require(activeProfileId in ALLOWED_PROFILE_IDS) { "Unsupported protection profile in backup." }
+        val graceUntil = json.optLong("emergencyCallbackGraceUntil", 0L)
+        require(graceUntil == 0L || graceUntil in 1..System.currentTimeMillis() + EmergencyCallbackGrace.DURATION_MS) {
+            "Invalid emergency callback grace in backup."
+        }
         return AppSettingsEntity(
             blockUnknown = json.optBoolean("blockUnknown", false),
             blockPrivate = json.optBoolean("blockPrivate", true),
@@ -200,6 +206,7 @@ class EncryptedBackupService(
             showBlockedNotification = json.optBoolean("showBlockedNotification", true),
             activeProfileId = activeProfileId,
             themeMode = themeMode,
+            emergencyCallbackGraceUntil = graceUntil,
         )
     }
 

@@ -115,6 +115,59 @@ class CallFirewallEngineTest {
     }
 
     @Test
+    fun `emergency callback grace allows a caller through broad blocking policies`() = runTest {
+        val snapshot = PolicySnapshotStore.Snapshot(
+            settings = AppSettingsEntity(
+                blockAllExceptWhitelist = true,
+                emergencyCallbackGraceUntil = System.currentTimeMillis() + EmergencyCallbackGrace.DURATION_MS
+            )
+        )
+
+        val decision = engine(snapshot).evaluate(event("emergency-callback", "+49 151 23456789"))
+
+        assertEquals(Decision.ALLOW, decision.decision)
+        assertEquals("emergency_callback_grace", decision.explainable.backend)
+    }
+
+    @Test
+    fun `emergency callback grace never overrides an explicit blacklist rule`() = runTest {
+        val number = normalizer.normalize("+49 151 23456789")
+        val snapshot = PolicySnapshotStore.Snapshot(
+            rules = listOf(
+                BlacklistRuleEntity(
+                    id = 12,
+                    ruleType = BlacklistRuleEntity.TYPE_EXACT,
+                    pattern = number.normalized
+                )
+            ),
+            settings = AppSettingsEntity(
+                blockAllExceptWhitelist = true,
+                emergencyCallbackGraceUntil = System.currentTimeMillis() + EmergencyCallbackGrace.DURATION_MS
+            )
+        )
+
+        val decision = engine(snapshot).evaluate(event("explicit-blacklist", number.raw))
+
+        assertEquals(Decision.BLOCK, decision.decision)
+        assertEquals("blacklist", decision.explainable.backend)
+    }
+
+    @Test
+    fun `expired emergency callback grace does not weaken blocking`() = runTest {
+        val snapshot = PolicySnapshotStore.Snapshot(
+            settings = AppSettingsEntity(
+                blockAllExceptWhitelist = true,
+                emergencyCallbackGraceUntil = System.currentTimeMillis() - 1
+            )
+        )
+
+        val decision = engine(snapshot).evaluate(event("expired-emergency-callback", "+49 151 23456789"))
+
+        assertEquals(Decision.BLOCK, decision.decision)
+        assertEquals("policy", decision.explainable.backend)
+    }
+
+    @Test
     fun `unknown-contact policy fails open when contacts permission is unavailable`() = runTest {
         val snapshot = PolicySnapshotStore.Snapshot(
             canReadContacts = false,

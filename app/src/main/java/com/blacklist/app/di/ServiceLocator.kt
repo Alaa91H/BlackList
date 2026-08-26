@@ -39,7 +39,10 @@ object ServiceLocator {
     fun provideDatabase(context: Context): BlackListDatabase =
         db ?: synchronized(this) {
             db ?: Room.databaseBuilder(context.applicationContext, BlackListDatabase::class.java, "blacklist.db")
-                .addMigrations(BlackListDatabase.MIGRATION_3_4)
+                .addMigrations(
+                    BlackListDatabase.MIGRATION_3_4,
+                    BlackListDatabase.MIGRATION_4_5
+                )
                 // Spec §48: never wipe user data on schema change.
                 // Destructive fallback is allowed ONLY on downgrade (e.g. installing an older build).
                 .fallbackToDestructiveMigrationOnDowngrade()

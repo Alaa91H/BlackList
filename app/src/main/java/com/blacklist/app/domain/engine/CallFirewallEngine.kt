@@ -43,12 +43,6 @@ class CallFirewallEngine(
             return decision(enrichedEvent, Decision.ALLOW, 0, ReputationLevel.TRUSTED, listOf("Whitelisted"), emptyList(), "whitelist")
         }
 
-        evaluateSchedule(enrichedEvent, snapshot)?.let { return it }
-
-        TemporaryFirewall.blockAllActive(snapshot.rules)?.let {
-            return decision(enrichedEvent, Decision.BLOCK, 90, ReputationLevel.SUSPICIOUS, listOf("Temporary firewall active"), emptyList(), "temporary_block_all")
-        }
-
         val matchedBlacklist = blacklistEngine.findMatching(enrichedEvent.phoneNumber, snapshot.rules)
         if (matchedBlacklist.isNotEmpty()) {
             val top = matchedBlacklist.first()
@@ -75,6 +69,24 @@ class CallFirewallEngine(
         }
 
         val settings = snapshot.settings
+        if (EmergencyCallbackGrace.isActive(settings?.emergencyCallbackGraceUntil ?: 0L)) {
+            return decision(
+                enrichedEvent,
+                Decision.ALLOW,
+                0,
+                ReputationLevel.TRUSTED,
+                listOf("Emergency callback grace active"),
+                emptyList(),
+                "emergency_callback_grace"
+            )
+        }
+
+        evaluateSchedule(enrichedEvent, snapshot)?.let { return it }
+
+        TemporaryFirewall.blockAllActive(snapshot.rules)?.let {
+            return decision(enrichedEvent, Decision.BLOCK, 90, ReputationLevel.SUSPICIOUS, listOf("Temporary firewall active"), emptyList(), "temporary_block_all")
+        }
+
         if (settings != null) {
             if (settings.blockAllExceptWhitelist) {
                 return decision(enrichedEvent, Decision.BLOCK, 85, ReputationLevel.SUSPICIOUS, listOf("Block all except whitelist"), emptyList(), "policy")

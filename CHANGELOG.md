@@ -2,6 +2,26 @@
 
 All notable changes to BlackList are documented in this file. The project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.0] - 2026-08-27
+
+### Added
+
+- **Emergency callback grace.** When Android routes an outgoing emergency call through the screening service, BlackList opens a short, local-only 15-minute allowance for an emergency dispatcher or responder to call back. The expiry is persisted in the local policy database and also kept in memory so a rapid callback is never delayed by storage refresh.
+
+### Changed
+
+- **Safer decision precedence.** Explicit user blacklist rules and legacy exact blocks continue to win over the emergency callback allowance. The allowance only precedes broad schedules, temporary block-all rules, unknown/private policies, and risk-based blocking.
+- **Backup continuity.** Encrypted backups now carry the emergency callback expiry when it is still valid, while restore validation rejects unreasonably long grace windows.
+
+### Fixed
+
+- Added a non-destructive Room migration for the new local expiry field. Existing policy data is retained when upgrading.
+- Added regression coverage proving that an active grace window allows callbacks through broad blocking policies, cannot override explicit blocks, and ceases to apply immediately after expiry.
+
+### Privacy
+
+- The feature uses no network service, location, contact lookup, call-log permission, analytics SDK, or new runtime permission. It stores only one local timestamp.
+
 ## [1.5.0] - 2026-08-27
 
 ### Added
@@ -30,5 +50,6 @@ All notable changes to BlackList are documented in this file. The project follow
 
 - Production-grade local call-firewall foundation with rule matching, risk scoring, behavior signals, reputation tracking, temporary protection controls, diagnostics, and a decision simulator.
 
+[1.6.0]: https://github.com/Alaa91H/BlackList/compare/v1.5.0...v1.6.0
 [1.5.0]: https://github.com/Alaa91H/BlackList/compare/v1.4.0...v1.5.0
 [1.4.0]: https://github.com/Alaa91H/BlackList/releases/tag/v1.4.0

@@ -23,4 +23,7 @@ interface AppSettingsDao {
 
     @Query("UPDATE app_settings SET blockAllExceptWhitelist = :v, updatedAt = :ts WHERE id = 1")
     suspend fun setBlockAllExceptWhitelist(v: Boolean, ts: Long = System.currentTimeMillis())
+
+    @Query("UPDATE app_settings SET emergencyCallbackGraceUntil = :expiry, updatedAt = :ts WHERE id = 1")
+    suspend fun setEmergencyCallbackGraceUntil(expiry: Long, ts: Long = System.currentTimeMillis())
 }

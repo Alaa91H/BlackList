@@ -21,11 +21,11 @@
 
 Most call blockers send your contacts and call history to remote servers. **BlackList never does.**
 
-### New in 1.5.0
+### New in 1.6.0
 
-- **Network verification awareness** — Android Telecom's caller-number verification result is now reflected in local risk scoring and decision diagnostics. A failed verification is a risk signal, not an automatic cloud lookup.
-- **Regional emergency safeguard** — local emergency short numbers are resolved offline through libphonenumber before any blacklist, schedule, or broad blocking policy is applied.
-- **Device-region normalization** — local number parsing uses the device's configured region as its fallback, improving accuracy for national-format numbers.
+- **Emergency callback grace** — after Android reports an outgoing emergency call, BlackList opens a short local-only allowance for a dispatcher or responder to call back. Explicit blacklist rules still win; the allowance only protects against broad policies such as schedules, block-all modes, and unknown/private filtering.
+- **Durable safety state** — the short expiry is persisted locally, included in encrypted backups when valid, and also held in memory so a rapid callback never waits for database refresh.
+- **Recent platform hardening** — Android Telecom caller verification contributes to local risk scoring, regional emergency short numbers remain protected, and local number parsing follows the configured device region.
 
 - **Room Database only** — everything stays on your device.
 - **Zero network permission** — the app cannot exfiltrate data even if it wanted to.
@@ -87,9 +87,10 @@ com.blacklist.app
    ```
    Emergency short number? → ALLOW (always wins)
    Temporary allow / whitelist? → ALLOW
+   Explicit blacklist or legacy exact block? → BLOCK
+   Recent outgoing emergency call? → short callback allowance
    Schedule active? → evaluate schedule mode (ALL / ALL_EXCEPT_WHITELIST / UNKNOWN_PRIVATE / BLACKLIST)
-   Temporary firewall or policy? → BLOCK
-   Blacklist match? → BLOCK
+   Temporary firewall or broad policy? → BLOCK
    Unknown/private policy? → BLOCK when enabled
    Local risk and behavior signals (including failed network verification)? → BLOCK only at the configured threshold
    otherwise → ALLOW
@@ -178,7 +179,8 @@ BlackList/
 
 - [x] Local CSV import/export for blacklist and whitelist, with size limits, duplicate detection, and spreadsheet-formula safety.
 - [x] Exact, prefix, range, country, temporary, and other local rule types in the firewall engine.
-- [ ] Encrypted local backup and restore.
+- [x] Emergency short-number safeguard and local emergency callback grace for broad-policy protection.
+- [x] Encrypted local backup and restore for policy data only; call history and diagnostics remain excluded.
 - [ ] Per-number schedule override.
 - [ ] Home-screen widget with today’s statistics.
 - [ ] Optional offline reputation-list import with transparent provenance and no background network access.

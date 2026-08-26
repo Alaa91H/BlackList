@@ -18,7 +18,7 @@ import com.blacklist.app.data.local.entity.*
         CallerReputationEntity::class,
         SecurityEventEntity::class
     ],
-    version = 4,
+    version = 5,
     exportSchema = true
 )
 abstract class BlackListDatabase : RoomDatabase() {
@@ -37,6 +37,15 @@ abstract class BlackListDatabase : RoomDatabase() {
             override fun migrate(database: SupportSQLiteDatabase) {
                 database.execSQL(
                     "ALTER TABLE app_settings ADD COLUMN activeProfileId TEXT NOT NULL DEFAULT 'custom'"
+                )
+            }
+        }
+
+        /** Preserves all local policy data while adding the emergency callback grace expiry. */
+        val MIGRATION_4_5 = object : Migration(4, 5) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL(
+                    "ALTER TABLE app_settings ADD COLUMN emergencyCallbackGraceUntil INTEGER NOT NULL DEFAULT 0"
                 )
             }
         }

@@ -12,5 +12,7 @@ data class AppSettingsEntity(
     val showBlockedNotification: Boolean = true,
     val activeProfileId: String = "custom", // custom, normal, focus, whitelist_only
     val themeMode: String = "SYSTEM", // SYSTEM, LIGHT, DARK
+    /** UTC expiry for the short local allowance after an outgoing emergency call. */
+    val emergencyCallbackGraceUntil: Long = 0L,
     val updatedAt: Long = System.currentTimeMillis()
 )
