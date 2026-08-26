@@ -110,7 +110,11 @@ jobs:
           set -euo pipefail
           : "${ANDROID_HOME:?GitHub runner did not expose ANDROID_HOME}"
           command -v sdkmanager
+          set +o pipefail
           yes | sdkmanager --licenses
+          SDKMANAGER_LICENSE_STATUS=${PIPESTATUS[1]}
+          set -o pipefail
+          test "$SDKMANAGER_LICENSE_STATUS" -eq 0
           sdkmanager --install "platform-tools" "platforms;android-36" "build-tools;36.0.0"
           sdkmanager --list_installed
           ls -lh "$ANDROID_HOME/platforms"
