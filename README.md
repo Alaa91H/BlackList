@@ -159,6 +159,12 @@ com.blacklist.app
 
 Each persistent exact, prefix, suffix, contains, numeric-range, or country rule has one deliberate local action. **Reject call** preserves the traditional blacklist behavior. **Silence ringtone** keeps a matching call connected while using Android’s `setSilenceCall(true)` response; it is neither a hidden-call mode nor a guarantee that Android will omit its own UI, call-log entry, or missed-call notification. The selected action is shown on every rule card, and the highest-priority matching persistent rule determines the action. Emergency numbers, temporary allows, and whitelist entries remain higher-priority safeguards.
 
+### Rule conflict preview
+
+Before saving a persistent blacklist rule, the editor performs a **read-only, in-memory conflict analysis**. It reports only overlaps that can be proven from the selected scopes: equivalent patterns, exact-number overlap with prefix/suffix/contains/range/country rules, nested prefix/suffix/contains patterns, intersecting numeric ranges, and identical countries. Equivalent active rules cannot be saved; the repository repeats this complete normalized-scope validation after the user presses Save.
+
+The live editor checks at most the **200 highest-priority active permanent rules** and tells the user if more rules were not inspected. This keeps editing bounded without making an incomplete preview a security decision. The durable duplicate validation always checks every active permanent rule. For matching rules, lower numeric priority wins; ties resolve to the newer `createdAt`, then to the greater rule ID. The runtime engine and the preview use this same order.
+
 Existing rules are migrated as **Reject call**. Encrypted local backups now retain the selected action, while backups from earlier releases safely restore rules as **Reject call**.
 
 ---

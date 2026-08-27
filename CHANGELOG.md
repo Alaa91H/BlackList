@@ -2,6 +2,27 @@
 
 All notable changes to BlackList are documented in this file. The project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.19.0] - 2026-08-27
+
+### Added
+
+- **Pre-save rule conflict preview.** The Blacklist rule editor now analyzes a draft locally before it is saved. It identifies provable overlaps with active permanent rules and states whether the draft or the existing rule takes precedence.
+- **Duplicate guard with visible explanation.** An equivalent active rule is shown as a duplicate and cannot be saved. The same scope analysis is enforced in the repository after normalization, not merely in the UI.
+- **Bounded live analysis.** The editor reviews at most the 200 highest-priority active permanent rules and explicitly reports when more rules were not inspected. Saving always performs the complete duplicate check.
+
+### Changed
+
+- **Stable matching tie-breaks.** When multiple rules match with the same numeric priority, the newer rule wins; equal timestamps then resolve to the greater rule ID. Runtime evaluation and the conflict preview use this same deterministic order.
+- **Conservative overlap reporting.** The preview reports only overlaps that can be proven from local rule scopes: equivalent patterns, exact-versus-prefix/suffix/contains/range/country matches, nested prefix/suffix/contains patterns, intersecting numeric ranges, and identical countries. It does not invent a warning for ambiguous combinations.
+
+### Quality
+
+- Added isolated coverage for regional exact-number normalization, duplicate detection, precedence of an existing higher-priority rule, deterministic equal-priority ordering, disabled-rule exclusion, bounded preview disclosure, and exact-range overlap.
+
+### Privacy
+
+- The preview is read-only and memory-only. It adds no rule until the user presses Save, and adds no permission, Call Log/SMS access, default-handler role, network request, cloud service, analytics event, tracker, worker, Root/Shizuku dependency, hidden-API bypass, ADB command execution, or call-screening-path I/O.
+
 ## [1.18.0] - 2026-08-27
 
 ### Added
@@ -334,6 +355,7 @@ All notable changes to BlackList are documented in this file. The project follow
 
 - Production-grade local call-firewall foundation with rule matching, risk scoring, behavior signals, reputation tracking, temporary protection controls, diagnostics, and a decision simulator.
 
+[1.19.0]: https://github.com/Alaa91H/BlackList/compare/v1.18.0...v1.19.0
 [1.18.0]: https://github.com/Alaa91H/BlackList/compare/v1.17.0...v1.18.0
 [1.17.0]: https://github.com/Alaa91H/BlackList/compare/v1.16.0...v1.17.0
 [1.16.0]: https://github.com/Alaa91H/BlackList/compare/v1.15.0...v1.16.0

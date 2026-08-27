@@ -25,6 +25,10 @@ import com.blacklist.app.R
 import com.blacklist.app.data.local.entity.BlacklistRuleEntity
 import com.blacklist.app.di.ServiceLocator
 import com.blacklist.app.di.ViewModelFactory
+import com.blacklist.app.domain.engine.BlacklistRuleConflictAnalyzer
+import com.blacklist.app.domain.engine.RuleConflictKind
+import com.blacklist.app.domain.engine.RuleConflictPreview
+import com.blacklist.app.domain.engine.RuleConflictWinner
 import com.blacklist.app.domain.engine.TemporaryExactBlockPolicy
 import com.blacklist.app.domain.engine.TemporaryFirewall
 import com.blacklist.app.ui.components.EmptyState
@@ -38,9 +42,12 @@ import java.text.DateFormat
 fun BlacklistScreen(nav: NavController) {
     val ctx = LocalContext.current
     val repo = remember { ServiceLocator.provideRepository(ctx) }
+    val normalizer = remember { ServiceLocator.provideNormalizer(ctx) }
+    val conflictAnalyzer = remember { BlacklistRuleConflictAnalyzer(normalizer) }
     val vm: BlacklistViewModel = viewModel(factory = ViewModelFactory(repo))
     val list by vm.filtered.collectAsState()
     val rules by vm.filteredRules.collectAsState()
+    val allRules by vm.rules.collectAsState()
     val temporaryExactBlocks by vm.temporaryExactBlocks.collectAsState()
     val query by vm.query.collectAsState()
     val error by vm.error.collectAsState()
@@ -170,6 +177,8 @@ fun BlacklistScreen(nav: NavController) {
     }
     if (showAdd) {
         AddRuleDialog(
+            existingRules = allRules,
+            conflictAnalyzer = conflictAnalyzer,
             onDismiss = { showAdd = false },
             onSaveRule = { rule ->
                 vm.addRule(rule)
@@ -351,6 +360,8 @@ private fun RuleCard(rule: BlacklistRuleEntity, onToggle: (Boolean) -> Unit, onD
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun AddRuleDialog(
+    existingRules: List<BlacklistRuleEntity>,
+    conflictAnalyzer: BlacklistRuleConflictAnalyzer,
     onDismiss: () -> Unit,
     onSaveRule: (BlacklistRuleEntity) -> Unit,
     onPickSource: (PickerSource) -> Unit
@@ -382,6 +393,11 @@ private fun AddRuleDialog(
                     BlacklistRuleEntity(ruleType = selectedType, enforcement = selectedEnforcement, pattern = p, displayName = displayName.takeIf { it.isNotBlank() })
             }
         }
+    }
+
+    val draft = buildRule()
+    val conflictPreview = draft?.let {
+        conflictAnalyzer.analyze(it, existingRules, MAX_RULES_FOR_LIVE_PREVIEW)
     }
 
     AlertDialog(
@@ -453,6 +469,9 @@ private fun AddRuleDialog(
                         }
                     }
                 }
+                if (conflictPreview != null) {
+                    RuleConflictPreviewCard(conflictPreview)
+                }
                 OutlinedTextField(value = displayName, onValueChange = { displayName = it }, label = { Text(stringResource(R.string.blacklist_add_name_hint)) }, singleLine = true, modifier = Modifier.fillMaxWidth())
                 if (selectedType == BlacklistRuleEntity.TYPE_EXACT) {
                     HorizontalDivider()
@@ -479,9 +498,96 @@ private fun AddRuleDialog(
                         pattern = ""; rangeStart = ""; rangeEnd = ""; countryIso = ""; displayName = ""
                     }
                 },
-                enabled = ready
+                enabled = ready && conflictPreview?.hasDuplicate != true
             ) { Text(stringResource(R.string.action_save)) }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) } }
     )
 }
+
+@Composable
+private fun RuleConflictPreviewCard(preview: RuleConflictPreview) {
+    val hasConflicts = preview.conflicts.isNotEmpty()
+    val colors = CardDefaults.cardColors(
+        containerColor = when {
+            preview.hasDuplicate -> MaterialTheme.colorScheme.errorContainer
+            hasConflicts -> MaterialTheme.colorScheme.secondaryContainer
+            else -> MaterialTheme.colorScheme.surfaceVariant
+        }
+    )
+    ElevatedCard(colors = colors, modifier = Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Text(
+                stringResource(R.string.rule_conflict_preview_title),
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold
+            )
+            if (!hasConflicts) {
+                Text(
+                    stringResource(R.string.rule_conflict_preview_clean),
+                    style = MaterialTheme.typography.bodySmall
+                )
+            } else {
+                Text(
+                    stringResource(R.string.rule_conflict_preview_summary, preview.conflicts.size),
+                    style = MaterialTheme.typography.bodySmall
+                )
+                preview.conflicts.take(MAX_PREVIEWED_CONFLICTS).forEach { conflict ->
+                    Text(
+                        stringResource(
+                            R.string.rule_conflict_preview_item,
+                            conflict.existingRule.id,
+                            stringResource(conflictKindLabelRes(conflict.kind)),
+                            stringResource(conflictWinnerLabelRes(conflict.winner))
+                        ),
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+                if (preview.conflicts.size > MAX_PREVIEWED_CONFLICTS) {
+                    Text(
+                        stringResource(
+                            R.string.rule_conflict_preview_more,
+                            preview.conflicts.size - MAX_PREVIEWED_CONFLICTS
+                        ),
+                        style = MaterialTheme.typography.labelSmall
+                    )
+                }
+                if (preview.isTruncated) {
+                    Text(
+                        stringResource(
+                            R.string.rule_conflict_preview_truncated,
+                            preview.inspectedRuleCount,
+                            preview.activeRuleCount
+                        ),
+                        style = MaterialTheme.typography.labelSmall
+                    )
+                }
+                if (preview.hasDuplicate) {
+                    Text(
+                        stringResource(R.string.rule_conflict_duplicate_not_saved),
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+            }
+            Text(
+                stringResource(R.string.rule_conflict_preview_read_only),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+private fun conflictKindLabelRes(kind: RuleConflictKind): Int = when (kind) {
+    RuleConflictKind.DUPLICATE -> R.string.rule_conflict_kind_duplicate
+    RuleConflictKind.OVERLAP -> R.string.rule_conflict_kind_overlap
+}
+
+private fun conflictWinnerLabelRes(winner: RuleConflictWinner): Int = when (winner) {
+    RuleConflictWinner.DRAFT -> R.string.rule_conflict_winner_draft
+    RuleConflictWinner.EXISTING -> R.string.rule_conflict_winner_existing
+}
+
+private const val MAX_PREVIEWED_CONFLICTS = 3
+private const val MAX_RULES_FOR_LIVE_PREVIEW = 200

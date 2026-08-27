@@ -438,4 +438,17 @@
     <string name="picker_clear_all">مسح التحديد</string>
     <string name="picker_selected_count">تم تحديد %1$d</string>
     <string name="picker_add_selected">إضافة (%1$d)</string>
+    <!-- معاينة تعارض مسودة القاعدة -->
+    <string name="rule_conflict_preview_title">معاينة تعارض القواعد</string>
+    <string name="rule_conflict_preview_clean">لا يوجد تداخل قابل للإثبات مع قاعدة دائمة نشطة.</string>
+    <string name="rule_conflict_preview_summary">تتداخل %1$d قاعدة دائمة نشطة مع هذه المسودة.</string>
+    <string name="rule_conflict_preview_item">القاعدة #%1$d: %2$s؛ %3$s.</string>
+    <string name="rule_conflict_preview_more">لا تظهر %1$d قاعدة متداخلة إضافية.</string>
+    <string name="rule_conflict_preview_truncated">تظهر أول %1$d قاعدة نشطة بحسب الأولوية من أصل %2$d. يبقى فحص التكرار كاملاً عند الحفظ.</string>
+    <string name="rule_conflict_preview_read_only">معاينة فقط — لا تُحفظ القاعدة ولا تُطبق حتى تضغط حفظ.</string>
+    <string name="rule_conflict_duplicate_not_saved">توجد قاعدة نشطة مكافئة بالفعل، لذا لا يمكن حفظ هذا التكرار.</string>
+    <string name="rule_conflict_kind_duplicate">نطاق مكافئ</string>
+    <string name="rule_conflict_kind_overlap">نطاق متداخل</string>
+    <string name="rule_conflict_winner_draft">تأخذ هذه المسودة الأولوية</string>
+    <string name="rule_conflict_winner_existing">تأخذ القاعدة الموجودة الأولوية</string>
 </resources>

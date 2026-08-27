@@ -453,4 +453,17 @@
     <string name="simulator_reasons">Decision explanation</string>
     <string name="simulator_matched_rules">Matched rule IDs: %1$s</string>
     <string name="simulator_read_only">Read-only preview — no call or data is changed.</string>
+    <!-- Draft rule conflict preview -->
+    <string name="rule_conflict_preview_title">Rule conflict preview</string>
+    <string name="rule_conflict_preview_clean">No provable overlap with an active permanent rule.</string>
+    <string name="rule_conflict_preview_summary">%1$d active permanent rule(s) overlap with this draft.</string>
+    <string name="rule_conflict_preview_item">Rule #%1$d: %2$s; %3$s.</string>
+    <string name="rule_conflict_preview_more">%1$d more overlapping rule(s) are not shown.</string>
+    <string name="rule_conflict_preview_truncated">Showing the %1$d highest-priority active rules out of %2$d. Saving still performs a full duplicate check.</string>
+    <string name="rule_conflict_preview_read_only">Preview only — no rule is saved or applied until you press Save.</string>
+    <string name="rule_conflict_duplicate_not_saved">An equivalent active rule already exists, so this duplicate cannot be saved.</string>
+    <string name="rule_conflict_kind_duplicate">equivalent match</string>
+    <string name="rule_conflict_kind_overlap">overlapping match</string>
+    <string name="rule_conflict_winner_draft">this draft takes precedence</string>
+    <string name="rule_conflict_winner_existing">the existing rule takes precedence</string>
 </resources>

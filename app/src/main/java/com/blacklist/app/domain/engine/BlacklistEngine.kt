@@ -88,7 +88,11 @@ class BlacklistEngine(
     }
 
     fun findMatching(eventNumber: PhoneNumber, rules: List<BlacklistRuleEntity>): List<BlacklistRuleEntity> {
-        return rules.filter { matches(eventNumber, it) }.sortedBy { it.priority }
+        return rules.filter { matches(eventNumber, it) }.sortedWith(
+            compareBy<BlacklistRuleEntity> { it.priority }
+                .thenByDescending { it.createdAt }
+                .thenByDescending { it.id }
+        )
     }
 
     fun isBlocked(eventNumber: PhoneNumber, rules: List<BlacklistRuleEntity>): Boolean {

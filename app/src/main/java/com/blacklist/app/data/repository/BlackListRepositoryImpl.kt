@@ -7,6 +7,7 @@ import com.blacklist.app.domain.backup.EncryptedBackupService
 import com.blacklist.app.domain.importexport.OfflineReputationImportPreview
 import com.blacklist.app.domain.normalization.PhoneNumberNormalizer
 import com.blacklist.app.domain.repository.BlackListRepository
+import com.blacklist.app.domain.engine.BlacklistRuleConflictAnalyzer
 import com.blacklist.app.domain.engine.TemporaryExactBlockPolicy
 import com.blacklist.app.domain.engine.TemporaryFirewall
 import com.blacklist.app.domain.model.Presentation
@@ -239,22 +240,17 @@ class BlackListRepositoryImpl(
                 else -> return Result.failure(IllegalArgumentException("Unsupported rule type"))
             }
 
-            // Duplicate check: same type + same pattern/start-end/country
-            val existing = ruleDao.getAll()
-            val dup = existing.any { e ->
-                e.ruleType == rule.ruleType && (
-                    (e.pattern != null && e.pattern == rule.pattern) ||
-                        (e.startNumber == rule.startNumber && e.endNumber == rule.endNumber && rule.startNumber != null) ||
-                        (e.countryIso != null && e.countryIso.equals(rule.countryIso, ignoreCase = true))
-                    )
-            }
-            if (dup) return Result.failure(IllegalStateException("Rule already exists"))
-
-            // Normalize stored values
+            // Normalize before comparison so UI preview and durable validation share one scope.
             val toInsert = when (rule.ruleType) {
-                BlacklistRuleEntity.TYPE_RANGE -> rule.copy(startNumber = rule.startNumber?.filter { it.isDigit() }, endNumber = rule.endNumber?.filter { it.isDigit() })
+                BlacklistRuleEntity.TYPE_RANGE -> rule.copy(
+                    startNumber = rule.startNumber?.filter { it.isDigit() },
+                    endNumber = rule.endNumber?.filter { it.isDigit() }
+                )
                 BlacklistRuleEntity.TYPE_COUNTRY -> rule.copy(countryIso = rule.countryIso?.uppercase())
                 else -> rule.copy(pattern = rule.pattern?.trim())
+            }
+            if (BlacklistRuleConflictAnalyzer(normalizer).analyze(toInsert, ruleDao.getAll()).hasDuplicate) {
+                return Result.failure(IllegalStateException("Equivalent active rule already exists"))
             }
             Result.success(ruleDao.insert(toInsert))
         } catch (e: Exception) {
