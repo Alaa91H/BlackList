@@ -123,6 +123,10 @@
     <string name="settings_general">عام</string>
     <string name="settings_block_unknown_desc">رفض المكالمات من أرقام غير محفوظة بصمت</string>
     <string name="settings_block_private_desc">رفض الأرقام المخفية/الخاصة</string>
+    <string name="settings_silence_unknown">إسكات المتصلين غير المعروفين بدلاً من ذلك</string>
+    <string name="settings_silence_unknown_desc">عند تفعيل حظر غير المعروفين، اسمح للمكالمات المؤهلة بالاستمرار دون رنين أو رفض.</string>
+    <string name="settings_silence_private">إسكات المتصلين الخاصين بدلاً من ذلك</string>
+    <string name="settings_silence_private_desc">عند تفعيل حظر الأرقام الخاصة، اسمح للمكالمات الخاصة بالاستمرار دون رنين أو رفض.</string>
     <string name="settings_notifications">إظهار إشعار للمكالمات المحظورة</string>
     <string name="settings_notifications_desc">إظهار إشعار منخفض الأهمية للمكالمات المحظورة</string>
     <string name="settings_notifications_global">الإشعارات العامة</string>

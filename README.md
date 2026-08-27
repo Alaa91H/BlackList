@@ -21,6 +21,12 @@
 
 Most call blockers send your contacts and call history to remote servers. **BlackList never does.**
 
+### New in 1.12.0
+
+- **Opt-in quiet screening for unknown and private calls** — choose whether eligible unknown or withheld calls are rejected (the existing default) or quietly silenced while the call continues without ringing.
+- **Preserved safety precedence** — quiet screening is evaluated only after emergency protection, temporary allowances, whitelists, explicit and legacy block rules, callback grace, schedules, and temporary firewall protection. It never weakens an explicit blocking action.
+- **Portable preference and safe upgrade** — the choices are disabled by default, reset when a curated protection profile is applied, survive encrypted local backup and restore, and use a non-destructive Room 9→10 migration.
+
 ### New in 1.11.0
 
 - **Offline reputation-list import with transparent provenance** — import a CSV file that you explicitly select, inspect its source, declared version and SHA-256 fingerprint, then confirm before it is stored locally.
@@ -52,8 +58,8 @@ Most call blockers send your contacts and call history to remote servers. **Blac
 |---------|-------------|
 | **Blacklist** | Add numbers manually, from contacts, or from call log. Wildcard-aware normalization (E.164 + national). |
 | **Whitelist** | Family / priority numbers that **always bypass** any blocking rule. |
-| **Block Unknown** | Silently reject numbers not in your contacts (uses `READ_CONTACTS`). |
-| **Block Private/Hidden** | Reject withheld / private / unknown callers. |
+| **Block Unknown** | Reject numbers not in your contacts (uses `READ_CONTACTS`), or optionally silence eligible unknown calls instead. |
+| **Block Private/Hidden** | Reject withheld / private callers, or optionally silence them instead. |
 | **Block All Except Whitelist** | Nuclear mode — only whitelisted numbers ring. |
 | **Opt-in Callback Grace** | After you dial a valid number, allow only that exact number to call back for 15 minutes; never overrides an explicit block. |
 | **Advanced Scheduling** | Time-based rules with day-of-week bitmask and per-schedule trusted caller exceptions. Example: *Block all except whitelist 22:00–06:00 Mon–Fri while allowing an on-call number*. Overnight spans supported. |
@@ -108,11 +114,11 @@ com.blacklist.app
    Active schedule has a matching trusted caller exception? → ALLOW for that schedule only
    Schedule active? → evaluate schedule mode (ALL / ALL_EXCEPT_WHITELIST / UNKNOWN_PRIVATE / BLACKLIST)
    Temporary firewall or broad policy? → BLOCK
-   Unknown/private policy? → BLOCK when enabled
+   Unknown/private policy? → BLOCK by default, or SILENCE only when the matching opt-in is enabled
    Local risk, behavior and exact offline-reputation signals? → BLOCK only at the configured threshold (offline score 80–100 is a risk floor)
    otherwise → ALLOW
    ```
-4. If blocked → `CallResponse.Builder().setDisallowCall(true).setRejectCall(true)` + optional private BlackList log + optional notification. By default the Android call log is retained; **Settings → Privacy → Private blocked-call history** can hide blocked calls from the shared system log while keeping the in-app record.
+4. If blocked → `CallResponse.Builder().setDisallowCall(true).setRejectCall(true)` + optional private BlackList log + optional notification. If an eligible unknown/private policy is explicitly set to **Silence instead**, the call is not rejected and Android suppresses its ring while retaining normal system call history and notification behavior. By default the Android call log is retained; **Settings → Privacy → Private blocked-call history** can hide blocked calls from the shared system log while keeping the in-app record.
 
 ---
 
@@ -163,12 +169,11 @@ No Firebase, no analytics SDK, no internet permission.
 
 | Permission | Why |
 |------------|-----|
-| `READ_PHONE_STATE` | Detect incoming call state |
-| `READ_CALL_LOG` | Optional — pick numbers from log |
-| `READ_CONTACTS` | Check if caller is in contacts (for *Block Unknown*) |
-| `CALL_PHONE` / `ANSWER_PHONE_CALLS` | Required for screening role |
-| `POST_NOTIFICATIONS` | Show blocked-call notification (Android 13+) |
-| `BIND_SCREENING_SERVICE` | System binds `CallScreeningService` |
+| `READ_CONTACTS` | Optional; checks whether a caller is in contacts for *Block Unknown*. |
+| `POST_NOTIFICATIONS` | Optional; shows BlackList's low-priority blocked-call notification on Android 13+. |
+| `BIND_SCREENING_SERVICE` | Service-level permission used by Android to bind `CallScreeningService`; it is not requested from the user. |
+
+BlackList declares **no** `INTERNET`, call-log, phone-state, call-placement, or call-answering permission. The user grants the Call Screening role through Android's standard role UI.
 
 ---
 

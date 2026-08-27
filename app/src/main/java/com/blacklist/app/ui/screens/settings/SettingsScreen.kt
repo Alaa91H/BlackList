@@ -9,6 +9,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.VolumeOff
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -206,7 +207,23 @@ fun SettingsScreen(nav: NavController) {
                 Column {
                     SettingSwitch(stringResource(R.string.home_block_unknown), stringResource(R.string.settings_block_unknown_desc), Icons.Filled.PersonOff, settings?.blockUnknown ?: false) { vm.setBlockUnknown(it) }
                     HorizontalDivider()
+                    SettingSwitch(
+                        stringResource(R.string.settings_silence_unknown),
+                        stringResource(R.string.settings_silence_unknown_desc),
+                        Icons.AutoMirrored.Filled.VolumeOff,
+                        settings?.silenceUnknown ?: false,
+                        enabled = settings?.blockUnknown ?: false
+                    ) { vm.setSilenceUnknown(it) }
+                    HorizontalDivider()
                     SettingSwitch(stringResource(R.string.home_block_private), stringResource(R.string.settings_block_private_desc), Icons.Filled.VisibilityOff, settings?.blockPrivate ?: true) { vm.setBlockPrivate(it) }
+                    HorizontalDivider()
+                    SettingSwitch(
+                        stringResource(R.string.settings_silence_private),
+                        stringResource(R.string.settings_silence_private_desc),
+                        Icons.AutoMirrored.Filled.VolumeOff,
+                        settings?.silencePrivate ?: false,
+                        enabled = settings?.blockPrivate ?: true
+                    ) { vm.setSilencePrivate(it) }
                     HorizontalDivider()
                     SettingSwitch(stringResource(R.string.home_block_all_except_whitelist), stringResource(R.string.settings_block_all_except_desc), Icons.Filled.DoNotDisturbOn, settings?.blockAllExceptWhitelist ?: false) { vm.setBlockAllExcept(it) }
                     HorizontalDivider()
@@ -415,6 +432,7 @@ private fun SettingSwitch(
     desc: String,
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     checked: Boolean,
+    enabled: Boolean = true,
     on: (Boolean) -> Unit
 ) {
     Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -423,7 +441,7 @@ private fun SettingSwitch(
             Text(title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Medium)
             Text(desc, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
-        Switch(checked = checked, onCheckedChange = on)
+        Switch(checked = checked, onCheckedChange = on, enabled = enabled)
     }
 }
 

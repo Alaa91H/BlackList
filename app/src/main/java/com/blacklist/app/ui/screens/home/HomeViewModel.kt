@@ -6,6 +6,7 @@ import android.os.Build
 import android.telecom.TelecomManager
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.blacklist.app.domain.model.ProtectionProfiles
 import com.blacklist.app.domain.repository.BlackListRepository
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -45,9 +46,15 @@ class HomeViewModel(
         }
     }
 
-    fun toggleBlockUnknown(v: Boolean) = viewModelScope.launch { repo.updateSettings { it.copy(blockUnknown = v) } }
-    fun toggleBlockPrivate(v: Boolean) = viewModelScope.launch { repo.updateSettings { it.copy(blockPrivate = v) } }
-    fun toggleBlockAllExceptWhitelist(v: Boolean) = viewModelScope.launch { repo.updateSettings { it.copy(blockAllExceptWhitelist = v) } }
+    fun toggleBlockUnknown(v: Boolean) = viewModelScope.launch {
+        repo.updateSettings { it.copy(blockUnknown = v, activeProfileId = ProtectionProfiles.CUSTOM) }
+    }
+    fun toggleBlockPrivate(v: Boolean) = viewModelScope.launch {
+        repo.updateSettings { it.copy(blockPrivate = v, activeProfileId = ProtectionProfiles.CUSTOM) }
+    }
+    fun toggleBlockAllExceptWhitelist(v: Boolean) = viewModelScope.launch {
+        repo.updateSettings { it.copy(blockAllExceptWhitelist = v, activeProfileId = ProtectionProfiles.CUSTOM) }
+    }
     fun toggleNotifications(v: Boolean) = viewModelScope.launch { repo.updateSettings { it.copy(showBlockedNotification = v) } }
 
     // Temporary firewall

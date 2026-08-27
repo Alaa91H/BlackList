@@ -107,15 +107,36 @@ class CallFirewallEngine(
                 return decision(enrichedEvent, Decision.BLOCK, 85, ReputationLevel.SUSPICIOUS, listOf("Block all except whitelist"), emptyList(), "policy")
             }
             if (settings.blockPrivate && enrichedEvent.phoneNumber.presentation == Presentation.RESTRICTED) {
-                return decision(enrichedEvent, Decision.BLOCK, 70, ReputationLevel.SUSPICIOUS, listOf("Private or hidden policy"), emptyList(), "private")
+                return broadPolicyDecision(
+                    event = enrichedEvent,
+                    silence = settings.silencePrivate,
+                    risk = 70,
+                    reputation = ReputationLevel.SUSPICIOUS,
+                    reason = "Private or hidden policy",
+                    backend = "private"
+                )
             }
             if (settings.blockUnknown && enrichedEvent.phoneNumber.presentation == Presentation.UNKNOWN) {
-                return decision(enrichedEvent, Decision.BLOCK, 50, ReputationLevel.NEUTRAL, listOf("Unknown caller policy"), emptyList(), "unknown")
+                return broadPolicyDecision(
+                    event = enrichedEvent,
+                    silence = settings.silenceUnknown,
+                    risk = 50,
+                    reputation = ReputationLevel.NEUTRAL,
+                    reason = "Unknown caller policy",
+                    backend = "unknown"
+                )
             }
             // Contact access is optional. A revoked or unavailable permission
             // never turns all known callers into accidental blocks.
             if (settings.blockUnknown && snapshot.canReadContacts && enrichedEvent.phoneNumber.presentation == Presentation.ALLOWED && enrichedEvent.contact?.isInContacts != true) {
-                return decision(enrichedEvent, Decision.BLOCK, 55, ReputationLevel.NEUTRAL, listOf("Not in contacts"), emptyList(), "unknown")
+                return broadPolicyDecision(
+                    event = enrichedEvent,
+                    silence = settings.silenceUnknown,
+                    risk = 55,
+                    reputation = ReputationLevel.NEUTRAL,
+                    reason = "Not in contacts",
+                    backend = "unknown"
+                )
             }
         }
 
@@ -204,6 +225,23 @@ class CallFirewallEngine(
         val suspicious = listOf("+216", "+212", "+234", "+92")
         return suspicious.any { number.normalized.startsWith(it) }
     }
+
+    private fun broadPolicyDecision(
+        event: CallEvent,
+        silence: Boolean,
+        risk: Int,
+        reputation: ReputationLevel,
+        reason: String,
+        backend: String
+    ): EnforcementDecision = decision(
+        event = event,
+        decision = if (silence) Decision.SILENCE else Decision.BLOCK,
+        risk = risk,
+        reputation = reputation,
+        reasons = listOf(if (silence) "$reason; silenced locally" else reason),
+        rules = emptyList(),
+        backendHint = if (silence) "${backend}_silence" else backend
+    )
 
     private fun decision(
         event: CallEvent,

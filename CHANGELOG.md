@@ -2,6 +2,31 @@
 
 All notable changes to BlackList are documented in this file. The project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.12.0] - 2026-08-27
+
+### Added
+
+- **Optional quiet screening.** When *Block Unknown* or *Block Private* is enabled, users can independently choose to silence eligible calls rather than reject them. The opt-ins are disabled by default and are clearly unavailable until their parent protection policy is enabled.
+- **Portable local preference.** Quiet-screening choices are now retained in encrypted local backup and restore, and a non-destructive Room 9→10 migration preserves every existing rule, list, source, schedule and setting.
+
+### Changed
+
+- **Safe decision routing.** Unknown and private policies return `SILENCE` only for their explicit opt-in; all existing users retain the reject behavior. Emergency protection, temporary allowances, whitelists, explicit and legacy blocks, callback grace, schedules, temporary firewall rules and block-all mode continue to take precedence.
+- **Curated profile clarity.** Applying a Normal, Focus or Whitelist-only protection profile resets optional quiet-screening choices, avoiding an inherited custom action that the preset does not promise.
+
+### Fixed
+
+- **Accurate permission documentation.** The README now reflects the manifest: BlackList declares only optional Contacts and Notifications permissions, plus the service-only screening bind permission. It does not request call-log, phone-state, calling, call-answering or Internet permissions.
+- **Profile state consistency.** Home-screen quick protection toggles now mark the selected configuration as Custom, matching the Settings screen behavior.
+
+### Quality
+
+- Added decision-engine regression coverage for explicit opt-in, default rejection, parent-policy gating, private-call silence, manual-rule precedence and profile resets.
+
+### Privacy
+
+- Quiet screening uses Android's local `CallResponse` capability only. It adds no network traffic, background job, runtime permission, data collection or pre-response I/O.
+
 ## [1.11.0] - 2026-08-27
 
 ### Added
@@ -166,6 +191,7 @@ All notable changes to BlackList are documented in this file. The project follow
 
 - Production-grade local call-firewall foundation with rule matching, risk scoring, behavior signals, reputation tracking, temporary protection controls, diagnostics, and a decision simulator.
 
+[1.12.0]: https://github.com/Alaa91H/BlackList/compare/v1.11.0...v1.12.0
 [1.11.0]: https://github.com/Alaa91H/BlackList/compare/v1.10.0...v1.11.0
 [1.10.0]: https://github.com/Alaa91H/BlackList/compare/v1.9.0...v1.10.0
 [1.9.0]: https://github.com/Alaa91H/BlackList/compare/v1.8.0...v1.9.0

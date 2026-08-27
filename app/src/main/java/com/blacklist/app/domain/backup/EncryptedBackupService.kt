@@ -202,7 +202,9 @@ class EncryptedBackupService(
 
     private fun AppSettingsEntity.toJson(): JSONObject = JSONObject()
         .put("blockUnknown", blockUnknown)
+        .put("silenceUnknown", silenceUnknown)
         .put("blockPrivate", blockPrivate)
+        .put("silencePrivate", silencePrivate)
         .put("blockAllExceptWhitelist", blockAllExceptWhitelist)
         .put("showBlockedNotification", showBlockedNotification)
         .put("hideBlockedCallsFromSystemLog", hideBlockedCallsFromSystemLog)
@@ -276,7 +278,9 @@ class EncryptedBackupService(
         }
         return AppSettingsEntity(
             blockUnknown = json.optBoolean("blockUnknown", false),
+            silenceUnknown = json.optBoolean("silenceUnknown", false),
             blockPrivate = json.optBoolean("blockPrivate", true),
+            silencePrivate = json.optBoolean("silencePrivate", false),
             blockAllExceptWhitelist = json.optBoolean("blockAllExceptWhitelist", false),
             showBlockedNotification = json.optBoolean("showBlockedNotification", true),
             hideBlockedCallsFromSystemLog = json.optBoolean("hideBlockedCallsFromSystemLog", false),

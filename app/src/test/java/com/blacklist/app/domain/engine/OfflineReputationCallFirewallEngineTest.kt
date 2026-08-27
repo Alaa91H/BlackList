@@ -5,6 +5,7 @@ import com.blacklist.app.data.local.entity.BlacklistRuleEntity
 import com.blacklist.app.data.local.entity.CallerReputationEntity
 import com.blacklist.app.domain.model.CallEvent
 import com.blacklist.app.domain.model.Decision
+import com.blacklist.app.domain.model.Presentation
 import com.blacklist.app.domain.normalization.PhoneNumberNormalizer
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
@@ -93,16 +94,84 @@ class OfflineReputationCallFirewallEngineTest {
         }
     }
 
+    @Test
+    fun `unknown callers can be silenced only after explicit opt in`() = runBlocking {
+        val decision = evaluate(
+            PolicySnapshotStore.Snapshot(
+                settings = AppSettingsEntity(blockUnknown = true, silenceUnknown = true)
+            ),
+            presentation = Presentation.UNKNOWN
+        )
+
+        assertEquals(Decision.SILENCE, decision.decision)
+        assertEquals("unknown_silence", decision.explainable.backend)
+    }
+
+    @Test
+    fun `unknown callers remain rejected by default`() = runBlocking {
+        val decision = evaluate(
+            PolicySnapshotStore.Snapshot(settings = AppSettingsEntity(blockUnknown = true)),
+            presentation = Presentation.UNKNOWN
+        )
+
+        assertEquals(Decision.BLOCK, decision.decision)
+        assertEquals("unknown", decision.explainable.backend)
+    }
+
+    @Test
+    fun `unknown silence never activates without its parent policy`() = runBlocking {
+        val decision = evaluate(
+            PolicySnapshotStore.Snapshot(
+                settings = AppSettingsEntity(blockUnknown = false, silenceUnknown = true)
+            ),
+            presentation = Presentation.UNKNOWN
+        )
+
+        assertEquals(Decision.ALLOW, decision.decision)
+    }
+
+    @Test
+    fun `private callers can be silenced only after explicit opt in`() = runBlocking {
+        val decision = evaluate(
+            PolicySnapshotStore.Snapshot(
+                settings = AppSettingsEntity(blockPrivate = true, silencePrivate = true)
+            ),
+            presentation = Presentation.RESTRICTED
+        )
+
+        assertEquals(Decision.SILENCE, decision.decision)
+        assertEquals("private_silence", decision.explainable.backend)
+    }
+
+    @Test
+    fun `explicit blacklist remains ahead of silent unknown policy`() = runBlocking {
+        val blacklistDecision = evaluate(
+            PolicySnapshotStore.Snapshot(
+                settings = AppSettingsEntity(blockUnknown = true, silenceUnknown = true),
+                rules = listOf(BlacklistRuleEntity(ruleType = BlacklistRuleEntity.TYPE_EXACT, pattern = "+4930123456"))
+            )
+        )
+
+        assertEquals(Decision.BLOCK, blacklistDecision.decision)
+        assertEquals("blacklist", blacklistDecision.explainable.backend)
+    }
+
     private suspend fun evaluate(
         snapshot: PolicySnapshotStore.Snapshot,
-        rawNumber: String = "+4930123456"
+        rawNumber: String = "+4930123456",
+        presentation: Presentation = Presentation.ALLOWED
     ) = CallFirewallEngine(
         policySnapshots = PolicySnapshotProvider { snapshot },
         normalizer = normalizer,
         blacklistEngine = BlacklistEngine(normalizer),
         riskEngine = RiskScoringEngine(),
         behaviorEngine = BehaviorEngine()
-    ).evaluate(CallEvent(callId = "test", phoneNumber = normalizer.normalize(rawNumber)))
+    ).evaluate(
+        CallEvent(
+            callId = "test",
+            phoneNumber = normalizer.normalize(rawNumber).copy(presentation = presentation)
+        )
+    )
 
     private fun snapshotWithSignal(number: String, score: Int) = PolicySnapshotStore.Snapshot(
         settings = AppSettingsEntity(),

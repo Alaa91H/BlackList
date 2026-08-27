@@ -34,4 +34,22 @@ class ProtectionProfilesTest {
         assertEquals(ProtectionProfiles.WHITELIST_ONLY, settings.activeProfileId)
         assertTrue(settings.blockAllExceptWhitelist)
     }
+
+    @Test
+    fun `preset resets optional quiet screening preferences`() {
+        val customQuietSettings = AppSettingsEntity(
+            blockUnknown = true,
+            silenceUnknown = true,
+            blockPrivate = true,
+            silencePrivate = true
+        )
+
+        val applied = ProtectionProfiles.byId(ProtectionProfiles.FOCUS)!!.applyTo(customQuietSettings)
+
+        assertTrue(applied.blockUnknown)
+        assertTrue(applied.blockPrivate)
+        assertFalse(applied.silenceUnknown)
+        assertFalse(applied.silencePrivate)
+        assertEquals(ProtectionProfiles.FOCUS, applied.activeProfileId)
+    }
 }

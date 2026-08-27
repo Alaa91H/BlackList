@@ -74,6 +74,14 @@ class SettingsViewModel(private val repo: BlackListRepository) : ViewModel() {
         repo.updateSettings { it.copy(blockPrivate = value, activeProfileId = ProtectionProfiles.CUSTOM) }
     }
 
+    fun setSilenceUnknown(value: Boolean) = viewModelScope.launch {
+        repo.updateSettings { it.copy(silenceUnknown = value, activeProfileId = ProtectionProfiles.CUSTOM) }
+    }
+
+    fun setSilencePrivate(value: Boolean) = viewModelScope.launch {
+        repo.updateSettings { it.copy(silencePrivate = value, activeProfileId = ProtectionProfiles.CUSTOM) }
+    }
+
     fun setBlockAllExcept(value: Boolean) = viewModelScope.launch {
         repo.updateSettings { it.copy(blockAllExceptWhitelist = value, activeProfileId = ProtectionProfiles.CUSTOM) }
     }

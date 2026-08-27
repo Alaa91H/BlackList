@@ -21,7 +21,7 @@ import com.blacklist.app.data.local.entity.*
         OfflineReputationEntryEntity::class,
         SecurityEventEntity::class
     ],
-    version = 9,
+    version = 10,
     exportSchema = true
 )
 abstract class BlackListDatabase : RoomDatabase() {
@@ -116,6 +116,14 @@ abstract class BlackListDatabase : RoomDatabase() {
                 database.execSQL("CREATE INDEX IF NOT EXISTS index_offline_reputation_entries_sourceId ON offline_reputation_entries(sourceId)")
                 database.execSQL("CREATE INDEX IF NOT EXISTS index_offline_reputation_entries_normalizedNumber ON offline_reputation_entries(normalizedNumber)")
                 database.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS index_offline_reputation_entries_sourceId_normalizedNumber ON offline_reputation_entries(sourceId, normalizedNumber)")
+            }
+        }
+
+        /** Adds opt-in quiet screening preferences without changing existing reject defaults. */
+        val MIGRATION_9_10 = object : Migration(9, 10) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL("ALTER TABLE app_settings ADD COLUMN silenceUnknown INTEGER NOT NULL DEFAULT 0")
+                database.execSQL("ALTER TABLE app_settings ADD COLUMN silencePrivate INTEGER NOT NULL DEFAULT 0")
             }
         }
     }

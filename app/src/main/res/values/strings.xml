@@ -131,7 +131,11 @@
     <string name="settings_title">Settings</string>
     <string name="settings_general">General</string>
     <string name="settings_block_unknown_desc">Silently reject calls from numbers not in contacts</string>
-    <string name="settings_block_private_desc">Reject hidden / private numbers</string>
+        <string name="settings_block_private_desc">Reject hidden / private numbers</string>
+    <string name="settings_silence_unknown">Silence unknown callers instead</string>
+    <string name="settings_silence_unknown_desc">When Block Unknown is enabled, let eligible unknown calls continue without ringing or a rejection.</string>
+    <string name="settings_silence_private">Silence private callers instead</string>
+    <string name="settings_silence_private_desc">When Block Private is enabled, let private calls continue without ringing or a rejection.</string>
     <string name="settings_notifications">Show notification for blocked calls</string>
     <string name="settings_notifications_desc">Show low-priority notification for blocked calls</string>
     <string name="settings_notifications_global">Global notifications</string>

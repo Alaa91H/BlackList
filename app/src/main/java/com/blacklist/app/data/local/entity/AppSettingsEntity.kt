@@ -7,7 +7,11 @@ import androidx.room.PrimaryKey
 data class AppSettingsEntity(
     @PrimaryKey val id: Int = 1, // singleton
     val blockUnknown: Boolean = false,
+    /** When enabled with blockUnknown, screen eligible unknown callers quietly rather than rejecting them. */
+    val silenceUnknown: Boolean = false,
     val blockPrivate: Boolean = true,
+    /** When enabled with blockPrivate, screen private callers quietly rather than rejecting them. */
+    val silencePrivate: Boolean = false,
     val blockAllExceptWhitelist: Boolean = false,
     val showBlockedNotification: Boolean = true,
     /** Keeps blocked-call history out of Android's shared call log while preserving BlackList's local log. */

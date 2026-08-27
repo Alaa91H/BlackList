@@ -14,7 +14,9 @@ data class ProtectionProfilePreset(
 ) {
     fun applyTo(settings: AppSettingsEntity): AppSettingsEntity = settings.copy(
         blockUnknown = blockUnknown,
+        silenceUnknown = false,
         blockPrivate = blockPrivate,
+        silencePrivate = false,
         blockAllExceptWhitelist = blockAllExceptWhitelist,
         activeProfileId = id,
         updatedAt = System.currentTimeMillis()
