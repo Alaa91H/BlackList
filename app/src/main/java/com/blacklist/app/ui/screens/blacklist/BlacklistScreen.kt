@@ -31,6 +31,8 @@ import com.blacklist.app.domain.engine.RuleConflictPreview
 import com.blacklist.app.domain.engine.RuleConflictWinner
 import com.blacklist.app.domain.engine.TemporaryExactBlockPolicy
 import com.blacklist.app.domain.engine.TemporaryFirewall
+import com.blacklist.app.domain.model.Decision
+import com.blacklist.app.domain.model.EnforcementDecision
 import com.blacklist.app.ui.components.EmptyState
 import com.blacklist.app.ui.components.PickerDialog
 import com.blacklist.app.ui.components.PickerSource
@@ -44,13 +46,14 @@ fun BlacklistScreen(nav: NavController) {
     val repo = remember { ServiceLocator.provideRepository(ctx) }
     val normalizer = remember { ServiceLocator.provideNormalizer(ctx) }
     val conflictAnalyzer = remember { BlacklistRuleConflictAnalyzer(normalizer) }
-    val vm: BlacklistViewModel = viewModel(factory = ViewModelFactory(repo))
+    val vm: BlacklistViewModel = viewModel(factory = ViewModelFactory(repo, ctx))
     val list by vm.filtered.collectAsState()
     val rules by vm.filteredRules.collectAsState()
     val allRules by vm.rules.collectAsState()
     val temporaryExactBlocks by vm.temporaryExactBlocks.collectAsState()
     val query by vm.query.collectAsState()
     val error by vm.error.collectAsState()
+    val draftPreview by vm.draftRulePreview.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     var showAdd by remember { mutableStateOf(false) }
     var showTemporaryBlock by remember { mutableStateOf(false) }
@@ -179,9 +182,16 @@ fun BlacklistScreen(nav: NavController) {
         AddRuleDialog(
             existingRules = allRules,
             conflictAnalyzer = conflictAnalyzer,
-            onDismiss = { showAdd = false },
+            previewState = draftPreview,
+            onPreview = vm::previewDraftRule,
+            onClearPreview = vm::clearDraftRulePreview,
+            onDismiss = {
+                vm.clearDraftRulePreview()
+                showAdd = false
+            },
             onSaveRule = { rule ->
                 vm.addRule(rule)
+                vm.clearDraftRulePreview()
                 showAdd = false
             },
             onPickSource = { source ->
@@ -362,6 +372,9 @@ private fun RuleCard(rule: BlacklistRuleEntity, onToggle: (Boolean) -> Unit, onD
 private fun AddRuleDialog(
     existingRules: List<BlacklistRuleEntity>,
     conflictAnalyzer: BlacklistRuleConflictAnalyzer,
+    previewState: DraftRulePreviewState,
+    onPreview: (BlacklistRuleEntity, String) -> Unit,
+    onClearPreview: () -> Unit,
     onDismiss: () -> Unit,
     onSaveRule: (BlacklistRuleEntity) -> Unit,
     onPickSource: (PickerSource) -> Unit
@@ -373,6 +386,7 @@ private fun AddRuleDialog(
     var rangeEnd by remember { mutableStateOf("") }
     var countryIso by remember { mutableStateOf("") }
     var displayName by remember { mutableStateOf("") }
+    var testNumber by remember { mutableStateOf("") }
 
     fun buildRule(): BlacklistRuleEntity? {
         return when (selectedType) {
@@ -410,7 +424,10 @@ private fun AddRuleDialog(
                     BlacklistRuleEntity.USER_TYPES.forEach { type ->
                         FilterChip(
                             selected = selectedType == type,
-                            onClick = { selectedType = type },
+                            onClick = {
+                                selectedType = type
+                                onClearPreview()
+                            },
                             label = { Text(stringResource(typeLabelRes(type)), style = MaterialTheme.typography.labelSmall) }
                         )
                     }
@@ -420,7 +437,10 @@ private fun AddRuleDialog(
                     BlacklistRuleEntity.USER_ENFORCEMENTS.forEach { enforcement ->
                         FilterChip(
                             selected = selectedEnforcement == enforcement,
-                            onClick = { selectedEnforcement = enforcement },
+                            onClick = {
+                                selectedEnforcement = enforcement
+                                onClearPreview()
+                            },
                             label = { Text(ruleEnforcementLabel(enforcement), style = MaterialTheme.typography.labelSmall) }
                         )
                     }
@@ -438,17 +458,20 @@ private fun AddRuleDialog(
                 )
                 when (selectedType) {
                     BlacklistRuleEntity.TYPE_RANGE -> {
-                        OutlinedTextField(value = rangeStart, onValueChange = { rangeStart = it }, label = { Text(stringResource(R.string.blacklist_range_start)) }, placeholder = { Text("500000000") }, keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Phone), singleLine = true, modifier = Modifier.fillMaxWidth())
-                        OutlinedTextField(value = rangeEnd, onValueChange = { rangeEnd = it }, label = { Text(stringResource(R.string.blacklist_range_end)) }, placeholder = { Text("599999999") }, keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Phone), singleLine = true, modifier = Modifier.fillMaxWidth())
+                        OutlinedTextField(value = rangeStart, onValueChange = { rangeStart = it; onClearPreview() }, label = { Text(stringResource(R.string.blacklist_range_start)) }, placeholder = { Text("500000000") }, keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Phone), singleLine = true, modifier = Modifier.fillMaxWidth())
+                        OutlinedTextField(value = rangeEnd, onValueChange = { rangeEnd = it; onClearPreview() }, label = { Text(stringResource(R.string.blacklist_range_end)) }, placeholder = { Text("599999999") }, keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Phone), singleLine = true, modifier = Modifier.fillMaxWidth())
                         Text(stringResource(R.string.blacklist_range_hint), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                     BlacklistRuleEntity.TYPE_COUNTRY -> {
-                        OutlinedTextField(value = countryIso, onValueChange = { countryIso = it }, label = { Text(stringResource(R.string.blacklist_country_hint)) }, placeholder = { Text("DE") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+                        OutlinedTextField(value = countryIso, onValueChange = { countryIso = it; onClearPreview() }, label = { Text(stringResource(R.string.blacklist_country_hint)) }, placeholder = { Text("DE") }, singleLine = true, modifier = Modifier.fillMaxWidth())
                     }
                     else -> {
                         OutlinedTextField(
                             value = pattern,
-                            onValueChange = { pattern = it },
+                            onValueChange = {
+                                pattern = it
+                                onClearPreview()
+                            },
                             label = { Text(stringResource(R.string.blacklist_pattern_label)) },
                             placeholder = {
                                 Text(
@@ -473,6 +496,56 @@ private fun AddRuleDialog(
                     RuleConflictPreviewCard(conflictPreview)
                 }
                 OutlinedTextField(value = displayName, onValueChange = { displayName = it }, label = { Text(stringResource(R.string.blacklist_add_name_hint)) }, singleLine = true, modifier = Modifier.fillMaxWidth())
+                HorizontalDivider()
+                Text(stringResource(R.string.draft_decision_preview_title), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+                Text(stringResource(R.string.draft_decision_preview_description), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                OutlinedTextField(
+                    value = testNumber,
+                    onValueChange = {
+                        testNumber = it
+                        onClearPreview()
+                    },
+                    label = { Text(stringResource(R.string.draft_decision_preview_number_label)) },
+                    placeholder = { Text(stringResource(R.string.draft_decision_preview_number_placeholder)) },
+                    supportingText = { Text(stringResource(R.string.draft_decision_preview_number_hint)) },
+                    keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Phone),
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Button(
+                    onClick = { draft?.let { onPreview(it, testNumber) } },
+                    enabled = draft != null && testNumber.isNotBlank() && !previewState.isPreviewing,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    if (previewState.isPreviewing) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(16.dp),
+                            strokeWidth = 2.dp,
+                            color = MaterialTheme.colorScheme.onPrimary
+                        )
+                        Spacer(Modifier.width(8.dp))
+                    } else {
+                        Icon(Icons.Filled.PlayArrow, null, modifier = Modifier.size(16.dp))
+                        Spacer(Modifier.width(8.dp))
+                    }
+                    Text(stringResource(R.string.draft_decision_preview_run))
+                }
+                previewState.error?.let { error ->
+                    Text(
+                        stringResource(
+                            if (error is DraftRulePreviewError.InvalidNumber) {
+                                R.string.draft_decision_preview_invalid_number
+                            } else {
+                                R.string.draft_decision_preview_failed
+                            }
+                        ),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+                if (previewState.result != null) {
+                    DraftDecisionPreviewCard(previewState.result)
+                }
                 if (selectedType == BlacklistRuleEntity.TYPE_EXACT) {
                     HorizontalDivider()
                     Text(stringResource(R.string.blacklist_pick_source), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -591,3 +664,55 @@ private fun conflictWinnerLabelRes(winner: RuleConflictWinner): Int = when (winn
 
 private const val MAX_PREVIEWED_CONFLICTS = 3
 private const val MAX_RULES_FOR_LIVE_PREVIEW = 200
+
+@Composable
+private fun DraftDecisionPreviewCard(result: EnforcementDecision) {
+    val (container, content, title) = when (result.decision) {
+        Decision.BLOCK -> Triple(
+            MaterialTheme.colorScheme.errorContainer,
+            MaterialTheme.colorScheme.onErrorContainer,
+            R.string.draft_decision_preview_result_block
+        )
+        Decision.SILENCE -> Triple(
+            MaterialTheme.colorScheme.secondaryContainer,
+            MaterialTheme.colorScheme.onSecondaryContainer,
+            R.string.draft_decision_preview_result_silence
+        )
+        Decision.ALLOW -> Triple(
+            MaterialTheme.colorScheme.primaryContainer,
+            MaterialTheme.colorScheme.onPrimaryContainer,
+            R.string.draft_decision_preview_result_allow
+        )
+    }
+    Card(colors = CardDefaults.cardColors(containerColor = container), modifier = Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Text(
+                stringResource(title),
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold,
+                color = content
+            )
+            Text(result.explainable.summary, style = MaterialTheme.typography.bodySmall, color = content)
+            result.explainable.details.take(MAX_PREVIEW_REASONS).forEach { reason ->
+                Text("• $reason", style = MaterialTheme.typography.bodySmall, color = content)
+            }
+            if (result.explainable.matchedRuleIds.isNotEmpty()) {
+                Text(
+                    stringResource(
+                        R.string.draft_decision_preview_matched_rules,
+                        result.explainable.matchedRuleIds.joinToString()
+                    ),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = content
+                )
+            }
+            Text(
+                stringResource(R.string.draft_decision_preview_read_only),
+                style = MaterialTheme.typography.labelSmall,
+                color = content
+            )
+        }
+    }
+}
+
+private const val MAX_PREVIEW_REASONS = 4

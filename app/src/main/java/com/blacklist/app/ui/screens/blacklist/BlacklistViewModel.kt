@@ -3,7 +3,9 @@ package com.blacklist.app.ui.screens.blacklist
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.blacklist.app.data.local.entity.BlacklistRuleEntity
+import com.blacklist.app.domain.engine.DraftRuleDecisionPreviewer
 import com.blacklist.app.domain.engine.TemporaryFirewall
+import com.blacklist.app.domain.model.EnforcementDecision
 import com.blacklist.app.domain.repository.BlackListRepository
 import com.blacklist.app.util.PickerItem
 import com.blacklist.app.util.PhoneNumberUtils
@@ -17,12 +19,26 @@ sealed interface TemporaryExactBlockEvent {
     data object Failed : TemporaryExactBlockEvent
 }
 
-class BlacklistViewModel(private val repo: BlackListRepository): ViewModel() {
+sealed interface DraftRulePreviewError {
+    data object InvalidNumber : DraftRulePreviewError
+    data object Failed : DraftRulePreviewError
+}
+
+data class DraftRulePreviewState(
+    val isPreviewing: Boolean = false,
+    val result: EnforcementDecision? = null,
+    val error: DraftRulePreviewError? = null
+)
+
+class BlacklistViewModel(
+    private val repo: BlackListRepository,
+    private val draftPreviewer: DraftRuleDecisionPreviewer
+) : ViewModel() {
     val items = repo.observeBlockedNumbers().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
     private val _query = MutableStateFlow("")
     val query: StateFlow<String> = _query
     val filtered = combine(items, _query) { list, q ->
-        if (q.isBlank()) list else list.filter { it.rawNumber.contains(q, true) || it.displayName?.contains(q,true)==true }
+        if (q.isBlank()) list else list.filter { it.rawNumber.contains(q, true) || it.displayName?.contains(q, true) == true }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     // Pattern rules (PREFIX/SUFFIX/CONTAINS/RANGE/COUNTRY/EXACT)
@@ -47,6 +63,9 @@ class BlacklistViewModel(private val repo: BlackListRepository): ViewModel() {
 
     private val _temporaryExactBlockEvents = MutableSharedFlow<TemporaryExactBlockEvent>()
     val temporaryExactBlockEvents = _temporaryExactBlockEvents.asSharedFlow()
+
+    private val _draftRulePreview = MutableStateFlow(DraftRulePreviewState())
+    val draftRulePreview: StateFlow<DraftRulePreviewState> = _draftRulePreview.asStateFlow()
 
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error
@@ -89,6 +108,27 @@ class BlacklistViewModel(private val repo: BlackListRepository): ViewModel() {
 
     fun cancelTemporaryExactBlock(id: Long) = viewModelScope.launch {
         repo.cancelTemporaryExactBlock(id)
+    }
+
+    /** Runs only after the user presses Preview; no rule or event is persisted. */
+    fun previewDraftRule(rule: BlacklistRuleEntity, rawNumber: String) = viewModelScope.launch {
+        _draftRulePreview.value = DraftRulePreviewState(isPreviewing = true)
+        runCatching { draftPreviewer.preview(rawNumber, rule) }
+            .onSuccess { decision -> _draftRulePreview.value = DraftRulePreviewState(result = decision) }
+            .onFailure { error ->
+                _draftRulePreview.value = DraftRulePreviewState(
+                    error = if (error is IllegalArgumentException) {
+                        DraftRulePreviewError.InvalidNumber
+                    } else {
+                        DraftRulePreviewError.Failed
+                    }
+                )
+            }
+    }
+
+    /** Clears the current session-only test number result when the editor closes or changes. */
+    fun clearDraftRulePreview() {
+        _draftRulePreview.value = DraftRulePreviewState()
     }
 
     fun addRule(rule: BlacklistRuleEntity) = viewModelScope.launch {

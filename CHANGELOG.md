@@ -2,6 +2,26 @@
 
 All notable changes to BlackList are documented in this file. The project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.20.0] - 2026-08-27
+
+### Added
+
+- **Full draft-rule decision preview.** The blacklist editor can now test one user-supplied number against the current local policy with an unsaved draft rule overlaid in memory. It shows the expected allow, reject, or ringtone-silence outcome, explanation, and matched rule IDs before the user saves anything.
+- **Precedence visibility beyond rule overlap.** The preview exposes when emergency protection, temporary allow, whitelist, or a higher-priority persistent rule overrides the draft. This makes policy precedence inspectable at edit time rather than only after an incoming call.
+
+### Changed
+
+- **Isolated test behaviour.** A preview uses a fresh in-memory behavior engine and a snapshot overlay, so running a test cannot contribute an attempt to the live behavioral signals used by actual call screening.
+- **Stale-result prevention.** Editing the draft rule, its enforcement choice, or the test number clears the previous result. Closing or saving the editor also clears the current-session preview.
+
+### Quality
+
+- Added focused coverage for an unsaved silent rule, whitelist and emergency precedence over a draft, and preservation of the source policy snapshot during preview.
+
+### Privacy
+
+- The draft preview accepts only a user-entered phone number of at most 64 characters. It never places a call, writes a rule, logs an event, posts a notification, persists the test number, reads Call Log/SMS, accesses Contacts, starts a worker, or performs network, Root/Shizuku, hidden-API, ADB, or call-screening-path I/O.
+
 ## [1.19.0] - 2026-08-27
 
 ### Added
@@ -355,6 +375,7 @@ All notable changes to BlackList are documented in this file. The project follow
 
 - Production-grade local call-firewall foundation with rule matching, risk scoring, behavior signals, reputation tracking, temporary protection controls, diagnostics, and a decision simulator.
 
+[1.20.0]: https://github.com/Alaa91H/BlackList/compare/v1.19.0...v1.20.0
 [1.19.0]: https://github.com/Alaa91H/BlackList/compare/v1.18.0...v1.19.0
 [1.18.0]: https://github.com/Alaa91H/BlackList/compare/v1.17.0...v1.18.0
 [1.17.0]: https://github.com/Alaa91H/BlackList/compare/v1.16.0...v1.17.0

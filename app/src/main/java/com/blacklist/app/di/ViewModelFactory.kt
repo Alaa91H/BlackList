@@ -2,6 +2,7 @@ package com.blacklist.app.di
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import com.blacklist.app.domain.engine.DraftRuleDecisionPreviewer
 import com.blacklist.app.domain.repository.BlackListRepository
 import com.blacklist.app.ui.screens.blacklist.BlacklistViewModel
 import com.blacklist.app.ui.screens.blockedlog.BlockedLogViewModel
@@ -20,7 +21,15 @@ class ViewModelFactory(
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         return when {
             modelClass.isAssignableFrom(HomeViewModel::class.java) -> HomeViewModel(repo, appContext!!) as T
-            modelClass.isAssignableFrom(BlacklistViewModel::class.java) -> BlacklistViewModel(repo) as T
+            modelClass.isAssignableFrom(BlacklistViewModel::class.java) -> BlacklistViewModel(
+                repo = repo,
+                draftPreviewer = DraftRuleDecisionPreviewer(
+                    policySnapshots = ServiceLocator.providePolicySnapshotStore(appContext!!),
+                    normalizer = ServiceLocator.provideNormalizer(appContext),
+                    blacklistEngine = ServiceLocator.provideBlacklistEngine(appContext),
+                    riskEngine = ServiceLocator.provideRiskEngine()
+                )
+            ) as T
             modelClass.isAssignableFrom(WhitelistViewModel::class.java) -> WhitelistViewModel(repo) as T
             modelClass.isAssignableFrom(BlockedLogViewModel::class.java) -> BlockedLogViewModel(
                 repo = repo,

@@ -466,4 +466,18 @@
     <string name="rule_conflict_kind_overlap">overlapping match</string>
     <string name="rule_conflict_winner_draft">this draft takes precedence</string>
     <string name="rule_conflict_winner_existing">the existing rule takes precedence</string>
+    <!-- Draft policy decision preview -->
+    <string name="draft_decision_preview_title">Test this draft rule</string>
+    <string name="draft_decision_preview_description">Test one number against the current local policy with this unsaved rule added temporarily.</string>
+    <string name="draft_decision_preview_number_label">Test number</string>
+    <string name="draft_decision_preview_number_placeholder">+1 415 555 2671</string>
+    <string name="draft_decision_preview_number_hint">Use a real phone number format. No test call is placed.</string>
+    <string name="draft_decision_preview_run">Preview decision</string>
+    <string name="draft_decision_preview_invalid_number">Enter a valid phone number to preview this draft.</string>
+    <string name="draft_decision_preview_failed">The local preview could not be completed. No rule was saved.</string>
+    <string name="draft_decision_preview_result_block">Would reject this call</string>
+    <string name="draft_decision_preview_result_silence">Would silence this ringtone</string>
+    <string name="draft_decision_preview_result_allow">Would allow this call</string>
+    <string name="draft_decision_preview_matched_rules">Matched rule IDs: %1$s</string>
+    <string name="draft_decision_preview_read_only">Test-only result — no call, rule, log, notification, or number is saved.</string>
 </resources>

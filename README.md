@@ -165,6 +165,12 @@ Before saving a persistent blacklist rule, the editor performs a **read-only, in
 
 The live editor checks at most the **200 highest-priority active permanent rules** and tells the user if more rules were not inspected. This keeps editing bounded without making an incomplete preview a security decision. The durable duplicate validation always checks every active permanent rule. For matching rules, lower numeric priority wins; ties resolve to the newer `createdAt`, then to the greater rule ID. The runtime engine and the preview use this same order.
 
+### Test a complete draft decision
+
+The rule editor can also test one **user-entered** phone number against a temporary in-memory policy that includes the current unsaved draft. The result states whether Android would be asked to **allow**, **reject**, or **silence the ringtone**, and shows its explanation and matched rule IDs. This exposes the effect of all higher-priority safeguards, including emergency protection, temporary allows, and whitelists.
+
+The test input is capped at 64 characters and exists only for the current editor session. It never places a call, saves a rule, writes a blocked-call event, posts a notification, or retains the supplied number. Its behavior engine is new for every preview, so testing cannot change the live repeated-call or burst signals. Changing the draft, its enforcement, or the test number clears the previous result.
+
 Existing rules are migrated as **Reject call**. Encrypted local backups now retain the selected action, while backups from earlier releases safely restore rules as **Reject call**.
 
 ---

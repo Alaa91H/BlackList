@@ -451,4 +451,18 @@
     <string name="rule_conflict_kind_overlap">نطاق متداخل</string>
     <string name="rule_conflict_winner_draft">تأخذ هذه المسودة الأولوية</string>
     <string name="rule_conflict_winner_existing">تأخذ القاعدة الموجودة الأولوية</string>
+    <!-- معاينة قرار سياسة المسودة -->
+    <string name="draft_decision_preview_title">اختبار مسودة القاعدة</string>
+    <string name="draft_decision_preview_description">اختبر رقماً واحداً وفق السياسة المحلية الحالية بعد إضافة هذه القاعدة غير المحفوظة مؤقتاً.</string>
+    <string name="draft_decision_preview_number_label">رقم الاختبار</string>
+    <string name="draft_decision_preview_number_placeholder">+1 415 555 2671</string>
+    <string name="draft_decision_preview_number_hint">استخدم صيغة رقم هاتف حقيقية. لا يُجرى اتصال اختباري.</string>
+    <string name="draft_decision_preview_run">معاينة القرار</string>
+    <string name="draft_decision_preview_invalid_number">أدخل رقم هاتف صالحاً لمعاينة هذه المسودة.</string>
+    <string name="draft_decision_preview_failed">تعذر إكمال المعاينة المحلية. لم تُحفظ أي قاعدة.</string>
+    <string name="draft_decision_preview_result_block">سيُرفض هذا الاتصال</string>
+    <string name="draft_decision_preview_result_silence">سيُسكَت رنين هذا الاتصال</string>
+    <string name="draft_decision_preview_result_allow">سيُسمح بهذا الاتصال</string>
+    <string name="draft_decision_preview_matched_rules">معرّفات القواعد المطابقة: %1$s</string>
+    <string name="draft_decision_preview_read_only">نتيجة اختبار فقط — لا يُجرى اتصال ولا تُحفظ قاعدة أو سجل أو إشعار أو رقم.</string>
 </resources>
