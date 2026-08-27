@@ -292,6 +292,24 @@
     <string name="csv_import_blacklist">استيراد CSV للقائمة السوداء</string>
     <string name="csv_export_whitelist">تصدير CSV للقائمة البيضاء</string>
     <string name="csv_import_whitelist">استيراد CSV للقائمة البيضاء</string>
+    <string name="offline_reputation_title">قوائم السمعة دون اتصال</string>
+    <string name="offline_reputation_desc">استورد ملف CSV يختاره المستخدم ويحمل مصدراً مُعلناً. لا يقوم BlackList بتنزيل هذه القوائم أو تحديثها أو إرسالها.</string>
+    <string name="offline_reputation_import">استيراد قائمة سمعة محلية</string>
+    <string name="offline_reputation_sources">المصادر المستوردة</string>
+    <string name="offline_reputation_source_summary">%1$d مدخلاً · SHA-256 %2$s…</string>
+    <string name="offline_reputation_source_imported">تاريخ الاستيراد: %1$s</string>
+    <string name="offline_reputation_no_sources">لم تُستورد قوائم سمعة دون اتصال</string>
+    <string name="offline_reputation_remove">إزالة</string>
+    <string name="offline_reputation_import_success">تم استيراد %1$d مدخلاً من %2$s</string>
+    <string name="offline_reputation_import_failed">تعذر استيراد قائمة السمعة</string>
+    <string name="offline_reputation_preview_title">مراجعة قائمة السمعة دون اتصال</string>
+    <string name="offline_reputation_preview_desc">راجع مصدر القائمة المُعلن وتأثيرها قبل التطبيق. قد تحظر الدرجات بين 80 و100 المكالمات المطابقة ما لم تكن لحكم محلي صريح أولوية أعلى.</string>
+    <string name="offline_reputation_source_value">المصدر: %1$s</string>
+    <string name="offline_reputation_version_value">الإصدار: %1$s</string>
+    <string name="offline_reputation_url_value">الرابط المُعلن: %1$s</string>
+    <string name="offline_reputation_fingerprint_value">SHA-256: %1$s…</string>
+    <string name="offline_reputation_preview_counts">السليم: %1$d · عالي الخطورة: %2$d · المكرر: %3$d · غير السليم: %4$d</string>
+    <string name="offline_reputation_import_confirm">استيراد محلياً</string>
     <string name="csv_blacklist_file_name">ارقام-القائمة-السوداء.csv</string>
     <string name="csv_whitelist_file_name">ارقام-القائمة-البيضاء.csv</string>
     <string name="csv_export_success">تم تصدير CSV: %1$d إدخالاً</string>
@@ -329,7 +347,7 @@
 
     <!-- النسخ الاحتياطي المشفّر -->
     <string name="settings_backup">نسخة احتياطية محلية مشفّرة</string>
-    <string name="settings_backup_desc">صدّر القواعد والقوائم والجداول والإعدادات إلى ملف مشفّر. لا يُضمَّن سجل المكالمات أبداً.</string>
+    <string name="settings_backup_desc">صدّر القواعد والقوائم ومصادر السمعة دون اتصال والجداول والإعدادات إلى ملف مشفّر. لا يُضمَّن سجل المكالمات أبداً.</string>
     <string name="settings_backup_export_desc">إنشاء ملف نسخة احتياطية محلية مشفّرة</string>
     <string name="settings_backup_import_desc">استعادة ملف نسخة احتياطية محلية مشفّرة</string>
     <string name="settings_backup_passphrase_title">عبارة مرور النسخة الاحتياطية</string>

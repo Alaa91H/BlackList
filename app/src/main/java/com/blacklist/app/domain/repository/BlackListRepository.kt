@@ -2,6 +2,7 @@ package com.blacklist.app.domain.repository
 
 import com.blacklist.app.data.local.entity.*
 import com.blacklist.app.domain.backup.EncryptedBackupService
+import com.blacklist.app.domain.importexport.OfflineReputationImportPreview
 import kotlinx.coroutines.flow.Flow
 import java.io.InputStream
 import java.io.OutputStream
@@ -43,6 +44,11 @@ interface BlackListRepository {
     fun observeScheduleExceptions(scheduleRuleId: Long): Flow<List<ScheduleExceptionEntity>>
     suspend fun addScheduleException(scheduleRuleId: Long, rawNumber: String): Result<Long>
     suspend fun deleteScheduleException(id: Long)
+
+    // User-selected offline reputation lists. The app never fetches these sources.
+    fun observeOfflineReputationSources(): Flow<List<OfflineReputationSourceEntity>>
+    suspend fun importOfflineReputationList(preview: OfflineReputationImportPreview): Result<Long>
+    suspend fun deleteOfflineReputationSource(id: Long)
 
     // Blacklist pattern rules (EXACT/PREFIX/SUFFIX/CONTAINS/RANGE/COUNTRY)
     fun observeBlacklistRules(): Flow<List<BlacklistRuleEntity>>

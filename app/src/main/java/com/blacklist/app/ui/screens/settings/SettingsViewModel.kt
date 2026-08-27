@@ -11,7 +11,10 @@ import com.blacklist.app.domain.importexport.CsvImportPreview
 import com.blacklist.app.domain.importexport.CsvListRow
 import com.blacklist.app.domain.importexport.CsvListTarget
 import com.blacklist.app.domain.importexport.CsvListTransferService
+import com.blacklist.app.domain.importexport.OfflineReputationImportPreview
+import com.blacklist.app.domain.importexport.OfflineReputationListTransferService
 import com.blacklist.app.domain.repository.BlackListRepository
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -20,6 +23,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class SettingsViewModel(private val repo: BlackListRepository) : ViewModel() {
     sealed interface BackupEvent {
@@ -38,8 +42,16 @@ class SettingsViewModel(private val repo: BlackListRepository) : ViewModel() {
 
     data class PendingCsvImport(val target: CsvListTarget, val preview: CsvImportPreview)
 
+    sealed interface OfflineReputationEvent {
+        data class Imported(val sourceName: String, val entries: Int) : OfflineReputationEvent
+        data class Failed(val error: Throwable) : OfflineReputationEvent
+    }
+
+    data class PendingOfflineReputationImport(val preview: OfflineReputationImportPreview)
+
     val settings = repo.observeSettings().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
     val blockedNumbers = repo.observeBlockedNumbers().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+    val offlineReputationSources = repo.observeOfflineReputationSources().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     private val _backupEvents = MutableSharedFlow<BackupEvent>(extraBufferCapacity = 1)
     val backupEvents = _backupEvents.asSharedFlow()
@@ -48,6 +60,11 @@ class SettingsViewModel(private val repo: BlackListRepository) : ViewModel() {
     val pendingCsvImport = _pendingCsvImport.asStateFlow()
     private val _csvEvents = MutableSharedFlow<CsvEvent>(extraBufferCapacity = 1)
     val csvEvents = _csvEvents.asSharedFlow()
+    private val offlineReputationTransfer = OfflineReputationListTransferService()
+    private val _pendingOfflineReputationImport = MutableStateFlow<PendingOfflineReputationImport?>(null)
+    val pendingOfflineReputationImport = _pendingOfflineReputationImport.asStateFlow()
+    private val _offlineReputationEvents = MutableSharedFlow<OfflineReputationEvent>(extraBufferCapacity = 1)
+    val offlineReputationEvents = _offlineReputationEvents.asSharedFlow()
 
     fun setBlockUnknown(value: Boolean) = viewModelScope.launch {
         repo.updateSettings { it.copy(blockUnknown = value, activeProfileId = ProtectionProfiles.CUSTOM) }
@@ -107,6 +124,43 @@ class SettingsViewModel(private val repo: BlackListRepository) : ViewModel() {
             }
             _csvEvents.emit(CsvEvent.Imported(pending.target, added, skipped))
         }
+    }
+
+    fun previewOfflineReputationImport(contentResolver: ContentResolver, uri: Uri) {
+        viewModelScope.launch {
+            runCatching {
+                withContext(Dispatchers.IO) {
+                    contentResolver.openInputStream(uri)?.use(offlineReputationTransfer::preview)
+                        ?: error("Unable to read the selected reputation list.")
+                }
+            }.onSuccess { preview ->
+                _pendingOfflineReputationImport.value = PendingOfflineReputationImport(preview)
+            }.onFailure { error ->
+                _offlineReputationEvents.emit(OfflineReputationEvent.Failed(error))
+            }
+        }
+    }
+
+    fun dismissOfflineReputationImport() {
+        _pendingOfflineReputationImport.value = null
+    }
+
+    fun confirmOfflineReputationImport() {
+        val pending = _pendingOfflineReputationImport.value ?: return
+        _pendingOfflineReputationImport.value = null
+        viewModelScope.launch {
+            repo.importOfflineReputationList(pending.preview)
+                .onSuccess { sourceId ->
+                    _offlineReputationEvents.emit(
+                        OfflineReputationEvent.Imported(pending.preview.sourceName, pending.preview.rows.size)
+                    )
+                }
+                .onFailure { error -> _offlineReputationEvents.emit(OfflineReputationEvent.Failed(error)) }
+        }
+    }
+
+    fun deleteOfflineReputationSource(id: Long) = viewModelScope.launch {
+        repo.deleteOfflineReputationSource(id)
     }
 
     fun exportCsv(contentResolver: ContentResolver, uri: Uri, target: CsvListTarget) {

@@ -17,9 +17,11 @@ import com.blacklist.app.data.local.entity.*
         AppSettingsEntity::class,
         BlacklistRuleEntity::class,
         CallerReputationEntity::class,
+        OfflineReputationSourceEntity::class,
+        OfflineReputationEntryEntity::class,
         SecurityEventEntity::class
     ],
-    version = 8,
+    version = 9,
     exportSchema = true
 )
 abstract class BlackListDatabase : RoomDatabase() {
@@ -31,6 +33,7 @@ abstract class BlackListDatabase : RoomDatabase() {
     abstract fun appSettingsDao(): AppSettingsDao
     abstract fun blacklistRuleDao(): BlacklistRuleDao
     abstract fun callerReputationDao(): CallerReputationDao
+    abstract fun offlineReputationDao(): OfflineReputationDao
     abstract fun securityEventDao(): SecurityEventDao
 
     companion object {
@@ -83,6 +86,36 @@ abstract class BlackListDatabase : RoomDatabase() {
                 )
                 database.execSQL("CREATE INDEX IF NOT EXISTS index_schedule_exceptions_scheduleRuleId ON schedule_exceptions(scheduleRuleId)")
                 database.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS index_schedule_exceptions_scheduleRuleId_normalizedNumber ON schedule_exceptions(scheduleRuleId, normalizedNumber)")
+            }
+        }
+
+        /** Adds auditable, user-imported local reputation sources and their exact-number entries. */
+        val MIGRATION_8_9 = object : Migration(8, 9) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL(
+                    "CREATE TABLE IF NOT EXISTS offline_reputation_sources (" +
+                        "id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                        "sourceName TEXT NOT NULL, " +
+                        "sourceVersion TEXT, " +
+                        "sourceUrl TEXT, " +
+                        "fingerprintSha256 TEXT NOT NULL, " +
+                        "entryCount INTEGER NOT NULL, " +
+                        "importedAt INTEGER NOT NULL)"
+                )
+                database.execSQL("CREATE INDEX IF NOT EXISTS index_offline_reputation_sources_importedAt ON offline_reputation_sources(importedAt)")
+                database.execSQL(
+                    "CREATE TABLE IF NOT EXISTS offline_reputation_entries (" +
+                        "id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                        "sourceId INTEGER NOT NULL, " +
+                        "normalizedNumber TEXT NOT NULL, " +
+                        "riskScore INTEGER NOT NULL, " +
+                        "category TEXT, " +
+                        "createdAt INTEGER NOT NULL, " +
+                        "FOREIGN KEY(sourceId) REFERENCES offline_reputation_sources(id) ON DELETE CASCADE)"
+                )
+                database.execSQL("CREATE INDEX IF NOT EXISTS index_offline_reputation_entries_sourceId ON offline_reputation_entries(sourceId)")
+                database.execSQL("CREATE INDEX IF NOT EXISTS index_offline_reputation_entries_normalizedNumber ON offline_reputation_entries(normalizedNumber)")
+                database.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS index_offline_reputation_entries_sourceId_normalizedNumber ON offline_reputation_entries(sourceId, normalizedNumber)")
             }
         }
     }

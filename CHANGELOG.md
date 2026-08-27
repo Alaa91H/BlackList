@@ -2,6 +2,32 @@
 
 All notable changes to BlackList are documented in this file. The project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.11.0] - 2026-08-27
+
+### Added
+
+- **Optional offline reputation-list import.** Users can select a local CSV once, review declared source provenance, optional version, display-only HTTPS URL, SHA-256 fingerprint, row counts and a sample, then explicitly confirm before the list is stored.
+- **Auditable, bounded local policy.** Imported source metadata and exact-number entries are stored in separate indexed Room tables with cascade deletion. The device caps imports at 10 sources, 5,000 accepted entries per source and 10,000 accepted entries total.
+- **Encrypted backup continuity.** Encrypted local policy backups now carry imported source metadata and entries, validate source-to-entry references before mutation, and remap source identifiers atomically on restore. Caller history and local behavioural reputation history remain excluded.
+
+### Changed
+
+- **Conservative exact-match risk policy.** Only strict E.164 entries (`+` followed by 7–15 ASCII digits) are accepted. An imported score of 80–100 is a risk floor for that exact number; lower scores remain informational risk context and do not directly block.
+- **Explicit precedence and explainability.** Emergency safeguards, temporary allowances, whitelist entries, explicit blacklist rules, legacy exact blocks, callback grace, schedules and broad local policies remain ahead of imported data. Local `TRUSTED` and `NOT_SPAM` verdicts suppress imported scoring. High-risk decisions identify their local offline source.
+
+### Fixed
+
+- **Safe file trust boundary.** Parsing is strict UTF-8 and bounded to 1 MiB, 10,050 lines and 10,000 source rows; it validates required metadata and the exact `number,score,category` schema, rejects malformed provenance URLs, controls row and cell sizes, and uses locale-independent lowercase SHA-256 formatting.
+- **No screening-path I/O.** Imported policy is aggregated in the immutable background-refreshed policy snapshot, so `CallScreeningService` performs no Room, contact, URI or file access before responding to Telecom.
+
+### Quality
+
+- Added regression coverage for canonical parsing, deterministic fingerprinting, malformed and oversized input, provenance validation, duplicate and invalid rows, aggregation across sources, threshold behavior, exact matching, and the established emergency/manual-policy precedence.
+
+### Privacy
+
+- The import is entirely user initiated and local: it uses Android’s one-time content selection, retains no URI permission, performs no URL fetch, network request, automatic refresh, background sync, cloud transfer, tracker or new runtime permission.
+
 ## [1.10.0] - 2026-08-27
 
 ### Added
@@ -140,6 +166,7 @@ All notable changes to BlackList are documented in this file. The project follow
 
 - Production-grade local call-firewall foundation with rule matching, risk scoring, behavior signals, reputation tracking, temporary protection controls, diagnostics, and a decision simulator.
 
+[1.11.0]: https://github.com/Alaa91H/BlackList/compare/v1.10.0...v1.11.0
 [1.10.0]: https://github.com/Alaa91H/BlackList/compare/v1.9.0...v1.10.0
 [1.9.0]: https://github.com/Alaa91H/BlackList/compare/v1.8.0...v1.9.0
 [1.8.0]: https://github.com/Alaa91H/BlackList/compare/v1.7.0...v1.8.0

@@ -28,6 +28,8 @@ import com.blacklist.app.di.ViewModelFactory
 import com.blacklist.app.domain.importexport.CsvListTarget
 import com.blacklist.app.ui.navigation.Routes
 import kotlinx.coroutines.flow.collectLatest
+import java.text.DateFormat
+import java.util.Date
 
 private enum class BackupUiAction { EXPORT, RESTORE }
 
@@ -48,6 +50,8 @@ fun SettingsScreen(nav: NavController) {
     var csvExportTarget by remember { mutableStateOf<CsvListTarget?>(null) }
     var csvImportTarget by remember { mutableStateOf<CsvListTarget?>(null) }
     val pendingCsvImport by vm.pendingCsvImport.collectAsState()
+    val pendingOfflineReputationImport by vm.pendingOfflineReputationImport.collectAsState()
+    val offlineReputationSources by vm.offlineReputationSources.collectAsState()
 
     val exportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/octet-stream")) { uri ->
         val passphrase = exportPassphrase
@@ -71,6 +75,9 @@ fun SettingsScreen(nav: NavController) {
         val target = csvImportTarget
         csvImportTarget = null
         if (uri != null && target != null) vm.previewCsvImport(context.contentResolver, uri, target)
+    }
+    val offlineReputationImportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        if (uri?.scheme == "content") vm.previewOfflineReputationImport(context.contentResolver, uri)
     }
 
     LaunchedEffect(settings?.showBlockedNotification) {
@@ -109,11 +116,32 @@ fun SettingsScreen(nav: NavController) {
         }
     }
 
+    LaunchedEffect(vm) {
+        vm.offlineReputationEvents.collectLatest { event ->
+            val message = when (event) {
+                is SettingsViewModel.OfflineReputationEvent.Imported -> context.getString(
+                    R.string.offline_reputation_import_success,
+                    event.entries,
+                    event.sourceName
+                )
+                is SettingsViewModel.OfflineReputationEvent.Failed -> context.getString(R.string.offline_reputation_import_failed)
+            }
+            snackbarHostState.showSnackbar(message)
+        }
+    }
+
     pendingCsvImport?.let { pending ->
         CsvImportPreviewDialog(
             pending = pending,
             onDismiss = vm::dismissCsvImportPreview,
             onConfirm = vm::confirmCsvImport
+        )
+    }
+    pendingOfflineReputationImport?.let { pending ->
+        OfflineReputationImportPreviewDialog(
+            pending = pending,
+            onDismiss = vm::dismissOfflineReputationImport,
+            onConfirm = vm::confirmOfflineReputationImport
         )
     }
 
@@ -260,6 +288,52 @@ fun SettingsScreen(nav: NavController) {
                         csvImportTarget = CsvListTarget.WHITELIST
                         csvImportLauncher.launch(arrayOf("text/csv", "text/plain", "application/csv"))
                     }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.csv_import_whitelist)) }
+                }
+            }
+
+            Text(stringResource(R.string.offline_reputation_title), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
+            ElevatedCard(shape = RoundedCornerShape(20.dp)) {
+                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(stringResource(R.string.offline_reputation_desc), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    OutlinedButton(
+                        onClick = { offlineReputationImportLauncher.launch("text/*") },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(Icons.Filled.FileUpload, null)
+                        Spacer(Modifier.width(8.dp))
+                        Text(stringResource(R.string.offline_reputation_import))
+                    }
+                    Text(stringResource(R.string.offline_reputation_sources), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Medium)
+                    if (offlineReputationSources.isEmpty()) {
+                        Text(stringResource(R.string.offline_reputation_no_sources), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    } else {
+                        offlineReputationSources.forEach { source ->
+                            HorizontalDivider()
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Column(Modifier.weight(1f)) {
+                                    Text(source.sourceName, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
+                                    source.sourceVersion?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                                    Text(
+                                        stringResource(R.string.offline_reputation_source_summary, source.entryCount, source.fingerprintSha256.take(12)),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                    Text(
+                                        stringResource(
+                                            R.string.offline_reputation_source_imported,
+                                            DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT).format(Date(source.importedAt))
+                                        ),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                    source.sourceUrl?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                                }
+                                TextButton(onClick = { vm.deleteOfflineReputationSource(source.id) }) {
+                                    Text(stringResource(R.string.offline_reputation_remove))
+                                }
+                            }
+                        }
+                    }
                 }
             }
 

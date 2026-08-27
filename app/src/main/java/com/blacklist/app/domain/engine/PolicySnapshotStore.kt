@@ -5,6 +5,8 @@ import com.blacklist.app.data.local.entity.AppSettingsEntity
 import com.blacklist.app.data.local.entity.BlacklistRuleEntity
 import com.blacklist.app.data.local.entity.BlockedNumberEntity
 import com.blacklist.app.data.local.entity.CallerReputationEntity
+import com.blacklist.app.data.local.entity.OfflineReputationEntryEntity
+import com.blacklist.app.data.local.entity.OfflineReputationSourceEntity
 import com.blacklist.app.data.local.entity.ScheduleExceptionEntity
 import com.blacklist.app.data.local.entity.ScheduleRuleEntity
 import com.blacklist.app.data.local.entity.WhitelistedNumberEntity
@@ -48,7 +50,8 @@ class PolicySnapshotStore(
         val knownContactNumbers: List<PhoneNumber> = emptyList(),
         val canReadContacts: Boolean = false,
         val settings: AppSettingsEntity? = null,
-        val reputations: Map<String, CallerReputationEntity> = emptyMap()
+        val reputations: Map<String, CallerReputationEntity> = emptyMap(),
+        val offlineReputations: Map<String, OfflineReputationSignal> = emptyMap()
     ) {
         fun isKnownContact(number: PhoneNumber, matcher: PhoneNumberNormalizer): Boolean =
             knownContactNumbers.any { matcher.matches(number, it) }
@@ -61,6 +64,9 @@ class PolicySnapshotStore(
 
         fun reputationFor(number: PhoneNumber): CallerReputationEntity? =
             reputations[number.normalized] ?: reputations[number.e164]
+
+        fun offlineReputationFor(number: PhoneNumber): OfflineReputationSignal? =
+            offlineReputations[number.normalized] ?: offlineReputations[number.e164]
     }
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -86,6 +92,8 @@ class PolicySnapshotStore(
         scope.launch { database.blockedNumberDao().observeAll().collect { refresh() } }
         scope.launch { database.appSettingsDao().observe().collect { refresh() } }
         scope.launch { database.callerReputationDao().observeAll().collect { refresh() } }
+        scope.launch { database.offlineReputationDao().observeEntries().collect { refresh() } }
+        scope.launch { database.offlineReputationDao().observeSources().collect { refresh() } }
     }
 
     /** Forces a background reload; intended for app start and tests. */
@@ -97,6 +105,9 @@ class PolicySnapshotStore(
         val legacyBlocked = safe { database.blockedNumberDao().getAll() }.orEmpty()
         val settings = safe { database.appSettingsDao().get() }
         val reputations = safe { database.callerReputationDao().getAll() }.orEmpty()
+        val offlineSources = safe { database.offlineReputationDao().getSources() }.orEmpty()
+        val offlineEntries = safe { database.offlineReputationDao().getEntries() }.orEmpty()
+        val offlineReputations = aggregateOfflineReputations(offlineEntries, offlineSources)
         // Contacts remain strictly optional. A provider failure or a revoked
         // permission must not prevent refreshed local rules from being applied.
         val canReadContacts = contactUtils.canReadContacts()
@@ -115,7 +126,8 @@ class PolicySnapshotStore(
                 knownContactNumbers = contacts.map(normalizer::normalize),
                 canReadContacts = canReadContacts,
                 settings = settings,
-                reputations = reputations.associateBy { it.normalizedNumber }
+                reputations = reputations.associateBy { it.normalizedNumber },
+                offlineReputations = offlineReputations
             )
         )
     }
@@ -127,3 +139,25 @@ class PolicySnapshotStore(
             null
         }
 }
+
+
+internal fun aggregateOfflineReputations(
+    entries: List<OfflineReputationEntryEntity>,
+    sources: List<OfflineReputationSourceEntity>
+): Map<String, OfflineReputationSignal> {
+    val sourceNames = sources.associate { it.id to it.sourceName }
+    return entries.groupBy { it.normalizedNumber }.mapValues { (_, matches) ->
+        val highest = matches.maxBy { it.riskScore }
+        OfflineReputationSignal(
+            riskScore = highest.riskScore,
+            sources = matches.mapNotNull { sourceNames[it.sourceId] }.distinct().sorted(),
+            categories = matches.mapNotNull { it.category }.distinct().sorted()
+        )
+    }
+}
+
+data class OfflineReputationSignal(
+    val riskScore: Int,
+    val sources: List<String>,
+    val categories: List<String>
+)

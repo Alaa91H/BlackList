@@ -21,6 +21,13 @@
 
 Most call blockers send your contacts and call history to remote servers. **BlackList never does.**
 
+### New in 1.11.0
+
+- **Offline reputation-list import with transparent provenance** — import a CSV file that you explicitly select, inspect its source, declared version and SHA-256 fingerprint, then confirm before it is stored locally.
+- **No background network activity** — source URLs are display-only provenance metadata; BlackList never fetches them, refreshes a list, retains file access, or adds an `INTERNET` permission.
+- **Conservative and explainable enforcement** — only exact E.164 matches with a score of **80–100** can raise a call to the blocking threshold. Emergency safeguards, temporary allowances, whitelist entries, explicit blacklist rules, callback grace, schedules and any local user verdict always take precedence.
+- **Portable local policy** — encrypted local backups now include imported source metadata and entries while continuing to exclude call history and caller-behaviour history.
+
 ### New in 1.10.0
 
 - **Home-screen blocked-call statistics widget** — add a compact, launcher-native view of today’s and total blocked-call counts, with one-tap app opening and manual refresh.
@@ -51,6 +58,7 @@ Most call blockers send your contacts and call history to remote servers. **Blac
 | **Opt-in Callback Grace** | After you dial a valid number, allow only that exact number to call back for 15 minutes; never overrides an explicit block. |
 | **Advanced Scheduling** | Time-based rules with day-of-week bitmask and per-schedule trusted caller exceptions. Example: *Block all except whitelist 22:00–06:00 Mon–Fri while allowing an on-call number*. Overnight spans supported. |
 | **Home-screen Stats Widget** | Compact local counts for blocked calls today and in total, with manual refresh and direct opening of the app. No number, contact, or call-reason content is exposed. |
+| **Offline Reputation Lists** | Optional user-selected, bounded CSV lists with auditable source metadata and SHA-256 fingerprint. No URL fetching, automatic updates, cloud sync, or retained storage access. Exact E.164 scores from 80–100 can block only after all manual and safety policies. |
 | **Blocked Log** | Professional timeline of every blocked call: number, display name, reason, timestamp. Clear with one tap. |
 | **Smart Notifications** | Optional low-priority notification for each blocked call (off by default if you prefer total silence). |
 | **Material Design 3 (2026)** | Jetpack Compose, dynamic colors (Material You), Light/Dark/System theme, smooth animations & transitions. |
@@ -101,10 +109,40 @@ com.blacklist.app
    Schedule active? → evaluate schedule mode (ALL / ALL_EXCEPT_WHITELIST / UNKNOWN_PRIVATE / BLACKLIST)
    Temporary firewall or broad policy? → BLOCK
    Unknown/private policy? → BLOCK when enabled
-   Local risk and behavior signals (including failed network verification)? → BLOCK only at the configured threshold
+   Local risk, behavior and exact offline-reputation signals? → BLOCK only at the configured threshold (offline score 80–100 is a risk floor)
    otherwise → ALLOW
    ```
 4. If blocked → `CallResponse.Builder().setDisallowCall(true).setRejectCall(true)` + optional private BlackList log + optional notification. By default the Android call log is retained; **Settings → Privacy → Private blocked-call history** can hide blocked calls from the shared system log while keeping the in-app record.
+
+---
+
+## Offline Reputation List Format
+
+The import is intentionally **local-file-only**. In **Settings → Offline reputation lists**, choose one CSV file with Android's one-time document picker. BlackList parses the selected bytes once on a background thread, presents a preview, and applies the immutable preview only after explicit confirmation. It does not persist URI access and never reads the file again after the preview.
+
+The first metadata field must declare the source. `version` and `url` are optional; the URL is **provenance text only**, must use HTTPS, and is never opened or fetched. The header and each accepted number are strict so an imported list cannot rely on ambiguous national or suffix matching.
+
+```csv
+# BlackList Offline Reputation List
+# source: Example Research Group
+# version: 2026.08
+# url: https://example.org/reputation.csv
+number,score,category
++4930123456,90,telemarketing
++14155552671,65,marketing
+```
+
+| Field | Requirement and effect |
+|---|---|
+| `source` | Required readable source name, displayed before confirmation and with the imported source. |
+| `version` / `url` | Optional provenance metadata. The displayed URL must be HTTPS; it is never requested by the app. |
+| `number` | Exact E.164 number: `+` followed by 7–15 ASCII digits. No prefixes, suffixes, wildcards, or national-format matching. |
+| `score` | Integer from 0–100. Scores **80–100** form a risk floor that may block only after higher-priority local policies. Lower scores remain local risk context and do not directly block. |
+| `category` | Optional, bounded readable label shown in the review and explainable decision. |
+
+Files are capped at **1 MiB**, **10,050 lines** and **10,000 source rows**. The device retains at most **10 sources**, **5,000 accepted entries per source**, and **10,000 accepted entries total**. Duplicate values within a source retain the highest score; the source fingerprint prevents the same byte-identical list from being imported twice. If several imported sources name one exact number, the highest score is used while the decision retains every source and category for provenance.
+
+Imported entries never overwrite local caller reputation or a user verdict. They are evaluated only after emergency protection, temporary allow, whitelist, explicit blacklist and legacy exact blocks, callback grace, schedule exceptions/schedules, and broad local policies. An explicit `TRUSTED` or `NOT_SPAM` local verdict suppresses imported reputation scoring. Removing a source deletes only its own imported entries. Encrypted local backup and restore preserve the imported source metadata and entries as policy data; local call history and behaviour history remain excluded.
 
 ---
 
@@ -189,11 +227,11 @@ BlackList/
 - [x] Local CSV import/export for blacklist and whitelist, with size limits, duplicate detection, and spreadsheet-formula safety.
 - [x] Exact, prefix, range, country, temporary, and other local rule types in the firewall engine.
 - [x] Emergency short-number safeguard, emergency callback grace, and an opt-in exact-number callback grace after a local outgoing call.
-- [x] Encrypted local backup and restore for policy data only; call history and diagnostics remain excluded.
+- [x] Encrypted local backup and restore for policy data, including imported offline reputation sources; call history and diagnostics remain excluded.
 - [x] Optional private blocked-call history, retaining the explainable log locally while suppressing only blocked calls from Android’s shared call log.
 - [x] Per-schedule exact-number trusted caller exceptions, bounded locally and subordinate to explicit blocks.
 - [x] Home-screen blocked-call statistics widget with aggregate-only counts, safe refresh actions, and no additional permission.
-- [ ] Optional offline reputation-list import with transparent provenance and no background network access.
+- [x] Optional offline reputation-list import with transparent provenance and no background network access.
 
 See [CHANGELOG.md](CHANGELOG.md) for the complete release history.
 

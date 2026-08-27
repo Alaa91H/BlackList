@@ -5,6 +5,8 @@ import com.blacklist.app.data.local.BlackListDatabase
 import com.blacklist.app.data.local.entity.AppSettingsEntity
 import com.blacklist.app.data.local.entity.BlacklistRuleEntity
 import com.blacklist.app.data.local.entity.BlockedNumberEntity
+import com.blacklist.app.data.local.entity.OfflineReputationEntryEntity
+import com.blacklist.app.data.local.entity.OfflineReputationSourceEntity
 import com.blacklist.app.data.local.entity.ScheduleExceptionEntity
 import com.blacklist.app.data.local.entity.ScheduleRuleEntity
 import com.blacklist.app.util.PhoneNumberUtils
@@ -18,6 +20,7 @@ import org.json.JSONObject
 import java.io.ByteArrayOutputStream
 import java.io.InputStream
 import java.io.OutputStream
+import java.net.URI
 import java.security.SecureRandom
 import java.util.Base64
 import javax.crypto.Cipher
@@ -58,6 +61,8 @@ class EncryptedBackupService(
             val whitelisted = database.whitelistedNumberDao().getAll()
             val schedules = database.scheduleRuleDao().getAll()
             val scheduleExceptions = database.scheduleExceptionDao().getAll()
+            val offlineReputationSources = database.offlineReputationDao().getSources()
+            val offlineReputationEntries = database.offlineReputationDao().getEntries()
             val settings = database.appSettingsDao().get() ?: AppSettingsEntity()
             val createdAt = System.currentTimeMillis()
             val payload = JSONObject()
@@ -69,6 +74,8 @@ class EncryptedBackupService(
                 .put("whitelistedNumbers", JSONArray().also { array -> whitelisted.forEach { array.put(it.toJson()) } })
                 .put("schedules", JSONArray().also { array -> schedules.forEach { array.put(it.toJson()) } })
                 .put("scheduleExceptions", JSONArray().also { array -> scheduleExceptions.forEach { array.put(it.toJson()) } })
+                .put("offlineReputationSources", JSONArray().also { array -> offlineReputationSources.forEach { array.put(it.toJson()) } })
+                .put("offlineReputationEntries", JSONArray().also { array -> offlineReputationEntries.forEach { array.put(it.toJson()) } })
 
             val salt = randomBytes(SALT_BYTES)
             val iv = randomBytes(GCM_IV_BYTES)
@@ -111,6 +118,7 @@ class EncryptedBackupService(
                 database.blockedNumberDao().clearAll()
                 database.whitelistedNumberDao().clearAll()
                 database.scheduleRuleDao().clearAll()
+                database.offlineReputationDao().clearSources()
 
                 payload.rules.forEach { database.blacklistRuleDao().insert(it.copy(id = 0)) }
                 payload.blockedNumbers.forEach { database.blockedNumberDao().insert(it.copy(id = 0)) }
@@ -127,6 +135,17 @@ class EncryptedBackupService(
                         exception.copy(id = 0, scheduleRuleId = restoredScheduleId)
                     )
                 }
+                val restoredReputationSourceIds = mutableMapOf<Long, Long>()
+                payload.offlineReputationSources.forEach { source ->
+                    restoredReputationSourceIds[source.id] = database.offlineReputationDao().insertSource(source.copy(id = 0))
+                }
+                if (payload.offlineReputationEntries.isNotEmpty()) {
+                    database.offlineReputationDao().insertEntries(payload.offlineReputationEntries.map { entry ->
+                        val restoredSourceId = restoredReputationSourceIds[entry.sourceId]
+                            ?: throw IllegalArgumentException("Offline reputation entry references a missing source.")
+                        entry.copy(id = 0, sourceId = restoredSourceId)
+                    })
+                }
                 database.appSettingsDao().upsert(payload.settings.copy(id = 1, updatedAt = System.currentTimeMillis()))
             }
 
@@ -140,7 +159,9 @@ class EncryptedBackupService(
         val blockedNumbers: List<BlockedNumberEntity>,
         val whitelistedNumbers: List<WhitelistedNumberEntity>,
         val schedules: List<ScheduleRuleEntity>,
-        val scheduleExceptions: List<ScheduleExceptionEntity>
+        val scheduleExceptions: List<ScheduleExceptionEntity>,
+        val offlineReputationSources: List<OfflineReputationSourceEntity>,
+        val offlineReputationEntries: List<OfflineReputationEntryEntity>
     )
 
     private fun parsePayload(json: JSONObject): Payload {
@@ -153,13 +174,20 @@ class EncryptedBackupService(
         require(scheduleExceptions.all { exception -> schedules.any { it.id == exception.scheduleRuleId } }) {
             "Schedule exception references a missing schedule."
         }
+        val offlineReputationSources = json.optionalArray("offlineReputationSources", MAX_REPUTATION_SOURCES)
+            .map(::offlineReputationSourceFromJson)
+        val offlineReputationEntries = json.optionalArray("offlineReputationEntries", MAX_REPUTATION_ENTRIES_TOTAL)
+            .map(::offlineReputationEntryFromJson)
+        validateOfflineReputationPayload(offlineReputationSources, offlineReputationEntries)
         return Payload(
             settings = settingsFromJson(json.getJSONObject("settings")),
             rules = rules,
             blockedNumbers = blocked,
             whitelistedNumbers = whitelisted,
             schedules = schedules,
-            scheduleExceptions = scheduleExceptions
+            scheduleExceptions = scheduleExceptions,
+            offlineReputationSources = offlineReputationSources,
+            offlineReputationEntries = offlineReputationEntries
         )
     }
 
@@ -221,6 +249,21 @@ class EncryptedBackupService(
         .put("scheduleRuleId", scheduleRuleId)
         .put("number", normalizedNumber)
         .put("createdAt", createdAt)
+
+    private fun OfflineReputationSourceEntity.toJson(): JSONObject = JSONObject()
+        .put("id", id)
+        .put("name", sourceName)
+        .put("version", sourceVersion)
+        .put("url", sourceUrl)
+        .put("fingerprint", fingerprintSha256)
+        .put("entryCount", entryCount)
+        .put("importedAt", importedAt)
+
+    private fun OfflineReputationEntryEntity.toJson(): JSONObject = JSONObject()
+        .put("sourceId", sourceId)
+        .put("number", normalizedNumber)
+        .put("score", riskScore)
+        .put("category", category)
 
     private fun settingsFromJson(json: JSONObject): AppSettingsEntity {
         val themeMode = json.optString("themeMode", "SYSTEM")
@@ -312,6 +355,70 @@ class EncryptedBackupService(
             createdAt = json.optLong("createdAt", System.currentTimeMillis())
         )
     }
+
+    private fun offlineReputationSourceFromJson(json: JSONObject): OfflineReputationSourceEntity {
+        val id = json.optLong("id", -1L)
+        val name = json.requiredText("name", MAX_REPUTATION_SOURCE_NAME_LENGTH)
+        val version = json.optionalText("version", MAX_REPUTATION_VERSION_LENGTH)
+        val url = json.optionalText("url", MAX_REPUTATION_URL_LENGTH)
+        val fingerprint = json.requiredText("fingerprint", REPUTATION_FINGERPRINT_LENGTH)
+        val entryCount = json.getInt("entryCount")
+        val importedAt = json.optLong("importedAt", 0L)
+        require(id > 0 && isSafeReputationText(name, MAX_REPUTATION_SOURCE_NAME_LENGTH)) { "Invalid offline reputation source." }
+        require(version == null || isSafeReputationText(version, MAX_REPUTATION_VERSION_LENGTH)) { "Invalid offline reputation source version." }
+        require(url == null || isSafeReputationUrl(url)) { "Invalid offline reputation source URL." }
+        require(fingerprint.matches(REPUTATION_FINGERPRINT)) { "Invalid offline reputation fingerprint." }
+        require(entryCount in 1..MAX_REPUTATION_ENTRIES_PER_SOURCE && importedAt > 0) { "Invalid offline reputation source metadata." }
+        return OfflineReputationSourceEntity(id, name, version, url, fingerprint, entryCount, importedAt)
+    }
+
+    private fun offlineReputationEntryFromJson(json: JSONObject): OfflineReputationEntryEntity {
+        val sourceId = json.optLong("sourceId", -1L)
+        val number = json.requiredText("number", MAX_NUMBER_LENGTH)
+        val score = json.getInt("score")
+        val category = json.optionalText("category", MAX_REPUTATION_CATEGORY_LENGTH)
+        require(sourceId > 0 && REPUTATION_E164.matches(number)) { "Invalid offline reputation entry number." }
+        require(score in 0..100) { "Invalid offline reputation entry score." }
+        require(category == null || isSafeReputationText(category, MAX_REPUTATION_CATEGORY_LENGTH, allowEmpty = true)) {
+            "Invalid offline reputation entry category."
+        }
+        return OfflineReputationEntryEntity(sourceId = sourceId, normalizedNumber = number, riskScore = score, category = category)
+    }
+
+    private fun validateOfflineReputationPayload(
+        sources: List<OfflineReputationSourceEntity>,
+        entries: List<OfflineReputationEntryEntity>
+    ) {
+        require(sources.size <= MAX_REPUTATION_SOURCES && entries.size <= MAX_REPUTATION_ENTRIES_TOTAL) {
+            "Offline reputation data exceeds the restore limit."
+        }
+        require(sources.map { it.id }.distinct().size == sources.size) { "Offline reputation source ids must be unique." }
+        require(sources.map { it.fingerprintSha256 }.distinct().size == sources.size) { "Offline reputation source fingerprints must be unique." }
+        val sourceIds = sources.map { it.id }.toSet()
+        require(entries.all { it.sourceId in sourceIds }) { "Offline reputation entry references a missing source." }
+        require(entries.groupBy { it.sourceId }.all { it.value.size <= MAX_REPUTATION_ENTRIES_PER_SOURCE }) {
+            "Offline reputation source exceeds the entry limit."
+        }
+        require(entries.groupBy { it.sourceId }.all { (_, sourceEntries) ->
+            sourceEntries.map { it.normalizedNumber }.distinct().size == sourceEntries.size
+        }) { "Offline reputation entries must be unique within each source." }
+        require(entries.groupBy { it.sourceId }.all { (sourceId, sourceEntries) ->
+            sources.first { it.id == sourceId }.entryCount == sourceEntries.size
+        }) { "Offline reputation source entry counts do not match their entries." }
+        require(sources.all { source -> entries.any { it.sourceId == source.id } }) {
+            "Offline reputation sources must contain at least one entry."
+        }
+    }
+
+    private fun isSafeReputationText(value: String, maxLength: Int, allowEmpty: Boolean = false): Boolean =
+        value.length.let { if (allowEmpty) it <= maxLength else it in 1..maxLength } &&
+            value.all { !it.isISOControl() && it != '\u007f' }
+
+    private fun isSafeReputationUrl(value: String): Boolean = runCatching {
+        val uri = URI(value)
+        value.length <= MAX_REPUTATION_URL_LENGTH && uri.scheme.equals("https", ignoreCase = true) &&
+            !uri.host.isNullOrBlank() && uri.userInfo == null && uri.fragment == null
+    }.getOrDefault(false)
 
     private fun scheduleExceptionFromJson(json: JSONObject): ScheduleExceptionEntity {
         val scheduleRuleId = json.optLong("scheduleRuleId", -1L)
@@ -406,6 +513,17 @@ class EncryptedBackupService(
         const val MAX_PATTERN_LENGTH = 128
         const val MAX_TEXT_LENGTH = 200
         const val MAX_TEMPORARY_EXPIRY_FUTURE_MS = 7L * 24 * 60 * 60 * 1000
+        const val MAX_REPUTATION_SOURCES = 10
+        const val MAX_REPUTATION_ENTRIES_PER_SOURCE = 5_000
+        const val MAX_REPUTATION_ENTRIES_TOTAL = 10_000
+        const val MAX_REPUTATION_SOURCE_NAME_LENGTH = 100
+        const val MAX_REPUTATION_VERSION_LENGTH = 64
+        const val MAX_REPUTATION_URL_LENGTH = 512
+        const val MAX_REPUTATION_CATEGORY_LENGTH = 80
+        const val REPUTATION_FINGERPRINT_LENGTH = 64
+
+        val REPUTATION_E164 = Regex("^\\+[1-9][0-9]{6,14}$")
+        val REPUTATION_FINGERPRINT = Regex("^[a-f0-9]{64}$")
 
         val ALLOWED_RULE_TYPES = setOf(
             BlacklistRuleEntity.TYPE_EXACT,

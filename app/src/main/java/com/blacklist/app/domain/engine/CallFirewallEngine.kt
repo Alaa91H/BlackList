@@ -119,16 +119,41 @@ class CallFirewallEngine(
             }
         }
 
-        val reputation = snapshot.reputationFor(enrichedEvent.phoneNumber)?.toDomain()
-        val risk = riskEngine.score(
+        val storedReputation = snapshot.reputationFor(enrichedEvent.phoneNumber)
+        val offlineReputation = snapshot.offlineReputationFor(enrichedEvent.phoneNumber)
+        val reputation = effectiveReputation(storedReputation, offlineReputation)
+        val calculatedRisk = riskEngine.score(
             enrichedEvent,
             reputation,
             signals,
             isSuspiciousPrefix(enrichedEvent.phoneNumber),
             isWhitelisted = false
         )
+        val importedRisk = offlineReputation
+            ?.takeIf { storedReputation?.userVerdict.isNullOrBlank() }
+            ?.riskScore
+            ?: 0
+        val risk = maxOf(calculatedRisk, importedRisk)
         if (risk >= 80) {
-            return decision(enrichedEvent, Decision.BLOCK, risk, reputation?.level ?: ReputationLevel.NEUTRAL, listOf("High risk score $risk", "Signals: burst=${signals.isBurst} repeated=${signals.repeatedCount}"), emptyList(), "risk")
+            val reasons = buildList {
+                add("High risk score $risk")
+                offlineReputation?.takeIf { storedReputation?.userVerdict.isNullOrBlank() }?.let {
+                    val sources = it.sources.joinToString().take(MAX_SOURCE_REASON_LENGTH)
+                    val categories = it.categories.joinToString().take(MAX_CATEGORY_REASON_LENGTH)
+                    add("Offline reputation: $sources; score ${it.riskScore}" +
+                        categories.takeIf(String::isNotBlank)?.let { category -> "; category $category" }.orEmpty())
+                }
+                add("Signals: burst=${signals.isBurst} repeated=${signals.repeatedCount}")
+            }
+            return decision(
+                enrichedEvent,
+                Decision.BLOCK,
+                risk,
+                reputation?.level ?: ReputationLevel.NEUTRAL,
+                reasons,
+                emptyList(),
+                if (offlineReputation != null && storedReputation?.userVerdict.isNullOrBlank()) "offline_reputation" else "risk"
+            )
         }
         if (signals.isBurst && risk >= 60) {
             return decision(enrichedEvent, Decision.BLOCK, risk, reputation?.level ?: ReputationLevel.NEUTRAL, listOf("Suspicious burst ${signals.callsLast10Minutes}/10m"), emptyList(), "behavior")
@@ -216,6 +241,24 @@ class CallFirewallEngine(
             description = "${entity.ruleType}:${entity.pattern}"
         )
 
+    private fun effectiveReputation(
+        stored: com.blacklist.app.data.local.entity.CallerReputationEntity?,
+        offline: OfflineReputationSignal?
+    ): CallerReputation? {
+        val local = stored?.toDomain()
+        // A user verdict is a direct local instruction and must never be diluted
+        // by imported data, including a list the user previously selected.
+        if (offline == null || !stored?.userVerdict.isNullOrBlank()) return local
+        val base = local ?: CallerReputation(normalizedNumber = "offline")
+        val risk = maxOf(base.riskScore, offline.riskScore)
+        val level = when {
+            base.level == ReputationLevel.MALICIOUS || risk >= 80 -> ReputationLevel.MALICIOUS
+            base.level == ReputationLevel.SUSPICIOUS || risk >= 60 -> ReputationLevel.SUSPICIOUS
+            else -> base.level
+        }
+        return base.copy(riskScore = risk, level = level)
+    }
+
     private fun com.blacklist.app.data.local.entity.CallerReputationEntity.toDomain(): CallerReputation {
         val reputationLevel = runCatching { ReputationLevel.valueOf(this.level) }
             .getOrDefault(ReputationLevel.NEUTRAL)
@@ -223,8 +266,17 @@ class CallFirewallEngine(
             normalizedNumber = normalizedNumber,
             totalCalls = totalCalls,
             blockedCalls = blockedCalls,
-            level = reputationLevel
+            allowedCalls = allowedCalls,
+            spamScore = spamScore,
+            riskScore = riskScore,
+            level = reputationLevel,
+            userVerdict = userVerdict?.let { runCatching { UserVerdict.valueOf(it) }.getOrNull() },
+            behaviorFlags = behaviorFlags.split(',').filter { it.isNotBlank() }.toSet()
         )
     }
 
+    private companion object {
+        const val MAX_SOURCE_REASON_LENGTH = 120
+        const val MAX_CATEGORY_REASON_LENGTH = 80
+    }
 }

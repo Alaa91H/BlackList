@@ -1,13 +1,16 @@
 package com.blacklist.app.data.repository
 
+import androidx.room.withTransaction
 import com.blacklist.app.data.local.BlackListDatabase
 import com.blacklist.app.data.local.entity.*
 import com.blacklist.app.domain.backup.EncryptedBackupService
+import com.blacklist.app.domain.importexport.OfflineReputationImportPreview
 import com.blacklist.app.domain.repository.BlackListRepository
 import com.blacklist.app.util.PhoneNumberUtils
 import kotlinx.coroutines.flow.Flow
 import java.io.InputStream
 import java.io.OutputStream
+import java.net.URI
 
 class BlackListRepositoryImpl(
     private val db: BlackListDatabase
@@ -20,6 +23,7 @@ class BlackListRepositoryImpl(
     private val scheduleDao get() = db.scheduleRuleDao()
     private val scheduleExceptionDao get() = db.scheduleExceptionDao()
     private val ruleDao get() = db.blacklistRuleDao()
+    private val offlineReputationDao get() = db.offlineReputationDao()
     private val backupService by lazy { EncryptedBackupService(db) }
 
     override fun observeBlockedNumbers(): Flow<List<BlockedNumberEntity>> = blockedDao.observeAll()
@@ -94,6 +98,88 @@ class BlackListRepositoryImpl(
     }
 
     override suspend fun deleteScheduleException(id: Long) = scheduleExceptionDao.deleteById(id)
+
+    override fun observeOfflineReputationSources(): Flow<List<OfflineReputationSourceEntity>> =
+        offlineReputationDao.observeSources()
+
+    override suspend fun importOfflineReputationList(preview: OfflineReputationImportPreview): Result<Long> = runCatching {
+        validateOfflineReputationPreview(preview)
+        db.withTransaction {
+            require(offlineReputationDao.countSources() < MAX_REPUTATION_SOURCES) {
+                "Offline reputation source limit reached. Remove a source before importing another list."
+            }
+            require(!offlineReputationDao.hasFingerprint(preview.fingerprintSha256)) {
+                "This reputation list has already been imported."
+            }
+            val normalizedRows = preview.rows.groupBy { it.rawNumber }.map { (number, rows) ->
+                val highest = rows.maxBy { it.riskScore }
+                OfflineReputationEntryEntity(
+                    sourceId = 0,
+                    normalizedNumber = number,
+                    riskScore = highest.riskScore,
+                    category = highest.category?.trim()?.takeIf { it.isNotEmpty() }
+                )
+            }
+            require(normalizedRows.isNotEmpty()) { "Reputation list contains no importable entries." }
+            require(normalizedRows.size <= MAX_REPUTATION_ENTRIES_PER_SOURCE) { "Reputation list exceeds the per-source limit." }
+            require(offlineReputationDao.countEntries() + normalizedRows.size <= MAX_REPUTATION_ENTRIES_TOTAL) {
+                "Offline reputation entry limit reached. Remove a source before importing another list."
+            }
+            val sourceId = offlineReputationDao.insertSource(
+                OfflineReputationSourceEntity(
+                    sourceName = preview.sourceName.trim(),
+                    sourceVersion = preview.sourceVersion?.trim(),
+                    sourceUrl = preview.sourceUrl?.trim(),
+                    fingerprintSha256 = preview.fingerprintSha256,
+                    entryCount = normalizedRows.size
+                )
+            )
+            offlineReputationDao.insertEntries(normalizedRows.map { it.copy(sourceId = sourceId) })
+            sourceId
+        }
+    }
+
+    private fun validateOfflineReputationPreview(preview: OfflineReputationImportPreview) {
+        require(preview.rows.isNotEmpty() && preview.rows.size <= MAX_REPUTATION_ENTRIES_PER_SOURCE) {
+            "Reputation list has an invalid number of valid entries."
+        }
+        require(preview.sourceRows in 1..MAX_REPUTATION_SOURCE_ROWS && preview.invalidRows >= 0 && preview.duplicateRows >= 0) {
+            "Reputation list has invalid row statistics."
+        }
+        require(preview.rows.size + preview.invalidRows + preview.duplicateRows == preview.sourceRows) {
+            "Reputation list row statistics do not match its contents."
+        }
+        require(preview.highRiskRows == preview.rows.count { it.riskScore >= HIGH_RISK_SCORE }) {
+            "Reputation list high-risk statistic does not match its contents."
+        }
+        require(isSafeText(preview.sourceName, MAX_REPUTATION_SOURCE_LENGTH)) { "Invalid reputation source name." }
+        require(preview.sourceVersion == null || isSafeText(preview.sourceVersion, MAX_REPUTATION_VERSION_LENGTH)) {
+            "Invalid reputation source version."
+        }
+        require(preview.sourceUrl == null || isSafeDisplayUrl(preview.sourceUrl)) { "Invalid reputation source URL." }
+        require(preview.fingerprintSha256.matches(REPUTATION_FINGERPRINT)) { "Invalid reputation list fingerprint." }
+        preview.rows.forEach { row ->
+            require(REPUTATION_E164.matches(row.rawNumber)) { "Offline reputation numbers must be E.164 values." }
+            require(row.riskScore in 0..100) { "Invalid offline reputation score." }
+            require(row.category == null || isSafeText(row.category, MAX_REPUTATION_CATEGORY_LENGTH, allowEmpty = true)) {
+                "Invalid offline reputation category."
+            }
+        }
+    }
+
+    private fun isSafeText(value: String, maxLength: Int, allowEmpty: Boolean = false): Boolean =
+        value.length.let { if (allowEmpty) it <= maxLength else it in 1..maxLength } &&
+            value.all { !it.isISOControl() && it != '\u007f' }
+
+    private fun isSafeDisplayUrl(value: String): Boolean = runCatching {
+        val uri = URI(value)
+        value.length <= MAX_REPUTATION_URL_LENGTH && uri.scheme.equals("https", ignoreCase = true) &&
+            !uri.host.isNullOrBlank() && uri.userInfo == null && uri.fragment == null
+    }.getOrDefault(false)
+
+    override suspend fun deleteOfflineReputationSource(id: Long) {
+        if (id > 0) offlineReputationDao.deleteSource(id)
+    }
 
     override fun observeBlacklistRules(): Flow<List<BlacklistRuleEntity>> = ruleDao.observeAll()
 
@@ -276,5 +362,16 @@ class BlackListRepositoryImpl(
 
     private companion object {
         const val MAX_SCHEDULE_EXCEPTIONS_PER_RULE = 50
+        const val MAX_REPUTATION_SOURCES = 10
+        const val MAX_REPUTATION_SOURCE_ROWS = 10_000
+        const val MAX_REPUTATION_ENTRIES_PER_SOURCE = 5_000
+        const val MAX_REPUTATION_ENTRIES_TOTAL = 10_000
+        const val HIGH_RISK_SCORE = 80
+        val REPUTATION_E164 = Regex("^\\+[1-9][0-9]{6,14}$")
+        val REPUTATION_FINGERPRINT = Regex("^[a-f0-9]{64}$")
+        const val MAX_REPUTATION_SOURCE_LENGTH = 100
+        const val MAX_REPUTATION_VERSION_LENGTH = 64
+        const val MAX_REPUTATION_URL_LENGTH = 512
+        const val MAX_REPUTATION_CATEGORY_LENGTH = 80
     }
 }
