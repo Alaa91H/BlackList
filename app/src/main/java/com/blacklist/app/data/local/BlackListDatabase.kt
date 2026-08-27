@@ -21,7 +21,7 @@ import com.blacklist.app.data.local.entity.*
         OfflineReputationEntryEntity::class,
         SecurityEventEntity::class
     ],
-    version = 10,
+    version = 11,
     exportSchema = true
 )
 abstract class BlackListDatabase : RoomDatabase() {
@@ -124,6 +124,13 @@ abstract class BlackListDatabase : RoomDatabase() {
             override fun migrate(database: SupportSQLiteDatabase) {
                 database.execSQL("ALTER TABLE app_settings ADD COLUMN silenceUnknown INTEGER NOT NULL DEFAULT 0")
                 database.execSQL("ALTER TABLE app_settings ADD COLUMN silencePrivate INTEGER NOT NULL DEFAULT 0")
+            }
+        }
+
+        /** Preserves existing local activity while adding user-controlled in-app history retention. */
+        val MIGRATION_10_11 = object : Migration(10, 11) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL("ALTER TABLE app_settings ADD COLUMN blockedLogRetentionDays INTEGER NOT NULL DEFAULT 0")
             }
         }
     }

@@ -27,6 +27,7 @@ import com.blacklist.app.R
 import com.blacklist.app.di.ServiceLocator
 import com.blacklist.app.di.ViewModelFactory
 import com.blacklist.app.domain.importexport.CsvListTarget
+import com.blacklist.app.domain.retention.BlockedCallLogRetentionPolicy
 import com.blacklist.app.ui.navigation.Routes
 import kotlinx.coroutines.flow.collectLatest
 import java.text.DateFormat
@@ -48,6 +49,7 @@ fun SettingsScreen(nav: NavController) {
     var pendingRestoreUri by remember { mutableStateOf<android.net.Uri?>(null) }
     var exportPassphrase by remember { mutableStateOf<CharArray?>(null) }
     var showNotificationManager by remember { mutableStateOf(false) }
+    var showBlockedLogRetentionPicker by remember { mutableStateOf(false) }
     var csvExportTarget by remember { mutableStateOf<CsvListTarget?>(null) }
     var csvImportTarget by remember { mutableStateOf<CsvListTarget?>(null) }
     val pendingCsvImport by vm.pendingCsvImport.collectAsState()
@@ -252,12 +254,29 @@ fun SettingsScreen(nav: NavController) {
 
             Text(stringResource(R.string.settings_privacy), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
             ElevatedCard(shape = RoundedCornerShape(20.dp)) {
-                SettingSwitch(
-                    stringResource(R.string.settings_private_blocked_history),
-                    stringResource(R.string.settings_private_blocked_history_desc),
-                    Icons.Filled.VisibilityOff,
-                    settings?.hideBlockedCallsFromSystemLog ?: false
-                ) { vm.setPrivateBlockedHistory(it) }
+                Column {
+                    SettingSwitch(
+                        stringResource(R.string.settings_private_blocked_history),
+                        stringResource(R.string.settings_private_blocked_history_desc),
+                        Icons.Filled.VisibilityOff,
+                        settings?.hideBlockedCallsFromSystemLog ?: false
+                    ) { vm.setPrivateBlockedHistory(it) }
+                    HorizontalDivider()
+                    Row(
+                        Modifier.padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Icon(Icons.Filled.History, null, tint = MaterialTheme.colorScheme.primary)
+                        Column(Modifier.weight(1f)) {
+                            Text(stringResource(R.string.settings_blocked_log_retention), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Medium)
+                            Text(stringResource(R.string.settings_blocked_log_retention_desc), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        TextButton(onClick = { showBlockedLogRetentionPicker = true }) {
+                            Text(retentionOptionLabel(settings?.blockedLogRetentionDays ?: BlockedCallLogRetentionPolicy.NEVER))
+                        }
+                    }
+                }
             }
 
             Text(stringResource(R.string.settings_permissions), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
@@ -389,6 +408,57 @@ fun SettingsScreen(nav: NavController) {
             Spacer(Modifier.height(32.dp))
         }
     }
+
+    if (showBlockedLogRetentionPicker) {
+        BlockedLogRetentionPickerDialog(
+            selectedDays = settings?.blockedLogRetentionDays ?: BlockedCallLogRetentionPolicy.NEVER,
+            onSelected = vm::setBlockedLogRetentionDays,
+            onDismiss = { showBlockedLogRetentionPicker = false }
+        )
+    }
+}
+
+@Composable
+private fun BlockedLogRetentionPickerDialog(
+    selectedDays: Long,
+    onSelected: (Long) -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.settings_blocked_log_retention)) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(
+                    stringResource(R.string.settings_blocked_log_retention_desc),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                BlockedCallLogRetentionPolicy.supportedDays.forEach { days ->
+                    TextButton(
+                        onClick = {
+                            onSelected(days)
+                            onDismiss()
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        if (days == selectedDays) {
+                            Icon(Icons.Filled.Check, null, modifier = Modifier.size(18.dp))
+                            Spacer(Modifier.width(8.dp))
+                        }
+                        Text(retentionOptionLabel(days))
+                    }
+                }
+            }
+        },
+        confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) } }
+    )
+}
+
+@Composable
+private fun retentionOptionLabel(days: Long): String = when (days) {
+    BlockedCallLogRetentionPolicy.NEVER -> stringResource(R.string.settings_blocked_log_retention_never)
+    else -> stringResource(R.string.settings_blocked_log_retention_days, days)
 }
 
 @Composable

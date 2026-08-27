@@ -206,6 +206,10 @@
     <string name="settings_notification_rate_limit_desc">Limit notifications per time period</string>
     <string name="settings_private_blocked_history">Private blocked-call history</string>
     <string name="settings_private_blocked_history_desc">Keep blocked calls in BlackList only and hide them from Android’s shared call log. Your private BlackList log remains available.</string>
+    <string name="settings_blocked_log_retention">Blocked-call history retention</string>
+    <string name="settings_blocked_log_retention_desc">Automatically remove older records from BlackList’s in-app blocked-call history. This never changes blocking rules or Android’s shared call log.</string>
+    <string name="settings_blocked_log_retention_never">Keep forever</string>
+    <string name="settings_blocked_log_retention_days">Last %1$d days</string>
 
     <!-- About -->
     <string name="about_title">About</string>

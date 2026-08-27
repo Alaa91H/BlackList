@@ -15,6 +15,7 @@ import com.blacklist.app.domain.events.FirewallEvent
 import com.blacklist.app.domain.events.FirewallEventBus
 import com.blacklist.app.domain.model.Decision
 import com.blacklist.app.domain.notification.BlockedNotificationGate
+import com.blacklist.app.domain.retention.BlockedCallLogRetentionPolicy
 import com.blacklist.app.widget.BlockedCallStatsWidgetProvider
 import com.blacklist.app.domain.model.EnforcementDecision
 import com.blacklist.app.domain.model.Presentation
@@ -184,6 +185,18 @@ class BlackListCallScreeningService : CallScreeningService() {
                         displayName = displayName
                     )
                 )
+
+                // This cached setting is consulted only after Telecom has received
+                // the response and the new private log entry is persisted. An
+                // invalid stored value fails conservatively by retaining history.
+                val retentionDays = ServiceLocator.providePolicySnapshotStore(applicationContext)
+                    .snapshot()
+                    .settings
+                    ?.blockedLogRetentionDays
+                    ?.takeIf(BlockedCallLogRetentionPolicy::isSupported)
+                    ?: BlockedCallLogRetentionPolicy.NEVER
+                BlockedCallLogRetentionPolicy.deletionCutoffMillis(retentionDays, System.currentTimeMillis())
+                    ?.let { cutoffMillis -> database.blockedCallLogDao().deleteOlderThan(cutoffMillis) }
 
                 runCatching {
                     ServiceLocator.provideReputationEngine(applicationContext)

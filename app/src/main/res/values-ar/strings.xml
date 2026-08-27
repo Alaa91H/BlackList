@@ -147,6 +147,10 @@
     <string name="settings_privacy_desc">جميع البيانات تبقى على جهازك فقط. بدون سحابة، بدون تتبع، بدون تحليلات.</string>
     <string name="settings_private_blocked_history">سجل خاص للمكالمات المحظورة</string>
     <string name="settings_private_blocked_history_desc">احتفظ بالمكالمات المحظورة داخل BlackList فقط وأخفها من سجل مكالمات أندرويد المشترك. يظل سجل BlackList الخاص متاحاً لك.</string>
+    <string name="settings_blocked_log_retention">مدة الاحتفاظ بسجل المكالمات المحظورة</string>
+    <string name="settings_blocked_log_retention_desc">احذف تلقائياً السجلات القديمة من سجل BlackList الداخلي للمكالمات المحظورة. لا يغير ذلك أبداً قواعد الحظر أو سجل مكالمات أندرويد المشترك.</string>
+    <string name="settings_blocked_log_retention_never">احتفظ به دائماً</string>
+    <string name="settings_blocked_log_retention_days">آخر %1$d يوماً</string>
     <string name="settings_export">تصدير البيانات</string>
     <string name="settings_import">استيراد البيانات</string>
 

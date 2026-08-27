@@ -13,6 +13,7 @@ import com.blacklist.app.util.PhoneNumberUtils
 import com.blacklist.app.data.local.entity.WhitelistedNumberEntity
 import com.blacklist.app.domain.engine.EmergencyCallbackGrace
 import com.blacklist.app.domain.model.ProtectionProfiles
+import com.blacklist.app.domain.retention.BlockedCallLogRetentionPolicy
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
@@ -208,6 +209,7 @@ class EncryptedBackupService(
         .put("blockAllExceptWhitelist", blockAllExceptWhitelist)
         .put("showBlockedNotification", showBlockedNotification)
         .put("hideBlockedCallsFromSystemLog", hideBlockedCallsFromSystemLog)
+        .put("blockedLogRetentionDays", blockedLogRetentionDays)
         .put("allowOutboundCallbackGrace", allowOutboundCallbackGrace)
         .put("activeProfileId", activeProfileId)
         .put("themeMode", themeMode)
@@ -276,6 +278,10 @@ class EncryptedBackupService(
         require(graceUntil == 0L || graceUntil in 1..System.currentTimeMillis() + EmergencyCallbackGrace.DURATION_MS) {
             "Invalid emergency callback grace in backup."
         }
+        val blockedLogRetentionDays = json.optLong("blockedLogRetentionDays", BlockedCallLogRetentionPolicy.NEVER)
+        require(BlockedCallLogRetentionPolicy.isSupported(blockedLogRetentionDays)) {
+            "Invalid blocked-call history retention in backup."
+        }
         return AppSettingsEntity(
             blockUnknown = json.optBoolean("blockUnknown", false),
             silenceUnknown = json.optBoolean("silenceUnknown", false),
@@ -284,6 +290,7 @@ class EncryptedBackupService(
             blockAllExceptWhitelist = json.optBoolean("blockAllExceptWhitelist", false),
             showBlockedNotification = json.optBoolean("showBlockedNotification", true),
             hideBlockedCallsFromSystemLog = json.optBoolean("hideBlockedCallsFromSystemLog", false),
+            blockedLogRetentionDays = blockedLogRetentionDays,
             allowOutboundCallbackGrace = json.optBoolean("allowOutboundCallbackGrace", false),
             activeProfileId = activeProfileId,
             themeMode = themeMode,

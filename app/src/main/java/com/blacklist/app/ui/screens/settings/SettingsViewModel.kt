@@ -14,6 +14,7 @@ import com.blacklist.app.domain.importexport.CsvListTransferService
 import com.blacklist.app.domain.importexport.OfflineReputationImportPreview
 import com.blacklist.app.domain.importexport.OfflineReputationListTransferService
 import com.blacklist.app.domain.repository.BlackListRepository
+import com.blacklist.app.domain.retention.BlockedCallLogRetentionPolicy
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -93,6 +94,12 @@ class SettingsViewModel(private val repo: BlackListRepository) : ViewModel() {
     fun setPrivateBlockedHistory(value: Boolean) = viewModelScope.launch {
         repo.updateSettings { it.copy(hideBlockedCallsFromSystemLog = value) }
     }
+
+    fun setBlockedLogRetentionDays(days: Long) {
+        require(BlockedCallLogRetentionPolicy.isSupported(days)) { "Unsupported blocked-call history retention." }
+        viewModelScope.launch { repo.updateSettings { it.copy(blockedLogRetentionDays = days) } }
+    }
+
     fun setOutboundCallbackGrace(value: Boolean) = viewModelScope.launch {
         repo.updateSettings { it.copy(allowOutboundCallbackGrace = value, activeProfileId = ProtectionProfiles.CUSTOM) }
     }

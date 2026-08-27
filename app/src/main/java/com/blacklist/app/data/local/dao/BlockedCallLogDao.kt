@@ -29,4 +29,8 @@ interface BlockedCallLogDao {
 
     @Query("DELETE FROM blocked_call_logs WHERE id = :id")
     suspend fun deleteById(id: Long)
+
+    /** Deletes only BlackList-owned history older than the exclusive local cutoff. */
+    @Query("DELETE FROM blocked_call_logs WHERE timestamp < :cutoffMillis")
+    suspend fun deleteOlderThan(cutoffMillis: Long): Int
 }

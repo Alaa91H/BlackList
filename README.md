@@ -21,6 +21,13 @@
 
 Most call blockers send your contacts and call history to remote servers. **BlackList never does.**
 
+### New in 1.14.0
+
+- **User-controlled local history expiry** — in **Settings → Privacy**, retain BlackList’s in-app blocked-call history forever (the default) or for the most recent **7, 30, 90 or 365 days**.
+- **Strictly limited effect** — after a future blocked call has already been answered and logged, BlackList removes only older records from its own private `blocked_call_logs` timeline. It does not alter blocking rules, caller reputation, security events, notifications, Android’s shared call log, or the new record.
+- **Safe continuity without activity export** — the preference uses a non-destructive Room 10→11 migration and follows encrypted policy backup/restore. Older backups resolve safely to **Keep forever**; blocked-call history itself continues to be excluded from every backup.
+- **No new background or data capability** — cleanup is local and happens only after the Telecom response. It adds no network access, storage permission, timer, worker, boot receiver, cloud, analytics, tracker, or pre-response I/O.
+
 ### New in 1.13.0
 
 - **Confirmed local false-positive recovery** — from a blocked-call record, choose **Not spam**, review the exact impact, and explicitly save a durable local `NOT_SPAM` verdict for that dialable caller.
@@ -71,7 +78,7 @@ Most call blockers send your contacts and call history to remote servers. **Blac
 | **Advanced Scheduling** | Time-based rules with day-of-week bitmask and per-schedule trusted caller exceptions. Example: *Block all except whitelist 22:00–06:00 Mon–Fri while allowing an on-call number*. Overnight spans supported. |
 | **Home-screen Stats Widget** | Compact local counts for blocked calls today and in total, with manual refresh and direct opening of the app. No number, contact, or call-reason content is exposed. |
 | **Offline Reputation Lists** | Optional user-selected, bounded CSV lists with auditable source metadata and SHA-256 fingerprint. No URL fetching, automatic updates, cloud sync, or retained storage access. Exact E.164 scores from 80–100 can block only after all manual and safety policies. |
-| **Blocked Log** | Professional timeline of every blocked call: number, display name, reason, timestamp, plus confirmed local **Not spam**, temporary allow, or permanent whitelist recovery choices. |
+| **Blocked Log** | Professional local timeline of blocked calls with number, display name, reason, timestamp, and recovery actions. Retain it forever (default), or automatically remove only entries older than 7, 30, 90 or 365 days; this never changes screening rules or Android’s shared call log. |
 | **Smart Notifications** | Optional low-priority notification for each blocked call (off by default if you prefer total silence). |
 | **Material Design 3 (2026)** | Jetpack Compose, dynamic colors (Material You), Light/Dark/System theme, smooth animations & transitions. |
 | **Localization** | System language by default. Full RTL support — perfect Arabic layout, plus English, French, German, Spanish, Turkish, Russian, Persian, Urdu, Hindi, Chinese, Japanese, Korean, Portuguese, Italian. |
@@ -124,7 +131,7 @@ com.blacklist.app
    Local risk, behavior and exact offline-reputation signals? → BLOCK only at the configured threshold (offline score 80–100 is a risk floor)
    otherwise → ALLOW
    ```
-4. If blocked → `CallResponse.Builder().setDisallowCall(true).setRejectCall(true)` + optional private BlackList log + optional notification. If an eligible unknown/private policy is explicitly set to **Silence instead**, the call is not rejected and Android suppresses its ring while retaining normal system call history and notification behavior. By default the Android call log is retained; **Settings → Privacy → Private blocked-call history** can hide blocked calls from the shared system log while keeping the in-app record.
+4. If blocked → `CallResponse.Builder().setDisallowCall(true).setRejectCall(true)` + optional private BlackList log + optional notification. If an eligible unknown/private policy is explicitly set to **Silence instead**, the call is not rejected and Android suppresses its ring while retaining normal system call history and notification behavior. By default the Android call log is retained; **Settings → Privacy → Private blocked-call history** can hide blocked calls from the shared system log while keeping the in-app record. In the same Privacy section, **Blocked-call history retention** can keep BlackList’s in-app records forever (the default) or expire records older than 7, 30, 90 or 365 days after a later blocked call has already been answered and logged. This setting never changes a screening decision or Android’s shared call log.
 
 ---
 
@@ -240,6 +247,7 @@ BlackList/
 - [x] Emergency short-number safeguard, emergency callback grace, and an opt-in exact-number callback grace after a local outgoing call.
 - [x] Encrypted local backup and restore for policy data, including imported offline reputation sources; call history and diagnostics remain excluded.
 - [x] Optional private blocked-call history, retaining the explainable log locally while suppressing only blocked calls from Android’s shared call log.
+- [x] User-controlled, bounded retention for BlackList’s in-app blocked-call history, with a safe Keep forever default and no scheduled background cleanup.
 - [x] Per-schedule exact-number trusted caller exceptions, bounded locally and subordinate to explicit blocks.
 - [x] Home-screen blocked-call statistics widget with aggregate-only counts, safe refresh actions, and no additional permission.
 - [x] Optional offline reputation-list import with transparent provenance and no background network access.

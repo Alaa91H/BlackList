@@ -2,6 +2,31 @@
 
 All notable changes to BlackList are documented in this file. The project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.14.0] - 2026-08-27
+
+### Added
+
+- **User-controlled local history expiry.** Settings → Privacy now offers a deliberate retention choice for BlackList’s own blocked-call history: keep it forever (the default), or retain the most recent 7, 30, 90 or 365 days.
+- **Clear, localized scope.** The English and Arabic interface explains that expiry affects only the in-app blocked-call timeline. It does not change call-blocking rules or Android’s shared call log.
+
+### Changed
+
+- **Post-response, bounded cleanup.** After a future call has already received its Telecom decision and its BlackList log record is written, the app removes only older local `blocked_call_logs` rows. Entries exactly on the cutoff and the newly logged call remain intact.
+- **Portable policy without activity export.** The selected retention setting is included in encrypted policy backup and restore. Older backups safely resolve to “keep forever”; call history itself remains deliberately excluded.
+
+### Fixed
+
+- **Safe schema evolution.** A non-destructive Room 10→11 migration introduces the defaulted setting while preserving existing local rules, lists, schedules, reputation sources and call history.
+- **Fail-conservative data handling.** Unsupported retained-setting values are rejected during backup restore and treated as “keep forever” by post-decision cleanup, preventing accidental removal of user history.
+
+### Quality
+
+- Added focused unit coverage for the complete fixed retention set, default no-expiry behavior, exclusive cutoff calculation, early-clock safety and invalid-value rejection.
+
+### Privacy
+
+- The feature adds no network request, cloud service, analytics event, tracker, shared-storage access, permission, timer, worker, boot receiver or call-screening-path I/O. Cleanup runs locally only after the call response.
+
 ## [1.13.0] - 2026-08-27
 
 ### Added
@@ -215,6 +240,7 @@ All notable changes to BlackList are documented in this file. The project follow
 
 - Production-grade local call-firewall foundation with rule matching, risk scoring, behavior signals, reputation tracking, temporary protection controls, diagnostics, and a decision simulator.
 
+[1.14.0]: https://github.com/Alaa91H/BlackList/compare/v1.13.0...v1.14.0
 [1.13.0]: https://github.com/Alaa91H/BlackList/compare/v1.12.0...v1.13.0
 [1.12.0]: https://github.com/Alaa91H/BlackList/compare/v1.11.0...v1.12.0
 [1.11.0]: https://github.com/Alaa91H/BlackList/compare/v1.10.0...v1.11.0
