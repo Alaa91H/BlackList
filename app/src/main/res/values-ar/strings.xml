@@ -122,6 +122,8 @@
     <string name="settings_notifications_per_number">تحكم فردي</string>
     <string name="settings_notifications_per_number_desc">كتم أرقام محددة من قائمة القائمة السوداء (أيقونة الجرس)</string>
     <string name="settings_block_all_except_desc">عند التفعيل، ترن فقط الأرقام في القائمة البيضاء</string>
+    <string name="settings_outbound_callback_grace">مهلة رد الاتصال بعد مكالمة صادرة</string>
+    <string name="settings_outbound_callback_grace_desc">اسمح للرقم الذي اتصلت به للتو أن يعاود الاتصال لمدة 15 دقيقة. تُحفظ محلياً على هذا الجهاز ولا تتجاوز الحظر الصريح.</string>
     <string name="settings_theme">المظهر</string>
     <string name="settings_theme_system">حسب النظام</string>
     <string name="settings_theme_light">فاتح</string>

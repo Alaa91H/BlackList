@@ -8,6 +8,7 @@ import com.blacklist.app.domain.model.VerificationStatus
 import com.blacklist.app.domain.normalization.PhoneNumberNormalizer
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -165,6 +166,87 @@ class CallFirewallEngineTest {
 
         assertEquals(Decision.BLOCK, decision.decision)
         assertEquals("policy", decision.explainable.backend)
+    }
+
+    @Test
+    fun `recent outgoing callback grace bypasses broad block policy for that exact number`() = runTest {
+        val number = normalizer.normalize("+49 151 23456789")
+        val snapshot = PolicySnapshotStore.Snapshot(
+            rules = listOf(
+                BlacklistRuleEntity(
+                    ruleType = BlacklistRuleEntity.TYPE_TEMP_OUTBOUND_CALLBACK,
+                    pattern = number.digitsOnly,
+                    startNumber = (System.currentTimeMillis() + OutboundCallbackGrace.DURATION_MS).toString()
+                )
+            ),
+            settings = AppSettingsEntity(
+                blockAllExceptWhitelist = true,
+                allowOutboundCallbackGrace = true
+            )
+        )
+
+        val decision = engine(snapshot).evaluate(event("outbound-callback", number.raw))
+
+        assertEquals(Decision.ALLOW, decision.decision)
+        assertEquals("outbound_callback_grace", decision.explainable.backend)
+    }
+
+    @Test
+    fun `recent outgoing callback grace never overrides explicit blacklist or another number`() = runTest {
+        val number = normalizer.normalize("+49 151 23456789")
+        val otherNumber = normalizer.normalize("+49 151 11111111")
+        val grace = BlacklistRuleEntity(
+            ruleType = BlacklistRuleEntity.TYPE_TEMP_OUTBOUND_CALLBACK,
+            pattern = number.digitsOnly,
+            startNumber = (System.currentTimeMillis() + OutboundCallbackGrace.DURATION_MS).toString()
+        )
+        val explicitBlock = BlacklistRuleEntity(
+            ruleType = BlacklistRuleEntity.TYPE_EXACT,
+            pattern = number.normalized
+        )
+        val snapshot = PolicySnapshotStore.Snapshot(
+            rules = listOf(grace, explicitBlock),
+            settings = AppSettingsEntity(
+                blockAllExceptWhitelist = true,
+                allowOutboundCallbackGrace = true
+            )
+        )
+
+        val explicitlyBlocked = engine(snapshot).evaluate(event("outbound-callback-explicit", number.raw))
+        val unmatchedNumber = engine(snapshot).evaluate(event("outbound-callback-other", otherNumber.raw))
+
+        assertEquals(Decision.BLOCK, explicitlyBlocked.decision)
+        assertEquals("blacklist", explicitlyBlocked.explainable.backend)
+        assertEquals(Decision.BLOCK, unmatchedNumber.decision)
+        assertEquals("policy", unmatchedNumber.explainable.backend)
+    }
+
+    @Test
+    fun `disabled outgoing callback grace does not weaken broad blocking`() = runTest {
+        val number = normalizer.normalize("+49 151 23456789")
+        val snapshot = PolicySnapshotStore.Snapshot(
+            rules = listOf(
+                BlacklistRuleEntity(
+                    ruleType = BlacklistRuleEntity.TYPE_TEMP_OUTBOUND_CALLBACK,
+                    pattern = number.digitsOnly,
+                    startNumber = (System.currentTimeMillis() + OutboundCallbackGrace.DURATION_MS).toString()
+                )
+            ),
+            settings = AppSettingsEntity(
+                blockAllExceptWhitelist = true,
+                allowOutboundCallbackGrace = false
+            )
+        )
+
+        val decision = engine(snapshot).evaluate(event("disabled-outbound-callback", number.raw))
+
+        assertEquals(Decision.BLOCK, decision.decision)
+        assertEquals("policy", decision.explainable.backend)
+    }
+
+    @Test
+    fun `outgoing callback grace is disabled by default`() {
+        assertFalse(AppSettingsEntity().allowOutboundCallbackGrace)
     }
 
     @Test

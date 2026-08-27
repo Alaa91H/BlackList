@@ -154,6 +154,7 @@ class EncryptedBackupService(
         .put("blockAllExceptWhitelist", blockAllExceptWhitelist)
         .put("showBlockedNotification", showBlockedNotification)
         .put("hideBlockedCallsFromSystemLog", hideBlockedCallsFromSystemLog)
+        .put("allowOutboundCallbackGrace", allowOutboundCallbackGrace)
         .put("activeProfileId", activeProfileId)
         .put("themeMode", themeMode)
         .put("emergencyCallbackGraceUntil", emergencyCallbackGraceUntil)
@@ -206,6 +207,7 @@ class EncryptedBackupService(
             blockAllExceptWhitelist = json.optBoolean("blockAllExceptWhitelist", false),
             showBlockedNotification = json.optBoolean("showBlockedNotification", true),
             hideBlockedCallsFromSystemLog = json.optBoolean("hideBlockedCallsFromSystemLog", false),
+            allowOutboundCallbackGrace = json.optBoolean("allowOutboundCallbackGrace", false),
             activeProfileId = activeProfileId,
             themeMode = themeMode,
             emergencyCallbackGraceUntil = graceUntil,
@@ -220,12 +222,18 @@ class EncryptedBackupService(
         val startNumber = json.optionalText("start", MAX_PATTERN_LENGTH)
         val endNumber = json.optionalText("end", MAX_PATTERN_LENGTH)
         when (type) {
-            BlacklistRuleEntity.TYPE_TEMP_BLOCK_ALL -> require(pattern?.toLongOrNull()?.let { it > 0 } == true) {
+            BlacklistRuleEntity.TYPE_TEMP_BLOCK_ALL -> require(isSaneTemporaryExpiry(pattern)) {
                 "Invalid temporary firewall expiry in backup."
             }
             BlacklistRuleEntity.TYPE_TEMP_ALLOW -> {
                 require(!pattern.isNullOrBlank()) { "Invalid temporary allow number in backup." }
-                require(startNumber?.toLongOrNull()?.let { it > 0 } == true) { "Invalid temporary allow expiry in backup." }
+                require(isSaneTemporaryExpiry(startNumber)) { "Invalid temporary allow expiry in backup." }
+            }
+            BlacklistRuleEntity.TYPE_TEMP_OUTBOUND_CALLBACK -> {
+                require(com.blacklist.app.domain.engine.OutboundCallbackGrace.isValidDigits(pattern.orEmpty())) {
+                    "Invalid outgoing callback number in backup."
+                }
+                require(isSaneTemporaryExpiry(startNumber)) { "Invalid outgoing callback expiry in backup." }
             }
         }
         return BlacklistRuleEntity(
@@ -273,6 +281,9 @@ class EncryptedBackupService(
             createdAt = json.optLong("createdAt", System.currentTimeMillis())
         )
     }
+
+    private fun isSaneTemporaryExpiry(value: String?): Boolean =
+        value?.toLongOrNull()?.let { it > 0 && it <= System.currentTimeMillis() + MAX_TEMPORARY_EXPIRY_FUTURE_MS } == true
 
     private fun JSONObject.requiredText(name: String, maxLength: Int): String =
         getString(name).also { require(it.isNotBlank() && it.length <= maxLength) { "Invalid $name in backup." } }
@@ -347,6 +358,7 @@ class EncryptedBackupService(
         const val MAX_NUMBER_LENGTH = 64
         const val MAX_PATTERN_LENGTH = 128
         const val MAX_TEXT_LENGTH = 200
+        const val MAX_TEMPORARY_EXPIRY_FUTURE_MS = 7L * 24 * 60 * 60 * 1000
 
         val ALLOWED_RULE_TYPES = setOf(
             BlacklistRuleEntity.TYPE_EXACT,
@@ -358,7 +370,8 @@ class EncryptedBackupService(
             BlacklistRuleEntity.TYPE_HIDDEN,
             BlacklistRuleEntity.TYPE_UNKNOWN,
             BlacklistRuleEntity.TYPE_TEMP_BLOCK_ALL,
-            BlacklistRuleEntity.TYPE_TEMP_ALLOW
+            BlacklistRuleEntity.TYPE_TEMP_ALLOW,
+            BlacklistRuleEntity.TYPE_TEMP_OUTBOUND_CALLBACK
         )
         val ALLOWED_THEME_MODES = setOf("SYSTEM", "LIGHT", "DARK")
         val ALLOWED_PROFILE_IDS = setOf(

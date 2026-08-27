@@ -32,4 +32,18 @@ class TemporaryFirewallTest {
         assertFalse(TemporaryFirewall.allowMatches(listOf(allow), "4915111111111", now))
         assertFalse(TemporaryFirewall.allowMatches(listOf(allow.copy(startNumber = now.toString())), "4915123456789", now))
     }
+
+    @Test
+    fun `outbound callback grace matches only its active exact number`() {
+        val now = 1_000_000L
+        val grace = BlacklistRuleEntity(
+            ruleType = BlacklistRuleEntity.TYPE_TEMP_OUTBOUND_CALLBACK,
+            pattern = "4915123456789",
+            startNumber = (now + 1).toString()
+        )
+
+        assertTrue(TemporaryFirewall.outboundCallbackMatches(listOf(grace), "4915123456789", now))
+        assertFalse(TemporaryFirewall.outboundCallbackMatches(listOf(grace), "4915111111111", now))
+        assertFalse(TemporaryFirewall.outboundCallbackMatches(listOf(grace.copy(startNumber = now.toString())), "4915123456789", now))
+    }
 }

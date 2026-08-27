@@ -68,6 +68,9 @@ class SettingsViewModel(private val repo: BlackListRepository) : ViewModel() {
     fun setPrivateBlockedHistory(value: Boolean) = viewModelScope.launch {
         repo.updateSettings { it.copy(hideBlockedCallsFromSystemLog = value) }
     }
+    fun setOutboundCallbackGrace(value: Boolean) = viewModelScope.launch {
+        repo.updateSettings { it.copy(allowOutboundCallbackGrace = value, activeProfileId = ProtectionProfiles.CUSTOM) }
+    }
     fun setTheme(mode: String) = viewModelScope.launch { repo.updateSettings { it.copy(themeMode = mode) } }
     fun setBlockedNumberNotification(id: Long, enabled: Boolean) = viewModelScope.launch { repo.setBlockedNotificationEnabled(id, enabled) }
     fun setAllBlockedNumberNotifications(enabled: Boolean) = viewModelScope.launch { repo.setAllBlockedNotificationsEnabled(enabled) }

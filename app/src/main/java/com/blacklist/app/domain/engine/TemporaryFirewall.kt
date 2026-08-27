@@ -6,6 +6,7 @@ import com.blacklist.app.data.local.entity.BlacklistRuleEntity
  * Temporary firewall semantics stored in blacklist_rules (no schema change):
  *  - TEMP_BLOCK_ALL: pattern = expiry epoch millis (blocks everything except whitelist while active)
  *  - TEMP_ALLOW:     pattern = normalized digits, startNumber = expiry epoch millis
+ *  - TEMP_OUTBOUND_CALLBACK: same encoding as TEMP_ALLOW, created only after a user-initiated outgoing call
  * Expired rules are ignored at evaluation time and purged opportunistically by the UI layer.
  */
 object TemporaryFirewall {
@@ -16,10 +17,15 @@ object TemporaryFirewall {
     val HOUR_2 = 2L * 60 * 60 * 1000
 
     fun isTempType(ruleType: String): Boolean =
-        ruleType == BlacklistRuleEntity.TYPE_TEMP_BLOCK_ALL || ruleType == BlacklistRuleEntity.TYPE_TEMP_ALLOW
+        ruleType == BlacklistRuleEntity.TYPE_TEMP_BLOCK_ALL ||
+            ruleType == BlacklistRuleEntity.TYPE_TEMP_ALLOW ||
+            ruleType == BlacklistRuleEntity.TYPE_TEMP_OUTBOUND_CALLBACK
 
     fun expiryOf(rule: BlacklistRuleEntity): Long? {
-        val raw = if (rule.ruleType == BlacklistRuleEntity.TYPE_TEMP_ALLOW) rule.startNumber else rule.pattern
+        val raw = if (
+            rule.ruleType == BlacklistRuleEntity.TYPE_TEMP_ALLOW ||
+            rule.ruleType == BlacklistRuleEntity.TYPE_TEMP_OUTBOUND_CALLBACK
+        ) rule.startNumber else rule.pattern
         return raw?.trim()?.toLongOrNull()
     }
 
@@ -42,6 +48,15 @@ object TemporaryFirewall {
         if (digitsOnly.isBlank()) return false
         return rules.any { rule ->
             rule.ruleType == BlacklistRuleEntity.TYPE_TEMP_ALLOW && isActive(rule, now) &&
+                com.blacklist.app.util.PhoneNumberUtils.matches(rule.pattern, digitsOnly)
+        }
+    }
+
+    /** Matches only a short-lived allowance created after the user dialed this exact number. */
+    fun outboundCallbackMatches(rules: List<BlacklistRuleEntity>, digitsOnly: String, now: Long = System.currentTimeMillis()): Boolean {
+        if (digitsOnly.isBlank()) return false
+        return rules.any { rule ->
+            rule.ruleType == BlacklistRuleEntity.TYPE_TEMP_OUTBOUND_CALLBACK && isActive(rule, now) &&
                 com.blacklist.app.util.PhoneNumberUtils.matches(rule.pattern, digitsOnly)
         }
     }

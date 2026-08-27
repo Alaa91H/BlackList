@@ -181,6 +181,8 @@ fun SettingsScreen(nav: NavController) {
                     SettingSwitch(stringResource(R.string.home_block_private), stringResource(R.string.settings_block_private_desc), Icons.Filled.VisibilityOff, settings?.blockPrivate ?: true) { vm.setBlockPrivate(it) }
                     HorizontalDivider()
                     SettingSwitch(stringResource(R.string.home_block_all_except_whitelist), stringResource(R.string.settings_block_all_except_desc), Icons.Filled.DoNotDisturbOn, settings?.blockAllExceptWhitelist ?: false) { vm.setBlockAllExcept(it) }
+                    HorizontalDivider()
+                    SettingSwitch(stringResource(R.string.settings_outbound_callback_grace), stringResource(R.string.settings_outbound_callback_grace_desc), Icons.Filled.PersonOff, settings?.allowOutboundCallbackGrace ?: false) { vm.setOutboundCallbackGrace(it) }
                 }
             }
 

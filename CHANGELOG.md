@@ -2,6 +2,31 @@
 
 All notable changes to BlackList are documented in this file. The project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.0] - 2026-08-27
+
+### Added
+
+- **Opt-in recent outgoing-call callback grace.** After Android reports a definite outgoing call to a valid non-emergency number, users may allow only that exact number to call back for 15 minutes. The setting is disabled by default.
+- **Bounded local callback state.** A small in-memory bridge prevents a snapshot-refresh race for an immediate callback, while an expiring internal policy rule preserves the allowance across normal process lifecycle events. Both stores cap their active entries and retain only normalized digits plus an expiry.
+
+### Changed
+
+- **Safer, explicit precedence.** Manual temporary allows and whitelists retain their established behavior; explicit blacklist rules and legacy exact blocks remain authoritative over the automatic callback allowance. The allowance applies only before broad schedules, temporary block-all mode, unknown/private filtering, and local risk policies.
+- **User-controlled continuity.** The preference and any still-valid callback rules now travel through encrypted policy backup and restore, with strict validation of number format and temporary expiry bounds.
+
+### Fixed
+
+- Outgoing and unknown call directions now receive an immediate allow response before any local persistence. Only a definite `DIRECTION_OUTGOING` call can create a callback allowance; unknown directions fail open without creating one.
+- Added a non-destructive Room 6→7 migration so existing local policy data is preserved and the new option stays disabled on upgrade.
+
+### Quality
+
+- Added regression coverage for exact-number matching, expiry, broad-policy recovery, explicit-block precedence, disabled-by-default settings, and stable manual temporary-allow behavior.
+
+### Privacy
+
+- The feature is fully local, requires no new permission or call-log access, makes no network request, and introduces no cloud service, analytics, tracker, or external reputation source.
+
 ## [1.7.0] - 2026-08-27
 
 ### Added
@@ -69,6 +94,7 @@ All notable changes to BlackList are documented in this file. The project follow
 
 - Production-grade local call-firewall foundation with rule matching, risk scoring, behavior signals, reputation tracking, temporary protection controls, diagnostics, and a decision simulator.
 
+[1.8.0]: https://github.com/Alaa91H/BlackList/compare/v1.7.0...v1.8.0
 [1.7.0]: https://github.com/Alaa91H/BlackList/compare/v1.6.0...v1.7.0
 [1.6.0]: https://github.com/Alaa91H/BlackList/compare/v1.5.0...v1.6.0
 [1.5.0]: https://github.com/Alaa91H/BlackList/compare/v1.4.0...v1.5.0

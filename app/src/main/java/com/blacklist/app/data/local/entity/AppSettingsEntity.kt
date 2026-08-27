@@ -12,6 +12,8 @@ data class AppSettingsEntity(
     val showBlockedNotification: Boolean = true,
     /** Keeps blocked-call history out of Android's shared call log while preserving BlackList's local log. */
     val hideBlockedCallsFromSystemLog: Boolean = false,
+    /** Enables a short local-only callback window after the user dials a non-emergency number. */
+    val allowOutboundCallbackGrace: Boolean = false,
     val activeProfileId: String = "custom", // custom, normal, focus, whitelist_only
     val themeMode: String = "SYSTEM", // SYSTEM, LIGHT, DARK
     /** UTC expiry for the short local allowance after an outgoing emergency call. */

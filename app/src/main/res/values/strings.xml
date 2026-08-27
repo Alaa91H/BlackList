@@ -141,6 +141,8 @@
 
 
     <string name="settings_block_all_except_desc">When enabled, only whitelisted numbers ring</string>
+    <string name="settings_outbound_callback_grace">Recent outgoing-call callback grace</string>
+    <string name="settings_outbound_callback_grace_desc">Allow a number you just dialed to call back for 15 minutes. Stored only on this device and never overrides an explicit block.</string>
     <string name="settings_theme">Theme</string>
     <string name="settings_theme_system">System Default</string>
     <string name="settings_theme_light">Light</string>

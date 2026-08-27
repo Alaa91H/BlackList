@@ -21,11 +21,11 @@
 
 Most call blockers send your contacts and call history to remote servers. **BlackList never does.**
 
-### New in 1.7.0
+### New in 1.8.0
 
-- **Private blocked-call history** — optionally keep blocked calls in BlackList’s private local log only, hiding them from Android’s shared call history. The default remains transparent: blocked calls continue to appear in the system log unless you opt in.
-- **Clear privacy boundary** — the setting applies only to calls BlackList blocks. Allowed and silenced calls retain their normal Android history, and the private in-app blocked log remains available with the decision reason.
-- **Portable protection settings** — the preference is safely carried by the encrypted policy backup and restore flow, with no new permission or network access.
+- **Opt-in outgoing callback grace** — after you dial a valid non-emergency number, BlackList can allow only that exact number to call back for 15 minutes. The feature is disabled by default and needs no call-log access, network connection, or new permission.
+- **Explicit blocks remain authoritative** — a manual blacklist rule or legacy exact block still wins. The short exact-number allowance protects only against broad policies such as schedules, block-all modes, and unknown/private filtering.
+- **Bounded and recoverable by design** — callback state contains only normalized digits and an expiry, is capped in memory and storage, expires automatically, and is included safely in encrypted policy backup and restore.
 
 ### Recent safety hardening
 
@@ -48,6 +48,7 @@ Most call blockers send your contacts and call history to remote servers. **Blac
 | **Block Unknown** | Silently reject numbers not in your contacts (uses `READ_CONTACTS`). |
 | **Block Private/Hidden** | Reject withheld / private / unknown callers. |
 | **Block All Except Whitelist** | Nuclear mode — only whitelisted numbers ring. |
+| **Opt-in Callback Grace** | After you dial a valid number, allow only that exact number to call back for 15 minutes; never overrides an explicit block. |
 | **Advanced Scheduling** | Time-based rules with day-of-week bitmask. Example: *Block all except whitelist 22:00–06:00 Mon–Fri*. Overnight spans supported. |
 | **Blocked Log** | Professional timeline of every blocked call: number, display name, reason, timestamp. Clear with one tap. |
 | **Smart Notifications** | Optional low-priority notification for each blocked call (off by default if you prefer total silence). |
@@ -93,7 +94,8 @@ com.blacklist.app
    Emergency short number? → ALLOW (always wins)
    Temporary allow / whitelist? → ALLOW
    Explicit blacklist or legacy exact block? → BLOCK
-   Recent outgoing emergency call? → short callback allowance
+   Recent outgoing call to this exact number and opt-in enabled? → 15-minute callback allowance
+   Recent outgoing emergency call? → short responder callback allowance
    Schedule active? → evaluate schedule mode (ALL / ALL_EXCEPT_WHITELIST / UNKNOWN_PRIVATE / BLACKLIST)
    Temporary firewall or broad policy? → BLOCK
    Unknown/private policy? → BLOCK when enabled
@@ -184,7 +186,7 @@ BlackList/
 
 - [x] Local CSV import/export for blacklist and whitelist, with size limits, duplicate detection, and spreadsheet-formula safety.
 - [x] Exact, prefix, range, country, temporary, and other local rule types in the firewall engine.
-- [x] Emergency short-number safeguard and local emergency callback grace for broad-policy protection.
+- [x] Emergency short-number safeguard, emergency callback grace, and an opt-in exact-number callback grace after a local outgoing call.
 - [x] Encrypted local backup and restore for policy data only; call history and diagnostics remain excluded.
 - [x] Optional private blocked-call history, retaining the explainable log locally while suppressing only blocked calls from Android’s shared call log.
 - [ ] Per-number schedule override.

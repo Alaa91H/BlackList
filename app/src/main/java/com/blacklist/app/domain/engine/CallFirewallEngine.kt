@@ -69,6 +69,21 @@ class CallFirewallEngine(
         }
 
         val settings = snapshot.settings
+        if ((settings?.allowOutboundCallbackGrace ?: false) &&
+            (OutboundCallbackGrace.isActive(enrichedEvent.phoneNumber.digitsOnly) ||
+                TemporaryFirewall.outboundCallbackMatches(snapshot.rules, enrichedEvent.phoneNumber.digitsOnly))
+        ) {
+            return decision(
+                enrichedEvent,
+                Decision.ALLOW,
+                0,
+                ReputationLevel.TRUSTED,
+                listOf("Recent outgoing-call callback grace active"),
+                emptyList(),
+                "outbound_callback_grace"
+            )
+        }
+
         if (EmergencyCallbackGrace.isActive(settings?.emergencyCallbackGraceUntil ?: 0L)) {
             return decision(
                 enrichedEvent,

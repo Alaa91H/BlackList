@@ -9,6 +9,7 @@ import com.blacklist.app.data.local.entity.BlockedCallLogEntity
 import com.blacklist.app.data.local.entity.SecurityEventEntity
 import com.blacklist.app.di.ServiceLocator
 import com.blacklist.app.domain.engine.EmergencyCallbackGrace
+import com.blacklist.app.domain.engine.OutboundCallbackGrace
 import com.blacklist.app.domain.enforcement.BlockedCallLogPrivacyPolicy
 import com.blacklist.app.domain.events.FirewallEvent
 import com.blacklist.app.domain.events.FirewallEventBus
@@ -40,8 +41,12 @@ class BlackListCallScreeningService : CallScreeningService() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q &&
             callDetails.callDirection != Call.Details.DIRECTION_INCOMING
         ) {
-            recordOutgoingEmergencyCall(callDetails)
+            // Unknown directions deliberately fail open, but only a definite
+            // outgoing call may create a callback allowance.
             respondAllow(callDetails)
+            if (callDetails.callDirection == Call.Details.DIRECTION_OUTGOING) {
+                scope.launch(Dispatchers.IO) { recordOutgoingCallProtections(callDetails) }
+            }
             return
         }
 
@@ -82,18 +87,17 @@ class BlackListCallScreeningService : CallScreeningService() {
     }
 
     /**
-     * Android routes outgoing calls through the screening service on supported
-     * devices. After an emergency call, allow a short local-only callback
-     * window so dispatch or responders are not caught by broad block policies.
+     * Runs only after Telecom has received an allow response for a definite
+     * outgoing call. It creates either the existing emergency-wide protection
+     * or an exact-number callback allowance; both remain entirely local.
      */
-    private fun recordOutgoingEmergencyCall(callDetails: Call.Details) {
+    private suspend fun recordOutgoingCallProtections(callDetails: Call.Details) {
         val event = runCatching {
             CallEventAdapter.fromDetails(applicationContext, callDetails)
         }.getOrNull() ?: return
-        if (!ServiceLocator.provideNormalizer(applicationContext).isEmergencyNumber(event.phoneNumber)) return
-
-        val expiry = EmergencyCallbackGrace.activate()
-        scope.launch(Dispatchers.IO) {
+        val normalizer = ServiceLocator.provideNormalizer(applicationContext)
+        if (normalizer.isEmergencyNumber(event.phoneNumber)) {
+            val expiry = EmergencyCallbackGrace.activate()
             runCatching {
                 val settingsDao = ServiceLocator.provideDatabase(applicationContext).appSettingsDao()
                 val current = settingsDao.get()
@@ -107,6 +111,21 @@ class BlackListCallScreeningService : CallScreeningService() {
                 // failure must never delay or change the outgoing call response.
                 Log.w(TAG, "Could not persist emergency callback grace", error)
             }
+            return
+        }
+
+        val digits = event.phoneNumber.digitsOnly
+        if (!OutboundCallbackGrace.isValidDigits(digits) ||
+            ServiceLocator.providePolicySnapshotStore(applicationContext).snapshot().settings?.allowOutboundCallbackGrace != true
+        ) return
+
+        OutboundCallbackGrace.activate(digits) ?: return
+        runCatching {
+            ServiceLocator.provideRepository(applicationContext).recordOutboundCallbackGrace(digits).getOrThrow()
+        }.onFailure { error ->
+            // The process-local bridge still covers the snapshot refresh race;
+            // persistence failures never alter the already answered call.
+            Log.w(TAG, "Could not persist outgoing callback grace", error)
         }
     }
 

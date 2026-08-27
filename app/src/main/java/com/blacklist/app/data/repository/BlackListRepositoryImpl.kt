@@ -77,7 +77,10 @@ class BlackListRepositoryImpl(
     override suspend fun addBlacklistRule(rule: BlacklistRuleEntity): Result<Long> {
         return try {
             // TEMP_* types are internal-only (created via temporary firewall APIs)
-            if (rule.ruleType == BlacklistRuleEntity.TYPE_TEMP_BLOCK_ALL || rule.ruleType == BlacklistRuleEntity.TYPE_TEMP_ALLOW) {
+            if (rule.ruleType == BlacklistRuleEntity.TYPE_TEMP_BLOCK_ALL ||
+                rule.ruleType == BlacklistRuleEntity.TYPE_TEMP_ALLOW ||
+                rule.ruleType == BlacklistRuleEntity.TYPE_TEMP_OUTBOUND_CALLBACK
+            ) {
                 return Result.failure(IllegalArgumentException("Internal rule type"))
             }
             when (rule.ruleType) {
@@ -190,10 +193,48 @@ class BlackListRepositoryImpl(
         }
     }
 
+    override suspend fun recordOutboundCallbackGrace(rawNumber: String): Result<Long> {
+        return try {
+            val digits = rawNumber.filter(Char::isDigit)
+            if (!com.blacklist.app.domain.engine.OutboundCallbackGrace.isValidDigits(digits)) {
+                return Result.failure(IllegalArgumentException("Invalid number"))
+            }
+            val now = System.currentTimeMillis()
+            val current = ruleDao.getAll()
+            current.filter {
+                it.ruleType == BlacklistRuleEntity.TYPE_TEMP_OUTBOUND_CALLBACK &&
+                    (!com.blacklist.app.domain.engine.TemporaryFirewall.isActive(it, now) || it.pattern == digits)
+            }.forEach { ruleDao.deleteById(it.id) }
+            val active = current.filter {
+                it.ruleType == BlacklistRuleEntity.TYPE_TEMP_OUTBOUND_CALLBACK &&
+                    it.pattern != digits && com.blacklist.app.domain.engine.TemporaryFirewall.isActive(it, now)
+            }
+            active.sortedBy { it.createdAt }
+                .take((active.size - com.blacklist.app.domain.engine.OutboundCallbackGrace.MAX_ENTRIES + 1).coerceAtLeast(0))
+                .forEach { ruleDao.deleteById(it.id) }
+            val expiry = now + com.blacklist.app.domain.engine.OutboundCallbackGrace.DURATION_MS
+            Result.success(
+                ruleDao.insert(
+                    BlacklistRuleEntity(
+                        ruleType = BlacklistRuleEntity.TYPE_TEMP_OUTBOUND_CALLBACK,
+                        pattern = digits,
+                        startNumber = expiry.toString(),
+                        priority = 20,
+                        displayName = "outbound_callback_grace"
+                    )
+                )
+            )
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     override suspend fun cleanupExpiredTemporaryRules(): Int {
         val now = System.currentTimeMillis()
         val expired = ruleDao.getAll().filter {
-            (it.ruleType == BlacklistRuleEntity.TYPE_TEMP_BLOCK_ALL || it.ruleType == BlacklistRuleEntity.TYPE_TEMP_ALLOW) &&
+            (it.ruleType == BlacklistRuleEntity.TYPE_TEMP_BLOCK_ALL ||
+                it.ruleType == BlacklistRuleEntity.TYPE_TEMP_ALLOW ||
+                it.ruleType == BlacklistRuleEntity.TYPE_TEMP_OUTBOUND_CALLBACK) &&
                 !com.blacklist.app.domain.engine.TemporaryFirewall.isActive(it, now)
         }
         expired.forEach { ruleDao.deleteById(it.id) }
