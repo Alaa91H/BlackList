@@ -21,7 +21,7 @@ import com.blacklist.app.data.local.entity.*
         OfflineReputationEntryEntity::class,
         SecurityEventEntity::class
     ],
-    version = 11,
+    version = 12,
     exportSchema = true
 )
 abstract class BlackListDatabase : RoomDatabase() {
@@ -131,6 +131,15 @@ abstract class BlackListDatabase : RoomDatabase() {
         val MIGRATION_10_11 = object : Migration(10, 11) {
             override fun migrate(database: SupportSQLiteDatabase) {
                 database.execSQL("ALTER TABLE app_settings ADD COLUMN blockedLogRetentionDays INTEGER NOT NULL DEFAULT 0")
+            }
+        }
+
+        /** Keeps all existing blacklist rules on their historical reject behavior. */
+        val MIGRATION_11_12 = object : Migration(11, 12) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL(
+                    "ALTER TABLE blacklist_rules ADD COLUMN enforcement TEXT NOT NULL DEFAULT 'BLOCK'"
+                )
             }
         }
     }

@@ -58,6 +58,11 @@ class CallFirewallEngine(
         val matchedBlacklist = blacklistEngine.findMatching(enrichedEvent.phoneNumber, snapshot.rules)
         if (matchedBlacklist.isNotEmpty()) {
             val top = matchedBlacklist.first()
+            val action = if (top.enforcement == BlacklistRuleEntity.ENFORCEMENT_SILENCE) {
+                Decision.SILENCE
+            } else {
+                Decision.BLOCK
+            }
             val risk = riskEngine.score(
                 enrichedEvent,
                 null,
@@ -67,12 +72,12 @@ class CallFirewallEngine(
             )
             return decision(
                 enrichedEvent,
-                Decision.BLOCK,
+                action,
                 risk,
                 ReputationLevel.SUSPICIOUS,
-                listOf("Matched blacklist rule: ${top.ruleType} ${top.pattern ?: top.countryIso}"),
+                listOf("Matched ${if (action == Decision.SILENCE) "silent" else "blocking"} blacklist rule: ${top.ruleType} ${top.pattern ?: top.countryIso}"),
                 matchedBlacklist.map(::toCallRule),
-                "blacklist"
+                if (action == Decision.SILENCE) "blacklist_silence" else "blacklist"
             )
         }
 
@@ -286,7 +291,11 @@ class CallFirewallEngine(
         CallRule(
             id = entity.id,
             priority = entity.priority,
-            action = RuleAction.BLOCK,
+            action = if (entity.enforcement == BlacklistRuleEntity.ENFORCEMENT_SILENCE) {
+                RuleAction.SILENCE
+            } else {
+                RuleAction.BLOCK
+            },
             conditions = emptyList(),
             description = "${entity.ruleType}:${entity.pattern}"
         )

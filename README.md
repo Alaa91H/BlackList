@@ -142,7 +142,8 @@ com.blacklist.app
    ```
    Emergency short number? → ALLOW (always wins)
    Temporary allow / whitelist? → ALLOW
-   Explicit blacklist or legacy exact block? → BLOCK
+   Explicit blacklist rule? → REJECT or SILENCE, as chosen on the highest-priority matching rule
+   Legacy exact block? → BLOCK
    Recent outgoing call to this exact number and opt-in enabled? → 15-minute callback allowance
    Recent outgoing emergency call? → short responder callback allowance
    Active schedule has a matching trusted caller exception? → ALLOW for that schedule only
@@ -152,7 +153,13 @@ com.blacklist.app
    Local risk, behavior and exact offline-reputation signals? → BLOCK only at the configured threshold (offline score 80–100 is a risk floor)
    otherwise → ALLOW
    ```
-4. If blocked → `CallResponse.Builder().setDisallowCall(true).setRejectCall(true)` + optional private BlackList log + optional notification. If an eligible unknown/private policy is explicitly set to **Silence instead**, the call is not rejected and Android suppresses its ring while retaining normal system call history and notification behavior. By default the Android call log is retained; **Settings → Privacy → Private blocked-call history** can hide blocked calls from the shared system log while keeping the in-app record. In the same Privacy section, **Blocked-call history retention** can keep BlackList’s in-app records forever (the default) or expire records older than 7, 30, 90 or 365 days after a later blocked call has already been answered and logged. This setting never changes a screening decision or Android’s shared call log.
+4. If a rule rejects → `CallResponse.Builder().setDisallowCall(true).setRejectCall(true)` + optional private BlackList log + optional notification. If an explicit blacklist rule or eligible unknown/private policy is set to **Silence ringtone**, the call is not rejected and Android is asked to suppress its ringtone. Silence does **not** promise to hide Android call UI, the shared call history, or a missed-call notification. By default the Android call log is retained; **Settings → Privacy → Private blocked-call history** can hide rejected blocked calls from the shared system log while keeping the in-app record. In the same Privacy section, **Blocked-call history retention** can keep BlackList’s in-app records forever (the default) or expire records older than 7, 30, 90 or 365 days after a later blocked call has already been answered and logged. This setting never changes a screening decision or Android’s shared call log.
+
+### Per-rule enforcement
+
+Each persistent exact, prefix, suffix, contains, numeric-range, or country rule has one deliberate local action. **Reject call** preserves the traditional blacklist behavior. **Silence ringtone** keeps a matching call connected while using Android’s `setSilenceCall(true)` response; it is neither a hidden-call mode nor a guarantee that Android will omit its own UI, call-log entry, or missed-call notification. The selected action is shown on every rule card, and the highest-priority matching persistent rule determines the action. Emergency numbers, temporary allows, and whitelist entries remain higher-priority safeguards.
+
+Existing rules are migrated as **Reject call**. Encrypted local backups now retain the selected action, while backups from earlier releases safely restore rules as **Reject call**.
 
 ---
 
@@ -207,7 +214,7 @@ No Firebase, no analytics SDK, no internet permission.
 | `POST_NOTIFICATIONS` | Optional; shows BlackList's low-priority blocked-call notification on Android 13+. |
 | `BIND_SCREENING_SERVICE` | Service-level permission used by Android to bind `CallScreeningService`; it is not requested from the user. |
 
-BlackList declares **no** `INTERNET`, Call Log, SMS, phone-state, call-placement, or call-answering permission. It does not request the default Phone, Assistant, or SMS role. The user grants the Call Screening role through Android's standard role UI; a deliberate `text/plain` share is the only external number-intake path added in 1.17.0.
+BlackList declares **no** `INTERNET`, Call Log, SMS, phone-state, call-placement, or call-answering permission. It does not request the default Phone, Assistant, or SMS role. The user grants the Call Screening role through Android's standard role UI; a deliberate `text/plain` share is the only external number-intake path added in 1.17.0. Version 1.18.0 adds no Root, Shizuku, Sui, hidden-API bypass, or ADB command execution dependency.
 
 ---
 

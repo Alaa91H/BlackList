@@ -208,6 +208,13 @@ fun ruleTypeLabel(type: String): String = when (type) {
     else -> type
 }
 
+/** A stored rule defaults to rejection unless it explicitly opts into ringtone silence. */
+@Composable
+fun ruleEnforcementLabel(enforcement: String): String = when (enforcement) {
+    BlacklistRuleEntity.ENFORCEMENT_SILENCE -> stringResource(R.string.rule_enforcement_silence)
+    else -> stringResource(R.string.rule_enforcement_block)
+}
+
 private fun typeLabelRes(type: String): Int = when (type) {
     BlacklistRuleEntity.TYPE_EXACT -> R.string.rule_type_exact
     BlacklistRuleEntity.TYPE_PREFIX -> R.string.rule_type_prefix
@@ -319,6 +326,11 @@ private fun RuleCard(rule: BlacklistRuleEntity, onToggle: (Boolean) -> Unit, onD
                         label = { Text(ruleTypeLabel(rule.ruleType), style = MaterialTheme.typography.labelSmall) },
                         enabled = false
                     )
+                    AssistChip(
+                        onClick = {},
+                        label = { Text(ruleEnforcementLabel(rule.enforcement), style = MaterialTheme.typography.labelSmall) },
+                        enabled = false
+                    )
                 }
                 Text(
                     when (rule.ruleType) {
@@ -344,6 +356,7 @@ private fun AddRuleDialog(
     onPickSource: (PickerSource) -> Unit
 ) {
     var selectedType by remember { mutableStateOf(BlacklistRuleEntity.TYPE_EXACT) }
+    var selectedEnforcement by remember { mutableStateOf(BlacklistRuleEntity.ENFORCEMENT_BLOCK) }
     var pattern by remember { mutableStateOf("") }
     var rangeStart by remember { mutableStateOf("") }
     var rangeEnd by remember { mutableStateOf("") }
@@ -356,17 +369,17 @@ private fun AddRuleDialog(
                 val s = rangeStart.filter { it.isDigit() }
                 val e = rangeEnd.filter { it.isDigit() }
                 if (s.isEmpty() || e.isEmpty()) null else if (s.length != e.length || s >= e) null else
-                    BlacklistRuleEntity(ruleType = selectedType, startNumber = s, endNumber = e, displayName = displayName.takeIf { it.isNotBlank() })
+                    BlacklistRuleEntity(ruleType = selectedType, enforcement = selectedEnforcement, startNumber = s, endNumber = e, displayName = displayName.takeIf { it.isNotBlank() })
             }
             BlacklistRuleEntity.TYPE_COUNTRY -> {
                 val iso = countryIso.trim().uppercase()
                 if (iso.length != 2 || iso.any { !it.isLetter() }) null else
-                    BlacklistRuleEntity(ruleType = selectedType, countryIso = iso, displayName = displayName.takeIf { it.isNotBlank() })
+                    BlacklistRuleEntity(ruleType = selectedType, enforcement = selectedEnforcement, countryIso = iso, displayName = displayName.takeIf { it.isNotBlank() })
             }
             else -> {
                 val p = pattern.trim()
                 if (p.isBlank()) null else
-                    BlacklistRuleEntity(ruleType = selectedType, pattern = p, displayName = displayName.takeIf { it.isNotBlank() })
+                    BlacklistRuleEntity(ruleType = selectedType, enforcement = selectedEnforcement, pattern = p, displayName = displayName.takeIf { it.isNotBlank() })
             }
         }
     }
@@ -386,6 +399,27 @@ private fun AddRuleDialog(
                         )
                     }
                 }
+                Text(stringResource(R.string.rule_enforcement_title), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    BlacklistRuleEntity.USER_ENFORCEMENTS.forEach { enforcement ->
+                        FilterChip(
+                            selected = selectedEnforcement == enforcement,
+                            onClick = { selectedEnforcement = enforcement },
+                            label = { Text(ruleEnforcementLabel(enforcement), style = MaterialTheme.typography.labelSmall) }
+                        )
+                    }
+                }
+                Text(
+                    stringResource(
+                        if (selectedEnforcement == BlacklistRuleEntity.ENFORCEMENT_SILENCE) {
+                            R.string.rule_enforcement_silence_description
+                        } else {
+                            R.string.rule_enforcement_block_description
+                        }
+                    ),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
                 when (selectedType) {
                     BlacklistRuleEntity.TYPE_RANGE -> {
                         OutlinedTextField(value = rangeStart, onValueChange = { rangeStart = it }, label = { Text(stringResource(R.string.blacklist_range_start)) }, placeholder = { Text("500000000") }, keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Phone), singleLine = true, modifier = Modifier.fillMaxWidth())

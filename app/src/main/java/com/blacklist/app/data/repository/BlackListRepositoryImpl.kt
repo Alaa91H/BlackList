@@ -197,6 +197,9 @@ class BlackListRepositoryImpl(
             ) {
                 return Result.failure(IllegalArgumentException("Internal rule type"))
             }
+            if (rule.enforcement !in BlacklistRuleEntity.USER_ENFORCEMENTS) {
+                return Result.failure(IllegalArgumentException("Unsupported enforcement mode"))
+            }
             when (rule.ruleType) {
                 BlacklistRuleEntity.TYPE_EXACT,
                 BlacklistRuleEntity.TYPE_PREFIX,
@@ -208,6 +211,11 @@ class BlackListRepositoryImpl(
                     val digits = pattern.filter { it.isDigit() }
                     if (rule.ruleType == BlacklistRuleEntity.TYPE_EXACT && digits.length < minLen) {
                         return Result.failure(IllegalArgumentException("Pattern too short"))
+                    }
+                    if (rule.ruleType == BlacklistRuleEntity.TYPE_EXACT &&
+                        normalizer.isEmergencyNumber(normalizer.normalize(pattern))
+                    ) {
+                        return Result.failure(IllegalArgumentException("Emergency numbers cannot be blocked"))
                     }
                     if (rule.ruleType != BlacklistRuleEntity.TYPE_EXACT &&
                         rule.pattern!!.any { !it.isDigit() && it != '+' && it != '*' && it != '#' && it != ' ' && it != '-' }) {

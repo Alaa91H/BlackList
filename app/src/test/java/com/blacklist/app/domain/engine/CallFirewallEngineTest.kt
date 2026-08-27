@@ -59,6 +59,28 @@ class CallFirewallEngineTest {
     }
 
     @Test
+    fun `silent exact blacklist rule mutes the ringtone and remains explainable`() = runTest {
+        val number = normalizer.normalize("+49 151 23456789")
+        val snapshot = PolicySnapshotStore.Snapshot(
+            rules = listOf(
+                BlacklistRuleEntity(
+                    id = 6,
+                    ruleType = BlacklistRuleEntity.TYPE_EXACT,
+                    enforcement = BlacklistRuleEntity.ENFORCEMENT_SILENCE,
+                    pattern = number.normalized
+                )
+            )
+        )
+
+        val decision = engine(snapshot).evaluate(event("silent-exact", number.raw))
+
+        assertEquals(Decision.SILENCE, decision.decision)
+        assertEquals("blacklist_silence", decision.explainable.backend)
+        assertEquals(com.blacklist.app.domain.model.RuleAction.SILENCE, decision.matchedRules.single().action)
+        assertTrue(decision.reasons.single().contains("silent blacklist rule"))
+    }
+
+    @Test
     fun `failed caller verification contributes risk and remains explainable`() = runTest {
         val decision = engine(PolicySnapshotStore.Snapshot()).evaluate(
             event("failed-verification", "+49 151 23456789", VerificationStatus.FAILED)

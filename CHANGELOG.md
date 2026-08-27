@@ -2,6 +2,31 @@
 
 All notable changes to BlackList are documented in this file. The project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.18.0] - 2026-08-27
+
+### Added
+
+- **Per-rule call handling.** Every persistent blacklist rule can now explicitly reject matching calls or use Android’s supported ringtone-silence response. The selected handling is visible on each saved rule.
+- **Consistent local coverage.** Exact, prefix, suffix, contains, numeric-range, and country rules all support the same deliberate handling choice.
+
+### Changed
+
+- **Truthful silence semantics.** The interface now states that silence keeps a matching call connected while requesting that Android mute its ringtone. It does not promise to suppress system call UI, shared call history, or missed-call notifications.
+- **Deterministic rule execution.** The highest-priority matching persistent rule now determines whether its match is rejected or silenced. Emergency protection, temporary allows, and whitelist entries remain higher-priority safeguards.
+- **Backward-compatible policy storage.** A non-destructive Room 11→12 migration adds the default `BLOCK` enforcement to existing rules. Encrypted local backups preserve the selected enforcement, while older backups safely restore as `BLOCK`.
+
+### Fixed
+
+- **Central emergency guard.** Repository validation now rejects an attempt to create a permanent exact-number blacklist rule for a regional emergency number, regardless of the UI entry path.
+
+### Quality
+
+- Added engine coverage for an exact silent rule, including the returned decision, explanatory backend, and matched rule action.
+
+### Privacy
+
+- This release adds no permission, Call Log/SMS access, default-handler role, network request, cloud service, analytics event, tracker, worker, timer, boot receiver, Root/Shizuku dependency, hidden-API bypass, ADB command execution, or call-screening-path I/O.
+
 ## [1.17.0] - 2026-08-27
 
 ### Added
@@ -309,6 +334,7 @@ All notable changes to BlackList are documented in this file. The project follow
 
 - Production-grade local call-firewall foundation with rule matching, risk scoring, behavior signals, reputation tracking, temporary protection controls, diagnostics, and a decision simulator.
 
+[1.18.0]: https://github.com/Alaa91H/BlackList/compare/v1.17.0...v1.18.0
 [1.17.0]: https://github.com/Alaa91H/BlackList/compare/v1.16.0...v1.17.0
 [1.16.0]: https://github.com/Alaa91H/BlackList/compare/v1.15.0...v1.16.0
 [1.15.0]: https://github.com/Alaa91H/BlackList/compare/v1.14.0...v1.15.0

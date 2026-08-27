@@ -219,6 +219,7 @@ class EncryptedBackupService(
         .put("enabled", isEnabled)
         .put("priority", priority)
         .put("type", ruleType)
+        .put("enforcement", enforcement)
         .put("pattern", pattern)
         .put("start", startNumber)
         .put("end", endNumber)
@@ -301,6 +302,11 @@ class EncryptedBackupService(
     private fun ruleFromJson(json: JSONObject): BlacklistRuleEntity {
         val type = json.requiredText("type", 32)
         require(type in ALLOWED_RULE_TYPES) { "Unsupported rule type in backup." }
+        val enforcement = json.optionalText("enforcement", 16) ?: BlacklistRuleEntity.ENFORCEMENT_BLOCK
+        require(enforcement in BlacklistRuleEntity.USER_ENFORCEMENTS) { "Unsupported rule enforcement in backup." }
+        if (type.startsWith("TEMP_")) {
+            require(enforcement == BlacklistRuleEntity.ENFORCEMENT_BLOCK) { "Temporary rules must reject calls." }
+        }
         val priority = json.optInt("priority", 30).also { require(it in 0..1000) { "Invalid rule priority." } }
         val pattern = json.optionalText("pattern", MAX_PATTERN_LENGTH)
         val startNumber = json.optionalText("start", MAX_PATTERN_LENGTH)
@@ -330,6 +336,7 @@ class EncryptedBackupService(
             isEnabled = json.optBoolean("enabled", true),
             priority = priority,
             ruleType = type,
+            enforcement = enforcement,
             pattern = pattern,
             startNumber = startNumber,
             endNumber = endNumber,

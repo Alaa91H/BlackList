@@ -36,7 +36,7 @@
     <!-- Blacklist -->
     <string name="blacklist_title">Blacklist</string>
     <string name="blacklist_empty">No blocked numbers yet</string>
-    <string name="blacklist_empty_desc">Add numbers you want to block silently</string>
+    <string name="blacklist_empty_desc">Add numbers or rules to reject or silence</string>
     <string name="blacklist_add">Add Number</string>
     <string name="blacklist_add_hint">Phone number</string>
     <string name="blacklist_add_name_hint">Name (optional)</string>
@@ -133,9 +133,11 @@
     <string name="settings_block_unknown_desc">Silently reject calls from numbers not in contacts</string>
         <string name="settings_block_private_desc">Reject hidden / private numbers</string>
     <string name="settings_silence_unknown">Silence unknown callers instead</string>
-    <string name="settings_silence_unknown_desc">When Block Unknown is enabled, let eligible unknown calls continue without ringing or a rejection.</string>
+        <string name="settings_silence_unknown_desc">When Block Unknown is enabled, let eligible unknown calls continue without ringing or rejection. Android may still show its call UI, history, or missed-call notification.</string>
+
     <string name="settings_silence_private">Silence private callers instead</string>
-    <string name="settings_silence_private_desc">When Block Private is enabled, let private calls continue without ringing or a rejection.</string>
+        <string name="settings_silence_private_desc">When Block Private is enabled, let private calls continue without ringing or rejection. Android may still show its call UI, history, or missed-call notification.</string>
+
     <string name="settings_notifications">Show notification for blocked calls</string>
     <string name="settings_notifications_desc">Show low-priority notification for blocked calls</string>
     <string name="settings_notifications_global">Global notifications</string>
@@ -407,7 +409,15 @@
     <string name="temporary_exact_block_limit_reached">Temporary block limit reached. Cancel an active temporary block first.</string>
     <string name="temporary_exact_block_failed">Could not add the temporary block. Try again.</string>
 
+        <!-- Per-rule call enforcement -->
+    <string name="rule_enforcement_title">When a rule matches</string>
+    <string name="rule_enforcement_block">Reject call</string>
+    <string name="rule_enforcement_silence">Silence ringtone</string>
+    <string name="rule_enforcement_block_description">Reject the matching call. Blocked-call privacy controls apply as configured.</string>
+    <string name="rule_enforcement_silence_description">Keep the matching call connected but mute its ringtone. Android may still show call UI, log it, or show a missed-call notification.</string>
+
     <!-- Explicit shared-number intake -->
+
     <string name="shared_number_title">Add shared number</string>
     <string name="shared_number_privacy_title">Your shared text stays private</string>
     <string name="shared_number_privacy_description">BlackList only checks text you explicitly share. The original text is not saved, and no number is added until you confirm an action.</string>

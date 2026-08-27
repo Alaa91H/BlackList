@@ -13,6 +13,12 @@ data class BlacklistRuleEntity(
     val isEnabled: Boolean = true,
     val priority: Int = 30, // Default EXPLICIT_BLOCK
     val ruleType: String, // EXACT, PREFIX, RANGE, COUNTRY, HIDDEN, UNKNOWN
+    /**
+     * BLOCK rejects the call. SILENCE keeps the call connected but asks Telecom
+     * to mute its ringtone; it does not promise to hide system call UI, logs, or
+     * missed-call notifications.
+     */
+    val enforcement: String = ENFORCEMENT_BLOCK,
     val pattern: String? = null, // for EXACT/PREFIX: normalized number/prefix
     val startNumber: String? = null, // for RANGE
     val endNumber: String? = null, // for RANGE
@@ -30,6 +36,10 @@ data class BlacklistRuleEntity(
         const val TYPE_COUNTRY = "COUNTRY"
         const val TYPE_HIDDEN = "HIDDEN"
         const val TYPE_UNKNOWN = "UNKNOWN"
+
+        const val ENFORCEMENT_BLOCK = "BLOCK"
+        const val ENFORCEMENT_SILENCE = "SILENCE"
+        val USER_ENFORCEMENTS = listOf(ENFORCEMENT_BLOCK, ENFORCEMENT_SILENCE)
 
         /** Internal temporary-firewall types (not user-selectable). See TemporaryFirewall for encoding. */
         const val TYPE_TEMP_BLOCK_ALL = "TEMP_BLOCK_ALL"
