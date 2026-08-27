@@ -26,6 +26,7 @@ import com.blacklist.app.data.local.entity.BlacklistRuleEntity
 import com.blacklist.app.di.ServiceLocator
 import com.blacklist.app.di.ViewModelFactory
 import com.blacklist.app.domain.engine.BlacklistRuleConflictAnalyzer
+import com.blacklist.app.domain.engine.DecisionTraceInterpreter
 import com.blacklist.app.domain.engine.RuleConflictKind
 import com.blacklist.app.domain.engine.RuleConflictPreview
 import com.blacklist.app.domain.engine.RuleConflictWinner
@@ -706,6 +707,23 @@ private fun DraftDecisionPreviewCard(result: EnforcementDecision) {
                     color = content
                 )
             }
+            HorizontalDivider(color = content.copy(alpha = 0.25f))
+            Text(
+                stringResource(R.string.draft_decision_trace_title),
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.SemiBold,
+                color = content
+            )
+            val trace = remember(result.explainable.backend) {
+                DecisionTraceInterpreter.forDecision(result)
+            }
+            trace.entries.forEach { entry ->
+                Text(
+                    "• ${decisionTraceStageLabel(entry.stage)} — ${decisionTraceStateLabel(entry.state)}",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = content
+                )
+            }
             Text(
                 stringResource(R.string.draft_decision_preview_read_only),
                 style = MaterialTheme.typography.labelSmall,
@@ -714,5 +732,34 @@ private fun DraftDecisionPreviewCard(result: EnforcementDecision) {
         }
     }
 }
+
+@Composable
+private fun decisionTraceStageLabel(stage: DecisionTraceInterpreter.Stage): String = stringResource(
+    when (stage) {
+        DecisionTraceInterpreter.Stage.EMERGENCY -> R.string.draft_decision_trace_emergency
+        DecisionTraceInterpreter.Stage.BEHAVIOR_SIGNALS -> R.string.draft_decision_trace_behavior
+        DecisionTraceInterpreter.Stage.TEMPORARY_ALLOW -> R.string.draft_decision_trace_temporary_allow
+        DecisionTraceInterpreter.Stage.WHITELIST -> R.string.draft_decision_trace_whitelist
+        DecisionTraceInterpreter.Stage.TEMPORARY_EXACT_BLOCK -> R.string.draft_decision_trace_temporary_block
+        DecisionTraceInterpreter.Stage.PERSISTENT_BLACKLIST -> R.string.draft_decision_trace_blacklist
+        DecisionTraceInterpreter.Stage.LEGACY_BLACKLIST -> R.string.draft_decision_trace_legacy
+        DecisionTraceInterpreter.Stage.OUTBOUND_CALLBACK_GRACE -> R.string.draft_decision_trace_outbound_grace
+        DecisionTraceInterpreter.Stage.EMERGENCY_CALLBACK_GRACE -> R.string.draft_decision_trace_emergency_grace
+        DecisionTraceInterpreter.Stage.SCHEDULE -> R.string.draft_decision_trace_schedule
+        DecisionTraceInterpreter.Stage.TEMPORARY_FIREWALL -> R.string.draft_decision_trace_firewall
+        DecisionTraceInterpreter.Stage.BROAD_POLICY -> R.string.draft_decision_trace_policy
+        DecisionTraceInterpreter.Stage.REPUTATION_AND_RISK -> R.string.draft_decision_trace_risk
+        DecisionTraceInterpreter.Stage.DEFAULT_ALLOW -> R.string.draft_decision_trace_default_allow
+    }
+)
+
+@Composable
+private fun decisionTraceStateLabel(state: DecisionTraceInterpreter.State): String = stringResource(
+    when (state) {
+        DecisionTraceInterpreter.State.PASSED -> R.string.draft_decision_trace_passed
+        DecisionTraceInterpreter.State.DECISIVE -> R.string.draft_decision_trace_decisive
+        DecisionTraceInterpreter.State.NOT_REACHED -> R.string.draft_decision_trace_not_reached
+    }
+)
 
 private const val MAX_PREVIEW_REASONS = 4

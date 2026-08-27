@@ -465,4 +465,23 @@
     <string name="draft_decision_preview_result_allow">سيُسمح بهذا الاتصال</string>
     <string name="draft_decision_preview_matched_rules">معرّفات القواعد المطابقة: %1$s</string>
     <string name="draft_decision_preview_read_only">نتيجة اختبار فقط — لا يُجرى اتصال ولا تُحفظ قاعدة أو سجل أو إشعار أو رقم.</string>
+    <!-- أثر أسبقية قرار المسودة -->
+    <string name="draft_decision_trace_title">مسار القرار</string>
+    <string name="draft_decision_trace_passed">فُحصت؛ بلا قرار</string>
+    <string name="draft_decision_trace_decisive">المرحلة الحاسمة</string>
+    <string name="draft_decision_trace_not_reached">لم تُقيّم بعد الحسم</string>
+    <string name="draft_decision_trace_emergency">حماية الطوارئ</string>
+    <string name="draft_decision_trace_behavior">إشارات السلوك</string>
+    <string name="draft_decision_trace_temporary_allow">السماح المؤقت</string>
+    <string name="draft_decision_trace_whitelist">القائمة البيضاء</string>
+    <string name="draft_decision_trace_temporary_block">حظر دقيق مؤقت</string>
+    <string name="draft_decision_trace_blacklist">القائمة السوداء الدائمة</string>
+    <string name="draft_decision_trace_legacy">القائمة السوداء القديمة</string>
+    <string name="draft_decision_trace_outbound_grace">مهلة معاودة الاتصال الصادر</string>
+    <string name="draft_decision_trace_emergency_grace">مهلة معاودة اتصال الطوارئ</string>
+    <string name="draft_decision_trace_schedule">الجدول والاستثناء</string>
+    <string name="draft_decision_trace_firewall">الجدار الناري المؤقت</string>
+    <string name="draft_decision_trace_policy">سياسة المكالمات العامة</string>
+    <string name="draft_decision_trace_risk">السمعة والمخاطر</string>
+    <string name="draft_decision_trace_default_allow">السماح الافتراضي</string>
 </resources>

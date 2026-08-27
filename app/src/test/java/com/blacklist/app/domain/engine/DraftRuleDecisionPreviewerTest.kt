@@ -24,6 +24,16 @@ class DraftRuleDecisionPreviewerTest {
 
         assertEquals(Decision.SILENCE, decision.decision)
         assertEquals("blacklist_silence", decision.explainable.backend)
+        val trace = DecisionTraceInterpreter.forDecision(decision)
+        assertEquals(DecisionTraceInterpreter.Stage.PERSISTENT_BLACKLIST, trace.decisiveStage)
+        assertEquals(
+            DecisionTraceInterpreter.State.DECISIVE,
+            trace.entries.single { it.stage == DecisionTraceInterpreter.Stage.PERSISTENT_BLACKLIST }.state
+        )
+        assertEquals(
+            DecisionTraceInterpreter.State.NOT_REACHED,
+            trace.entries.single { it.stage == DecisionTraceInterpreter.Stage.LEGACY_BLACKLIST }.state
+        )
         assertTrue(snapshot.rules.isEmpty())
     }
 
@@ -40,6 +50,16 @@ class DraftRuleDecisionPreviewerTest {
 
         assertEquals(Decision.ALLOW, decision.decision)
         assertEquals("whitelist", decision.explainable.backend)
+        val trace = DecisionTraceInterpreter.forDecision(decision)
+        assertEquals(DecisionTraceInterpreter.Stage.WHITELIST, trace.decisiveStage)
+        assertEquals(
+            DecisionTraceInterpreter.State.PASSED,
+            trace.entries.single { it.stage == DecisionTraceInterpreter.Stage.TEMPORARY_ALLOW }.state
+        )
+        assertEquals(
+            DecisionTraceInterpreter.State.NOT_REACHED,
+            trace.entries.single { it.stage == DecisionTraceInterpreter.Stage.PERSISTENT_BLACKLIST }.state
+        )
     }
 
     @Test
@@ -54,6 +74,9 @@ class DraftRuleDecisionPreviewerTest {
 
         assertEquals(Decision.ALLOW, decision.decision)
         assertEquals("emergency", decision.explainable.backend)
+        val trace = DecisionTraceInterpreter.forDecision(decision)
+        assertEquals(DecisionTraceInterpreter.Stage.EMERGENCY, trace.decisiveStage)
+        assertTrue(trace.entries.drop(1).all { it.state == DecisionTraceInterpreter.State.NOT_REACHED })
     }
 
     private fun previewer(snapshot: PolicySnapshotStore.Snapshot): DraftRuleDecisionPreviewer =

@@ -480,4 +480,23 @@
     <string name="draft_decision_preview_result_allow">Would allow this call</string>
     <string name="draft_decision_preview_matched_rules">Matched rule IDs: %1$s</string>
     <string name="draft_decision_preview_read_only">Test-only result — no call, rule, log, notification, or number is saved.</string>
+    <!-- Draft decision precedence trace -->
+    <string name="draft_decision_trace_title">Decision path</string>
+    <string name="draft_decision_trace_passed">checked; no decision</string>
+    <string name="draft_decision_trace_decisive">decisive</string>
+    <string name="draft_decision_trace_not_reached">not evaluated after decision</string>
+    <string name="draft_decision_trace_emergency">Emergency safeguard</string>
+    <string name="draft_decision_trace_behavior">Behavior signals</string>
+    <string name="draft_decision_trace_temporary_allow">Temporary allow</string>
+    <string name="draft_decision_trace_whitelist">Whitelist</string>
+    <string name="draft_decision_trace_temporary_block">Temporary exact block</string>
+    <string name="draft_decision_trace_blacklist">Persistent blacklist</string>
+    <string name="draft_decision_trace_legacy">Legacy blacklist</string>
+    <string name="draft_decision_trace_outbound_grace">Outbound callback grace</string>
+    <string name="draft_decision_trace_emergency_grace">Emergency callback grace</string>
+    <string name="draft_decision_trace_schedule">Schedule and exception</string>
+    <string name="draft_decision_trace_firewall">Temporary firewall</string>
+    <string name="draft_decision_trace_policy">Broad call policy</string>
+    <string name="draft_decision_trace_risk">Reputation and risk</string>
+    <string name="draft_decision_trace_default_allow">Default allow</string>
 </resources>

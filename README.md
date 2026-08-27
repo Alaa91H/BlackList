@@ -171,6 +171,12 @@ The rule editor can also test one **user-entered** phone number against a tempor
 
 The test input is capped at 64 characters and exists only for the current editor session. It never places a call, saves a rule, writes a blocked-call event, posts a notification, or retains the supplied number. Its behavior engine is new for every preview, so testing cannot change the live repeated-call or burst signals. Changing the draft, its enforcement, or the test number clears the previous result.
 
+### Inspect the precedence path
+
+Every draft preview also shows the local decision path in the firewall's actual precedence order. A stage is marked **checked; no decision**, **decisive**, or **not evaluated after decision**. The trace covers emergency protection, behavioral signals, temporary allows, whitelist, temporary and persistent blacklist rules, legacy blocks, callback-grace safeguards, schedules, the temporary firewall, broad caller policies, reputation/risk, and default allow.
+
+The trace is derived from the preview's final local decision. It does not run a second evaluation, query Room or Contacts, call Telecom, mutate policy, record a behavior attempt, or run inside `CallScreeningService`. It is an editor explanation, not a claim about Android system UI, Call Log, notifications, VoIP coverage, Root, or Shizuku behaviour.
+
 Existing rules are migrated as **Reject call**. Encrypted local backups now retain the selected action, while backups from earlier releases safely restore rules as **Reject call**.
 
 ---

@@ -2,6 +2,25 @@
 
 All notable changes to BlackList are documented in this file. The project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.21.0] - 2026-08-27
+
+### Added
+
+- **Step-by-step draft decision path.** The in-editor draft preview now shows every local policy stage in the actual firewall precedence order. Each stage is labeled as checked with no decision, decisive, or not evaluated after an earlier decisive result.
+- **Decisive-stage explanation.** Users can see whether an emergency safeguard, temporary allow, whitelist, temporary block, permanent blacklist rule, legacy block, callback grace, schedule, temporary firewall, broad policy, reputation/risk, or default allow produced the preview result.
+
+### Changed
+
+- **Trace derived from the final decision only.** The new read-only interpreter maps the preview's existing backend result to the stable evaluation order; it does not re-evaluate policy, access storage, or run on the CallScreeningService path.
+
+### Quality
+
+- Added trace assertions for permanent silent-rule decisions, whitelist precedence, emergency precedence, and stages that are not evaluated after an earlier decisive safeguard.
+
+### Privacy
+
+- The decision path is limited to the user-triggered, current-session draft preview. It adds no call, persistence, log, notification, permission, Call Log/SMS or Contacts read, worker, network request, Root/Shizuku dependency, hidden-API bypass, ADB command, or call-screening hot-path I/O.
+
 ## [1.20.0] - 2026-08-27
 
 ### Added
@@ -375,6 +394,7 @@ All notable changes to BlackList are documented in this file. The project follow
 
 - Production-grade local call-firewall foundation with rule matching, risk scoring, behavior signals, reputation tracking, temporary protection controls, diagnostics, and a decision simulator.
 
+[1.21.0]: https://github.com/Alaa91H/BlackList/compare/v1.20.0...v1.21.0
 [1.20.0]: https://github.com/Alaa91H/BlackList/compare/v1.19.0...v1.20.0
 [1.19.0]: https://github.com/Alaa91H/BlackList/compare/v1.18.0...v1.19.0
 [1.18.0]: https://github.com/Alaa91H/BlackList/compare/v1.17.0...v1.18.0
