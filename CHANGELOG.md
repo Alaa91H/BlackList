@@ -2,6 +2,25 @@
 
 All notable changes to BlackList are documented in this file. The project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.7.0] - 2026-08-27
+
+### Added
+
+- **Private blocked-call history.** Users can now choose to keep blocked calls exclusively in BlackList’s private local log, preventing those calls from appearing in Android’s shared call history. The in-app blocked log remains available with the timestamp and explainable decision reason.
+
+### Changed
+
+- **Explicit transparency and privacy control.** The default remains transparent: blocked calls continue to appear in Android’s call log. Enabling the new setting affects only calls BlackList blocks; allowed and silenced calls preserve their normal system history.
+- **Portable privacy preference.** The setting is included in the existing encrypted policy backup and restore flow.
+
+### Fixed
+
+- Added a non-destructive Room migration for the new privacy preference and regression tests that prevent accidental hiding of allowed or silenced calls.
+
+### Privacy
+
+- The optional private-history mode requires no new permission, network access, cloud service, analytics SDK, or external data source.
+
 ## [1.6.0] - 2026-08-27
 
 ### Added
@@ -50,6 +69,7 @@ All notable changes to BlackList are documented in this file. The project follow
 
 - Production-grade local call-firewall foundation with rule matching, risk scoring, behavior signals, reputation tracking, temporary protection controls, diagnostics, and a decision simulator.
 
+[1.7.0]: https://github.com/Alaa91H/BlackList/compare/v1.6.0...v1.7.0
 [1.6.0]: https://github.com/Alaa91H/BlackList/compare/v1.5.0...v1.6.0
 [1.5.0]: https://github.com/Alaa91H/BlackList/compare/v1.4.0...v1.5.0
 [1.4.0]: https://github.com/Alaa91H/BlackList/releases/tag/v1.4.0

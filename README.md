@@ -21,11 +21,16 @@
 
 Most call blockers send your contacts and call history to remote servers. **BlackList never does.**
 
-### New in 1.6.0
+### New in 1.7.0
+
+- **Private blocked-call history** — optionally keep blocked calls in BlackList’s private local log only, hiding them from Android’s shared call history. The default remains transparent: blocked calls continue to appear in the system log unless you opt in.
+- **Clear privacy boundary** — the setting applies only to calls BlackList blocks. Allowed and silenced calls retain their normal Android history, and the private in-app blocked log remains available with the decision reason.
+- **Portable protection settings** — the preference is safely carried by the encrypted policy backup and restore flow, with no new permission or network access.
+
+### Recent safety hardening
 
 - **Emergency callback grace** — after Android reports an outgoing emergency call, BlackList opens a short local-only allowance for a dispatcher or responder to call back. Explicit blacklist rules still win; the allowance only protects against broad policies such as schedules, block-all modes, and unknown/private filtering.
-- **Durable safety state** — the short expiry is persisted locally, included in encrypted backups when valid, and also held in memory so a rapid callback never waits for database refresh.
-- **Recent platform hardening** — Android Telecom caller verification contributes to local risk scoring, regional emergency short numbers remain protected, and local number parsing follows the configured device region.
+- **Regional and platform awareness** — Android Telecom caller verification contributes to local risk scoring, regional emergency short numbers remain protected, and local number parsing follows the configured device region.
 
 - **Room Database only** — everything stays on your device.
 - **Zero network permission** — the app cannot exfiltrate data even if it wanted to.
@@ -95,7 +100,7 @@ com.blacklist.app
    Local risk and behavior signals (including failed network verification)? → BLOCK only at the configured threshold
    otherwise → ALLOW
    ```
-4. If blocked → `CallResponse.Builder().setDisallowCall(true).setRejectCall(true)` + optional log + optional notification.
+4. If blocked → `CallResponse.Builder().setDisallowCall(true).setRejectCall(true)` + optional private BlackList log + optional notification. By default the Android call log is retained; **Settings → Privacy → Private blocked-call history** can hide blocked calls from the shared system log while keeping the in-app record.
 
 ---
 
@@ -181,6 +186,7 @@ BlackList/
 - [x] Exact, prefix, range, country, temporary, and other local rule types in the firewall engine.
 - [x] Emergency short-number safeguard and local emergency callback grace for broad-policy protection.
 - [x] Encrypted local backup and restore for policy data only; call history and diagnostics remain excluded.
+- [x] Optional private blocked-call history, retaining the explainable log locally while suppressing only blocked calls from Android’s shared call log.
 - [ ] Per-number schedule override.
 - [ ] Home-screen widget with today’s statistics.
 - [ ] Optional offline reputation-list import with transparent provenance and no background network access.

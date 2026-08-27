@@ -203,6 +203,16 @@ fun SettingsScreen(nav: NavController) {
                 }
             }
 
+            Text(stringResource(R.string.settings_privacy), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
+            ElevatedCard(shape = RoundedCornerShape(20.dp)) {
+                SettingSwitch(
+                    stringResource(R.string.settings_private_blocked_history),
+                    stringResource(R.string.settings_private_blocked_history_desc),
+                    Icons.Filled.VisibilityOff,
+                    settings?.hideBlockedCallsFromSystemLog ?: false
+                ) { vm.setPrivateBlockedHistory(it) }
+            }
+
             Text(stringResource(R.string.settings_permissions), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
             ElevatedCard(shape = RoundedCornerShape(20.dp)) {
                 Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {

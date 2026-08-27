@@ -153,6 +153,7 @@ class EncryptedBackupService(
         .put("blockPrivate", blockPrivate)
         .put("blockAllExceptWhitelist", blockAllExceptWhitelist)
         .put("showBlockedNotification", showBlockedNotification)
+        .put("hideBlockedCallsFromSystemLog", hideBlockedCallsFromSystemLog)
         .put("activeProfileId", activeProfileId)
         .put("themeMode", themeMode)
         .put("emergencyCallbackGraceUntil", emergencyCallbackGraceUntil)
@@ -204,6 +205,7 @@ class EncryptedBackupService(
             blockPrivate = json.optBoolean("blockPrivate", true),
             blockAllExceptWhitelist = json.optBoolean("blockAllExceptWhitelist", false),
             showBlockedNotification = json.optBoolean("showBlockedNotification", true),
+            hideBlockedCallsFromSystemLog = json.optBoolean("hideBlockedCallsFromSystemLog", false),
             activeProfileId = activeProfileId,
             themeMode = themeMode,
             emergencyCallbackGraceUntil = graceUntil,

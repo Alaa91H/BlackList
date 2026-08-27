@@ -189,6 +189,8 @@
     <string name="settings_notification_deduplication_desc">Group similar notifications</string>
     <string name="settings_notification_rate_limit">Rate Limiting</string>
     <string name="settings_notification_rate_limit_desc">Limit notifications per time period</string>
+    <string name="settings_private_blocked_history">Private blocked-call history</string>
+    <string name="settings_private_blocked_history_desc">Keep blocked calls in BlackList only and hide them from Android’s shared call log. Your private BlackList log remains available.</string>
 
     <!-- About -->
     <string name="about_title">About</string>

@@ -131,6 +131,8 @@
     <string name="settings_language_system">لغة النظام</string>
     <string name="settings_privacy">الخصوصية</string>
     <string name="settings_privacy_desc">جميع البيانات تبقى على جهازك فقط. بدون سحابة، بدون تتبع، بدون تحليلات.</string>
+    <string name="settings_private_blocked_history">سجل خاص للمكالمات المحظورة</string>
+    <string name="settings_private_blocked_history_desc">احتفظ بالمكالمات المحظورة داخل BlackList فقط وأخفها من سجل مكالمات أندرويد المشترك. يظل سجل BlackList الخاص متاحاً لك.</string>
     <string name="settings_export">تصدير البيانات</string>
     <string name="settings_import">استيراد البيانات</string>
 

@@ -9,6 +9,7 @@ import com.blacklist.app.data.local.entity.BlockedCallLogEntity
 import com.blacklist.app.data.local.entity.SecurityEventEntity
 import com.blacklist.app.di.ServiceLocator
 import com.blacklist.app.domain.engine.EmergencyCallbackGrace
+import com.blacklist.app.domain.enforcement.BlockedCallLogPrivacyPolicy
 import com.blacklist.app.domain.events.FirewallEvent
 import com.blacklist.app.domain.events.FirewallEventBus
 import com.blacklist.app.domain.model.Decision
@@ -111,11 +112,13 @@ class BlackListCallScreeningService : CallScreeningService() {
 
     private fun respond(callDetails: Call.Details, decision: EnforcementDecision) {
         try {
+            val settings = ServiceLocator.providePolicySnapshotStore(applicationContext).snapshot().settings
+            val skipSystemCallLog = BlockedCallLogPrivacyPolicy.skipSystemCallLog(decision.decision, settings)
             val response = when (decision.decision) {
                 Decision.BLOCK -> CallResponse.Builder()
                     .setDisallowCall(true)
                     .setRejectCall(true)
-                    .setSkipCallLog(false)
+                    .setSkipCallLog(skipSystemCallLog)
                     // BlackList owns blocked-call notifications; suppress the
                     // system fallback so a muted configuration stays muted.
                     .setSkipNotification(true)
