@@ -379,6 +379,15 @@
     <!-- Quick Settings tile -->
     <string name="tile_temporary_block">Temporary call block</string>
     <string name="tile_temporary_block_active">Blocking all calls for 1 hour</string>
+    <string name="settings_quick_access">Quick access</string>
+    <string name="settings_temporary_block_tile">Temporary call block tile</string>
+    <string name="settings_temporary_block_tile_desc">Add a Quick Settings toggle for the existing one-hour local block-all override. Tap it again to cancel; permanent rules and your call log are unchanged.</string>
+    <string name="settings_temporary_block_tile_add">Add to Quick Settings</string>
+    <string name="settings_temporary_block_tile_manual_add">Open Quick Settings, choose Edit, then add “Temporary call block”.</string>
+    <string name="settings_temporary_block_tile_added">Temporary call block was added to Quick Settings.</string>
+    <string name="settings_temporary_block_tile_already_added">Temporary call block is already in Quick Settings.</string>
+    <string name="settings_temporary_block_tile_not_added">Temporary call block was not added.</string>
+    <string name="settings_temporary_block_tile_request_error">Could not request the Quick Settings tile. You can add it from the Quick Settings edit menu.</string>
 
     <!-- Protection profiles -->
     <string name="settings_protection_profiles">Protection profiles</string>

@@ -5,6 +5,7 @@ import android.service.quicksettings.TileService
 import com.blacklist.app.R
 import com.blacklist.app.di.ServiceLocator
 import com.blacklist.app.domain.engine.TemporaryFirewall
+import com.blacklist.app.domain.quicksettings.TemporaryBlockTilePolicy
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -26,6 +27,15 @@ class TemporaryBlockTileService : TileService() {
 
     override fun onClick() {
         super.onClick()
+        val toggle = Runnable(::toggleTemporaryBlock)
+        if (TemporaryBlockTilePolicy.requiresUnlock(isLocked, isSecure)) {
+            unlockAndRun(toggle)
+        } else {
+            toggle.run()
+        }
+    }
+
+    private fun toggleTemporaryBlock() {
         scope.launch {
             val repository = ServiceLocator.provideRepository(applicationContext)
             if (repository.isTemporaryBlockAllActive()) {

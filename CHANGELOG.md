@@ -2,6 +2,30 @@
 
 All notable changes to BlackList are documented in this file. The project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.15.0] - 2026-08-27
+
+### Added
+
+- **User-confirmed Quick Settings placement.** Settings → Quick access now gives the existing Temporary call block tile a discoverable add path. Android 13+ opens the platform placement prompt only when the user presses the explicit button; Android 7–12 shows the corresponding manual-add instruction.
+- **Localized result feedback.** English and Arabic feedback distinguishes added, already-added, declined and unavailable placement outcomes without exposing system error details.
+
+### Changed
+
+- **Clear, reversible one-hour shortcut.** The Quick Settings tile remains a toggle for the existing local Temporary Block All override: a first tap activates it for one hour and a second tap cancels it. It does not modify any permanent rule, protection profile, whitelist, reputation verdict, notification setting, local history or Android call log.
+- **Platform-native semantics.** The declared TileService now uses a dedicated monochrome tile icon, declares its toggleable state and is categorized as a privacy control where the device UI supports that metadata.
+
+### Fixed
+
+- **Secure lock-screen handling.** A tap from a secured locked device now requests an unlock before it can change the temporary blocking override; unlocked and unsecured-device behavior stays immediate.
+
+### Quality
+
+- Added focused unit coverage for every secured/locked combination behind the tile’s unlock decision.
+
+### Privacy
+
+- The discovery flow reuses the existing local TileService and Android system placement UI. It adds no permission, network request, cloud service, analytics event, tracker, worker, timer, boot receiver, stored setting, backup field or call-screening-path I/O.
+
 ## [1.14.0] - 2026-08-27
 
 ### Added
@@ -240,6 +264,7 @@ All notable changes to BlackList are documented in this file. The project follow
 
 - Production-grade local call-firewall foundation with rule matching, risk scoring, behavior signals, reputation tracking, temporary protection controls, diagnostics, and a decision simulator.
 
+[1.15.0]: https://github.com/Alaa91H/BlackList/compare/v1.14.0...v1.15.0
 [1.14.0]: https://github.com/Alaa91H/BlackList/compare/v1.13.0...v1.14.0
 [1.13.0]: https://github.com/Alaa91H/BlackList/compare/v1.12.0...v1.13.0
 [1.12.0]: https://github.com/Alaa91H/BlackList/compare/v1.11.0...v1.12.0

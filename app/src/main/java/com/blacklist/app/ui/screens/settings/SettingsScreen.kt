@@ -1,5 +1,10 @@
 package com.blacklist.app.ui.screens.settings
 
+import android.app.StatusBarManager
+import android.content.ComponentName
+import android.graphics.drawable.Icon
+import android.os.Build
+
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
@@ -28,8 +33,10 @@ import com.blacklist.app.di.ServiceLocator
 import com.blacklist.app.di.ViewModelFactory
 import com.blacklist.app.domain.importexport.CsvListTarget
 import com.blacklist.app.domain.retention.BlockedCallLogRetentionPolicy
+import com.blacklist.app.service.TemporaryBlockTileService
 import com.blacklist.app.ui.navigation.Routes
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
 import java.text.DateFormat
 import java.util.Date
 
@@ -45,6 +52,7 @@ fun SettingsScreen(nav: NavController) {
     val settings by vm.settings.collectAsState()
     val blockedNumbers by vm.blockedNumbers.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
+    val coroutineScope = rememberCoroutineScope()
     var pendingAction by remember { mutableStateOf<BackupUiAction?>(null) }
     var pendingRestoreUri by remember { mutableStateOf<android.net.Uri?>(null) }
     var exportPassphrase by remember { mutableStateOf<CharArray?>(null) }
@@ -86,6 +94,31 @@ fun SettingsScreen(nav: NavController) {
     LaunchedEffect(settings?.showBlockedNotification) {
         settings?.showBlockedNotification?.let { enabled ->
             notificationManager.updatePolicy(notificationManager.getPolicy().copy(enabled = enabled))
+        }
+    }
+
+    fun requestTemporaryBlockTile() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return
+        val statusBarManager = context.getSystemService(StatusBarManager::class.java)
+        if (statusBarManager == null) {
+            coroutineScope.launch {
+                snackbarHostState.showSnackbar(context.getString(R.string.settings_temporary_block_tile_request_error))
+            }
+            return
+        }
+        statusBarManager.requestAddTileService(
+            ComponentName(context, TemporaryBlockTileService::class.java),
+            context.getString(R.string.tile_temporary_block),
+            Icon.createWithResource(context, R.drawable.ic_temporary_block_tile),
+            context.mainExecutor
+        ) { result ->
+            val message = when (result) {
+                StatusBarManager.TILE_ADD_REQUEST_RESULT_TILE_ADDED -> R.string.settings_temporary_block_tile_added
+                StatusBarManager.TILE_ADD_REQUEST_RESULT_TILE_ALREADY_ADDED -> R.string.settings_temporary_block_tile_already_added
+                StatusBarManager.TILE_ADD_REQUEST_RESULT_TILE_NOT_ADDED -> R.string.settings_temporary_block_tile_not_added
+                else -> R.string.settings_temporary_block_tile_request_error
+            }
+            coroutineScope.launch { snackbarHostState.showSnackbar(context.getString(message)) }
         }
     }
 
@@ -230,6 +263,26 @@ fun SettingsScreen(nav: NavController) {
                     SettingSwitch(stringResource(R.string.home_block_all_except_whitelist), stringResource(R.string.settings_block_all_except_desc), Icons.Filled.DoNotDisturbOn, settings?.blockAllExceptWhitelist ?: false) { vm.setBlockAllExcept(it) }
                     HorizontalDivider()
                     SettingSwitch(stringResource(R.string.settings_outbound_callback_grace), stringResource(R.string.settings_outbound_callback_grace_desc), Icons.Filled.PersonOff, settings?.allowOutboundCallbackGrace ?: false) { vm.setOutboundCallbackGrace(it) }
+                }
+            }
+
+            Text(stringResource(R.string.settings_quick_access), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
+            ElevatedCard(shape = RoundedCornerShape(20.dp)) {
+                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Icon(Icons.Filled.DoNotDisturbOn, null, tint = MaterialTheme.colorScheme.primary)
+                        Column(Modifier.weight(1f)) {
+                            Text(stringResource(R.string.settings_temporary_block_tile), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Medium)
+                            Text(stringResource(R.string.settings_temporary_block_tile_desc), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    }
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                        OutlinedButton(onClick = ::requestTemporaryBlockTile, modifier = Modifier.fillMaxWidth()) {
+                            Text(stringResource(R.string.settings_temporary_block_tile_add))
+                        }
+                    } else {
+                        Text(stringResource(R.string.settings_temporary_block_tile_manual_add), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
                 }
             }
 

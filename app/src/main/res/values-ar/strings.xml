@@ -335,6 +335,15 @@
     <!-- اختصار الإعدادات السريعة -->
     <string name="tile_temporary_block">حظر المكالمات المؤقت</string>
     <string name="tile_temporary_block_active">حظر كل المكالمات لمدة ساعة</string>
+    <string name="settings_quick_access">وصول سريع</string>
+    <string name="settings_temporary_block_tile">اختصار حظر المكالمات المؤقت</string>
+    <string name="settings_temporary_block_tile_desc">أضف مفتاح الإعدادات السريعة للحظر المحلي القائم لمدة ساعة. اضغطه مرة أخرى للإلغاء؛ لا تتغير القواعد الدائمة أو سجل المكالمات.</string>
+    <string name="settings_temporary_block_tile_add">إضافة إلى الإعدادات السريعة</string>
+    <string name="settings_temporary_block_tile_manual_add">افتح الإعدادات السريعة، واختر «تعديل»، ثم أضف «حظر المكالمات المؤقت».</string>
+    <string name="settings_temporary_block_tile_added">تمت إضافة حظر المكالمات المؤقت إلى الإعدادات السريعة.</string>
+    <string name="settings_temporary_block_tile_already_added">حظر المكالمات المؤقت موجود بالفعل في الإعدادات السريعة.</string>
+    <string name="settings_temporary_block_tile_not_added">لم تتم إضافة حظر المكالمات المؤقت.</string>
+    <string name="settings_temporary_block_tile_request_error">تعذر طلب اختصار الإعدادات السريعة. يمكنك إضافته من قائمة تعديل الإعدادات السريعة.</string>
 
     <!-- ملفات الحماية -->
     <string name="settings_protection_profiles">ملفات الحماية</string>

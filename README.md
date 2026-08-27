@@ -21,6 +21,12 @@
 
 Most call blockers send your contacts and call history to remote servers. **BlackList never does.**
 
+### New in 1.15.0
+
+- **User-controlled Quick Settings placement** — **Settings → Quick access** now provides an explicit path to add the existing **Temporary call block** tile. On Android 13 and later, the app asks the system to show its one-tap placement prompt; Android 7–12 users receive the equivalent manual-add guidance.
+- **One-hour reversible override, now discoverable** — the tile enables the existing local **Temporary Block All** override for one hour and cancels it on a second tap. It changes no permanent rule, profile, whitelist, reputation verdict, notification preference, or call history; a secured locked device must be unlocked before the override can change.
+- **Platform-native and private** — the tile uses Android’s built-in Quick Settings TileService and a user-confirmed system prompt. It adds no runtime permission, network operation, worker, boot receiver, timer, cloud service, analytics, tracker, or call-screening-path I/O.
+
 ### New in 1.14.0
 
 - **User-controlled local history expiry** — in **Settings → Privacy**, retain BlackList’s in-app blocked-call history forever (the default) or for the most recent **7, 30, 90 or 365 days**.
@@ -76,6 +82,7 @@ Most call blockers send your contacts and call history to remote servers. **Blac
 | **Block All Except Whitelist** | Nuclear mode — only whitelisted numbers ring. |
 | **Opt-in Callback Grace** | After you dial a valid number, allow only that exact number to call back for 15 minutes; never overrides an explicit block. |
 | **Advanced Scheduling** | Time-based rules with day-of-week bitmask and per-schedule trusted caller exceptions. Example: *Block all except whitelist 22:00–06:00 Mon–Fri while allowing an on-call number*. Overnight spans supported. |
+| **Temporary Block Quick Tile** | User-added Quick Settings toggle for the existing one-hour local block-all override. Add it from **Settings → Quick access** (Android 13+) or via the Quick Settings edit menu (Android 7–12); a second tap cancels it. |
 | **Home-screen Stats Widget** | Compact local counts for blocked calls today and in total, with manual refresh and direct opening of the app. No number, contact, or call-reason content is exposed. |
 | **Offline Reputation Lists** | Optional user-selected, bounded CSV lists with auditable source metadata and SHA-256 fingerprint. No URL fetching, automatic updates, cloud sync, or retained storage access. Exact E.164 scores from 80–100 can block only after all manual and safety policies. |
 | **Blocked Log** | Professional local timeline of blocked calls with number, display name, reason, timestamp, and recovery actions. Retain it forever (default), or automatically remove only entries older than 7, 30, 90 or 365 days; this never changes screening rules or Android’s shared call log. |
