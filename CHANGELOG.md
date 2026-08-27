@@ -2,6 +2,30 @@
 
 All notable changes to BlackList are documented in this file. The project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.13.0] - 2026-08-27
+
+### Added
+
+- **Confirmed false-positive recovery.** The Blocked Log now asks for explicit confirmation before saving a durable local `NOT_SPAM` verdict for an eligible blocked caller.
+- **Clear local feedback.** The recovery flow reports concise success, invalid-number and retry-safe failure states in English and Arabic without exposing raw internal exceptions.
+
+### Changed
+
+- **Deliberate scope for user verdicts.** A confirmed `NOT_SPAM` verdict suppresses imported offline-reputation scoring for the same normalized caller. It does not create a whitelist entry, bypass unknown/private or block-all policies, or weaken emergency, manual-rule, callback-grace or schedule precedence.
+- **Unified number identity.** False-positive recovery now uses the same regional `PhoneNumberNormalizer` configuration as call screening, preserving the identity key used by local caller reputation and offline reputation matching.
+
+### Fixed
+
+- **Explicit feedback instead of soft decay.** The former Blocked Log action only recorded an allowed-call counter after stripping the number; it could leave imported reputation active and use a different stored key. It now persists the requested local verdict directly and keeps caller formatting intact through shared normalization.
+
+### Quality
+
+- Added an isolated `ReputationEngine` regression test proving that `NOT_SPAM` is persisted as an explicit, durable local verdict, alongside the existing policy-precedence coverage.
+
+### Privacy
+
+- Recovery is user initiated and runs only after the call decision and local log write. It adds no network request, remote report, analytics event, background work, runtime permission or call-screening-path I/O.
+
 ## [1.12.0] - 2026-08-27
 
 ### Added
@@ -191,6 +215,7 @@ All notable changes to BlackList are documented in this file. The project follow
 
 - Production-grade local call-firewall foundation with rule matching, risk scoring, behavior signals, reputation tracking, temporary protection controls, diagnostics, and a decision simulator.
 
+[1.13.0]: https://github.com/Alaa91H/BlackList/compare/v1.12.0...v1.13.0
 [1.12.0]: https://github.com/Alaa91H/BlackList/compare/v1.11.0...v1.12.0
 [1.11.0]: https://github.com/Alaa91H/BlackList/compare/v1.10.0...v1.11.0
 [1.10.0]: https://github.com/Alaa91H/BlackList/compare/v1.9.0...v1.10.0

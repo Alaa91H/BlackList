@@ -21,7 +21,11 @@ class ViewModelFactory(
             modelClass.isAssignableFrom(HomeViewModel::class.java) -> HomeViewModel(repo, appContext!!) as T
             modelClass.isAssignableFrom(BlacklistViewModel::class.java) -> BlacklistViewModel(repo) as T
             modelClass.isAssignableFrom(WhitelistViewModel::class.java) -> WhitelistViewModel(repo) as T
-            modelClass.isAssignableFrom(BlockedLogViewModel::class.java) -> BlockedLogViewModel(repo) as T
+            modelClass.isAssignableFrom(BlockedLogViewModel::class.java) -> BlockedLogViewModel(
+                repo = repo,
+                normalizer = ServiceLocator.provideNormalizer(appContext!!),
+                reputationEngine = ServiceLocator.provideReputationEngine(appContext!!)
+            ) as T
             modelClass.isAssignableFrom(ScheduleViewModel::class.java) -> ScheduleViewModel(repo) as T
             modelClass.isAssignableFrom(SettingsViewModel::class.java) -> SettingsViewModel(repo) as T
             modelClass.isAssignableFrom(DecisionSimulatorViewModel::class.java) -> DecisionSimulatorViewModel(appContext!!) as T

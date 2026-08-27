@@ -281,8 +281,12 @@
     <string name="fp_not_spam">ليست مكالمة مزعجة</string>
     <string name="fp_always_allow">السماح دائماً</string>
     <string name="fp_temp_allow">سماح ساعة</string>
-    <string name="fp_action_title">الإبلاغ عن حظر خاطئ</string>
-    <string name="fp_action_desc">وضع علامة "ليست مزعجة" على %1$s. يحسّن ذلك القرارات المستقبلية.</string>
+    <string name="fp_action_title">تأكيد الحظر الخاطئ</string>
+    <string name="fp_action_desc">ضع علامة «ليست مزعجة» على %1$s. يُحفظ حكمك محلياً ويتغلب على السمعة المستوردة لهذا الرقم، لكنه لا يضيفه إلى القائمة البيضاء ولا يتجاوز سياسات الحظر العامة.</string>
+    <string name="fp_not_spam_confirm">حفظ الحكم المحلي</string>
+    <string name="fp_not_spam_saved">حُفظت المكالمة كغير مزعجة. سيتغلب حكمك المحلي على السمعة المستوردة لهذا المتصل.</string>
+    <string name="fp_not_spam_invalid">لا يحتوي سجل المكالمة المحظورة على رقم هاتف صالح للاستخدام.</string>
+    <string name="fp_not_spam_failed">تعذر حفظ الحكم المحلي. حاول مرة أخرى.</string>
     <string name="fp_temp_allow_title">سماح مؤقت</string>
     <string name="fp_temp_allow_desc">السماح بمكالمات %1$s للساعة القادمة حتى لو كانت القواعد تحظرها.</string>
     <string name="fp_temp_allow_confirm">سماح لمدة ساعة</string>

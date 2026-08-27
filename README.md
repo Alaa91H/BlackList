@@ -21,6 +21,12 @@
 
 Most call blockers send your contacts and call history to remote servers. **BlackList never does.**
 
+### New in 1.13.0
+
+- **Confirmed local false-positive recovery** — from a blocked-call record, choose **Not spam**, review the exact impact, and explicitly save a durable local `NOT_SPAM` verdict for that dialable caller.
+- **Precise, bounded effect** — the verdict is normalized with the same regional policy as call screening and suppresses imported offline-reputation scoring for that exact caller. It does **not** add a whitelist entry, weaken emergency/manual rules, or bypass broad local policies.
+- **Private-by-design feedback** — the recovery action writes only local caller-reputation data after the call is already logged; it adds no network request, report submission, background work, permission, or pre-response I/O.
+
 ### New in 1.12.0
 
 - **Opt-in quiet screening for unknown and private calls** — choose whether eligible unknown or withheld calls are rejected (the existing default) or quietly silenced while the call continues without ringing.
@@ -65,7 +71,7 @@ Most call blockers send your contacts and call history to remote servers. **Blac
 | **Advanced Scheduling** | Time-based rules with day-of-week bitmask and per-schedule trusted caller exceptions. Example: *Block all except whitelist 22:00–06:00 Mon–Fri while allowing an on-call number*. Overnight spans supported. |
 | **Home-screen Stats Widget** | Compact local counts for blocked calls today and in total, with manual refresh and direct opening of the app. No number, contact, or call-reason content is exposed. |
 | **Offline Reputation Lists** | Optional user-selected, bounded CSV lists with auditable source metadata and SHA-256 fingerprint. No URL fetching, automatic updates, cloud sync, or retained storage access. Exact E.164 scores from 80–100 can block only after all manual and safety policies. |
-| **Blocked Log** | Professional timeline of every blocked call: number, display name, reason, timestamp. Clear with one tap. |
+| **Blocked Log** | Professional timeline of every blocked call: number, display name, reason, timestamp, plus confirmed local **Not spam**, temporary allow, or permanent whitelist recovery choices. |
 | **Smart Notifications** | Optional low-priority notification for each blocked call (off by default if you prefer total silence). |
 | **Material Design 3 (2026)** | Jetpack Compose, dynamic colors (Material You), Light/Dark/System theme, smooth animations & transitions. |
 | **Localization** | System language by default. Full RTL support — perfect Arabic layout, plus English, French, German, Spanish, Turkish, Russian, Persian, Urdu, Hindi, Chinese, Japanese, Korean, Portuguese, Italian. |
@@ -148,7 +154,7 @@ number,score,category
 
 Files are capped at **1 MiB**, **10,050 lines** and **10,000 source rows**. The device retains at most **10 sources**, **5,000 accepted entries per source**, and **10,000 accepted entries total**. Duplicate values within a source retain the highest score; the source fingerprint prevents the same byte-identical list from being imported twice. If several imported sources name one exact number, the highest score is used while the decision retains every source and category for provenance.
 
-Imported entries never overwrite local caller reputation or a user verdict. They are evaluated only after emergency protection, temporary allow, whitelist, explicit blacklist and legacy exact blocks, callback grace, schedule exceptions/schedules, and broad local policies. An explicit `TRUSTED` or `NOT_SPAM` local verdict suppresses imported reputation scoring. Removing a source deletes only its own imported entries. Encrypted local backup and restore preserve the imported source metadata and entries as policy data; local call history and behaviour history remain excluded.
+Imported entries never overwrite local caller reputation or a user verdict. They are evaluated only after emergency protection, temporary allow, whitelist, explicit blacklist and legacy exact blocks, callback grace, schedule exceptions/schedules, and broad local policies. An explicit `TRUSTED` or `NOT_SPAM` local verdict suppresses imported reputation scoring. From a blocked-call record, **Not spam** asks for confirmation and saves exactly that local `NOT_SPAM` verdict for a usable dialable number; it neither whitelists the caller nor overrides broad policies. Removing a source deletes only its own imported entries. Encrypted local backup and restore preserve the imported source metadata and entries as policy data; local call history and behaviour history remain excluded.
 
 ---
 

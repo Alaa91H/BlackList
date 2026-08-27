@@ -21,7 +21,7 @@ import com.blacklist.app.R
 import com.blacklist.app.di.ServiceLocator
 import com.blacklist.app.di.ViewModelFactory
 import com.blacklist.app.ui.components.EmptyState
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.collectLatest
 import java.text.DateFormat
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -29,15 +29,26 @@ import java.text.DateFormat
 fun BlockedLogScreen(nav: NavController) {
     val ctx = LocalContext.current
     val repo = remember { ServiceLocator.provideRepository(ctx) }
-    val vm: BlockedLogViewModel = viewModel(factory = ViewModelFactory(repo))
-    val scope = rememberCoroutineScope()
+    val vm: BlockedLogViewModel = viewModel(factory = ViewModelFactory(repo, ctx.applicationContext))
     val logs by vm.logs.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
     var confirmClear by remember { mutableStateOf(false) }
     var actionTarget by remember { mutableStateOf<com.blacklist.app.data.local.entity.BlockedCallLogEntity?>(null) }
     var tempAllowTarget by remember { mutableStateOf<com.blacklist.app.data.local.entity.BlockedCallLogEntity?>(null) }
     LaunchedEffect(Unit) { vm.cleanupExpiredTemporaryRules() }
+    LaunchedEffect(vm) {
+        vm.recoveryEvents.collectLatest { event ->
+            val message = when (event) {
+                BlockedLogRecoveryEvent.MarkedNotSpam -> ctx.getString(R.string.fp_not_spam_saved)
+                BlockedLogRecoveryEvent.InvalidNumber -> ctx.getString(R.string.fp_not_spam_invalid)
+                BlockedLogRecoveryEvent.Failed -> ctx.getString(R.string.fp_not_spam_failed)
+            }
+            snackbarHostState.showSnackbar(message)
+        }
+    }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(title = { Text(stringResource(R.string.blocked_log_title), fontWeight = FontWeight.Bold) }, navigationIcon = { IconButton(onClick = { nav.popBackStack() }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null) } }, actions = { if (logs.isNotEmpty()) IconButton(onClick = { confirmClear = true }) { Icon(Icons.Filled.DeleteSweep, null) } })
         }
@@ -57,10 +68,7 @@ fun BlockedLogScreen(nav: NavController) {
                         AssistChip(onClick = { actionTarget = log }, label = { Text(log.reason) }, leadingIcon = { Icon(Icons.Filled.Shield, null, modifier = Modifier.size(16.dp)) })
                     }
                     FalsePositiveActions(log = log,
-                        onNotSpam = {
-                            val digits = log.phoneNumber?.filter { it.isDigit() }
-                            if (!digits.isNullOrBlank() && digits.length >= 3) scope.launch { ServiceLocator.provideReputationEngine(ctx).recordAllowed(digits) }
-                        },
+                        onNotSpam = { actionTarget = log },
                         onAlwaysAllow = { vm.alwaysAllow(log.phoneNumber!!, log.displayName) },
                         onTempAllow = { tempAllowTarget = log },
                         enabled = !log.phoneNumber.isNullOrBlank())
@@ -80,10 +88,9 @@ fun BlockedLogScreen(nav: NavController) {
             text = { Text(stringResource(R.string.fp_action_desc, target.phoneNumber ?: "")) },
             confirmButton = {
                 TextButton(onClick = {
-                    val digits = target.phoneNumber?.filter { it.isDigit() }
-                    if (!digits.isNullOrBlank() && digits.length >= 3) scope.launch { ServiceLocator.provideReputationEngine(ctx).recordAllowed(digits) }
+                    vm.markNotSpam(target.phoneNumber.orEmpty())
                     actionTarget = null
-                }) { Text(stringResource(R.string.fp_not_spam)) }
+                }) { Text(stringResource(R.string.fp_not_spam_confirm)) }
             },
             dismissButton = { TextButton(onClick = { actionTarget = null }) { Text(stringResource(R.string.action_cancel)) } })
     }
