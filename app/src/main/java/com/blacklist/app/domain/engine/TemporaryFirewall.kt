@@ -7,6 +7,7 @@ import com.blacklist.app.data.local.entity.BlacklistRuleEntity
  *  - TEMP_BLOCK_ALL: pattern = expiry epoch millis (blocks everything except whitelist while active)
  *  - TEMP_ALLOW:     pattern = normalized digits, startNumber = expiry epoch millis
  *  - TEMP_OUTBOUND_CALLBACK: same encoding as TEMP_ALLOW, created only after a user-initiated outgoing call
+ *  - TEMP_BLOCK_EXACT: normalized E.164 digits in pattern, expiry epoch millis in startNumber
  * Expired rules are ignored at evaluation time and purged opportunistically by the UI layer.
  */
 object TemporaryFirewall {
@@ -19,12 +20,14 @@ object TemporaryFirewall {
     fun isTempType(ruleType: String): Boolean =
         ruleType == BlacklistRuleEntity.TYPE_TEMP_BLOCK_ALL ||
             ruleType == BlacklistRuleEntity.TYPE_TEMP_ALLOW ||
-            ruleType == BlacklistRuleEntity.TYPE_TEMP_OUTBOUND_CALLBACK
+            ruleType == BlacklistRuleEntity.TYPE_TEMP_OUTBOUND_CALLBACK ||
+            ruleType == BlacklistRuleEntity.TYPE_TEMP_BLOCK_EXACT
 
     fun expiryOf(rule: BlacklistRuleEntity): Long? {
         val raw = if (
             rule.ruleType == BlacklistRuleEntity.TYPE_TEMP_ALLOW ||
-            rule.ruleType == BlacklistRuleEntity.TYPE_TEMP_OUTBOUND_CALLBACK
+            rule.ruleType == BlacklistRuleEntity.TYPE_TEMP_OUTBOUND_CALLBACK ||
+            rule.ruleType == BlacklistRuleEntity.TYPE_TEMP_BLOCK_EXACT
         ) rule.startNumber else rule.pattern
         return raw?.trim()?.toLongOrNull()
     }
@@ -49,6 +52,20 @@ object TemporaryFirewall {
         return rules.any { rule ->
             rule.ruleType == BlacklistRuleEntity.TYPE_TEMP_ALLOW && isActive(rule, now) &&
                 com.blacklist.app.util.PhoneNumberUtils.matches(rule.pattern, digitsOnly)
+        }
+    }
+
+    /** Matches a user-created temporary block by the canonical exact-number identity only. */
+    fun blockExactMatches(
+        rules: List<BlacklistRuleEntity>,
+        digitsOnly: String,
+        now: Long = System.currentTimeMillis()
+    ): BlacklistRuleEntity? {
+        if (!TemporaryExactBlockPolicy.isValidE164Digits(digitsOnly)) return null
+        return rules.firstOrNull { rule ->
+            rule.ruleType == BlacklistRuleEntity.TYPE_TEMP_BLOCK_EXACT &&
+                isActive(rule, now) &&
+                rule.pattern == digitsOnly
         }
     }
 

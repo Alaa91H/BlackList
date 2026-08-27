@@ -158,7 +158,10 @@ object ServiceLocator {
 
     fun provideRepository(context: Context): BlackListRepository =
         repo ?: synchronized(this) {
-            repo ?: BlackListRepositoryImpl(provideDatabase(context)).also { repo = it }
+            repo ?: BlackListRepositoryImpl(
+                provideDatabase(context),
+                provideNormalizer(context)
+            ).also { repo = it }
         }
 
     fun clearForTest() {

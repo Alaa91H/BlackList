@@ -61,6 +61,8 @@ interface BlackListRepository {
     suspend fun cancelTemporaryBlockAll()
     suspend fun isTemporaryBlockAllActive(): Boolean
     suspend fun addTemporaryAllow(rawNumber: String, durationMs: Long): Result<Long>
+    suspend fun addTemporaryExactBlock(rawNumber: String, durationMs: Long): Result<Long>
+    suspend fun cancelTemporaryExactBlock(id: Long)
     /** Records a short callback allowance only after a definite user-initiated outgoing call. */
     suspend fun recordOutboundCallbackGrace(rawNumber: String): Result<Long>
     suspend fun cleanupExpiredTemporaryRules(): Int

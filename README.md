@@ -21,6 +21,13 @@
 
 Most call blockers send your contacts and call history to remote servers. **BlackList never does.**
 
+### New in 1.16.0
+
+- **Temporary exact-number blocks** — in **Blacklist**, enter one valid phone number and choose a fixed local expiry of **1 hour, 1 day, 7 days or 30 days**. The active temporary-block section shows the canonical number and localized end time; each rule can be cancelled directly.
+- **Conservative precedence and bounds** — a temporary exact block is evaluated only after emergency protection, a current temporary allow and the whitelist. It never blocks an emergency number, never overrides an allow/whitelist, expires in the immutable policy snapshot even before cleanup, accepts only canonical E.164 identities, replaces a matching temporary block atomically and caps active entries at 100.
+- **Portable local policy, no activity data** — encrypted policy backup/restore now validates and carries active temporary exact blocks. The feature adds no Room migration, runtime permission, network request, cloud service, analytics, tracker, worker, timer, boot receiver, shared call-log/SMS read, or call-screening-path I/O.
+- **Precise silence semantics** — the existing opt-in quiet screening uses Android’s `setSilenceCall(true)`: the eligible incoming call continues without ringing. It is distinct from block/reject and does not promise to hide the system call log or missed-call notification.
+
 ### New in 1.15.0
 
 - **User-controlled Quick Settings placement** — **Settings → Quick access** now provides an explicit path to add the existing **Temporary call block** tile. On Android 13 and later, the app asks the system to show its one-tap placement prompt; Android 7–12 users receive the equivalent manual-add guidance.
@@ -83,6 +90,7 @@ Most call blockers send your contacts and call history to remote servers. **Blac
 | **Opt-in Callback Grace** | After you dial a valid number, allow only that exact number to call back for 15 minutes; never overrides an explicit block. |
 | **Advanced Scheduling** | Time-based rules with day-of-week bitmask and per-schedule trusted caller exceptions. Example: *Block all except whitelist 22:00–06:00 Mon–Fri while allowing an on-call number*. Overnight spans supported. |
 | **Temporary Block Quick Tile** | User-added Quick Settings toggle for the existing one-hour local block-all override. Add it from **Settings → Quick access** (Android 13+) or via the Quick Settings edit menu (Android 7–12); a second tap cancels it. |
+| **Temporary Exact Block** | Locally block one valid non-emergency number for 1 hour, 1 day, 7 days or 30 days. The active temporary-block list shows its expiry and offers one-tap cancellation; temporary allows and whitelists still win. |
 | **Home-screen Stats Widget** | Compact local counts for blocked calls today and in total, with manual refresh and direct opening of the app. No number, contact, or call-reason content is exposed. |
 | **Offline Reputation Lists** | Optional user-selected, bounded CSV lists with auditable source metadata and SHA-256 fingerprint. No URL fetching, automatic updates, cloud sync, or retained storage access. Exact E.164 scores from 80–100 can block only after all manual and safety policies. |
 | **Blocked Log** | Professional local timeline of blocked calls with number, display name, reason, timestamp, and recovery actions. Retain it forever (default), or automatically remove only entries older than 7, 30, 90 or 365 days; this never changes screening rules or Android’s shared call log. |

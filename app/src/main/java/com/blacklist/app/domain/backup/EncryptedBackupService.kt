@@ -319,6 +319,12 @@ class EncryptedBackupService(
                 }
                 require(isSaneTemporaryExpiry(startNumber)) { "Invalid outgoing callback expiry in backup." }
             }
+            BlacklistRuleEntity.TYPE_TEMP_BLOCK_EXACT -> {
+                require(com.blacklist.app.domain.engine.TemporaryExactBlockPolicy.isValidE164Digits(pattern.orEmpty())) {
+                    "Invalid temporary exact block number in backup."
+                }
+                require(isSaneTemporaryExpiry(startNumber)) { "Invalid temporary exact block expiry in backup." }
+            }
         }
         return BlacklistRuleEntity(
             isEnabled = json.optBoolean("enabled", true),
@@ -547,7 +553,8 @@ class EncryptedBackupService(
             BlacklistRuleEntity.TYPE_UNKNOWN,
             BlacklistRuleEntity.TYPE_TEMP_BLOCK_ALL,
             BlacklistRuleEntity.TYPE_TEMP_ALLOW,
-            BlacklistRuleEntity.TYPE_TEMP_OUTBOUND_CALLBACK
+            BlacklistRuleEntity.TYPE_TEMP_OUTBOUND_CALLBACK,
+            BlacklistRuleEntity.TYPE_TEMP_BLOCK_EXACT
         )
         val ALLOWED_THEME_MODES = setOf("SYSTEM", "LIGHT", "DARK")
         val ALLOWED_PROFILE_IDS = setOf(

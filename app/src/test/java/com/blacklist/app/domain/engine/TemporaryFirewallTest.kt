@@ -34,6 +34,20 @@ class TemporaryFirewallTest {
     }
 
     @Test
+    fun `temporary exact block matches only its active canonical number`() {
+        val now = 1_000_000L
+        val block = BlacklistRuleEntity(
+            ruleType = BlacklistRuleEntity.TYPE_TEMP_BLOCK_EXACT,
+            pattern = "4915123456789",
+            startNumber = (now + 1).toString()
+        )
+
+        assertTrue(TemporaryFirewall.blockExactMatches(listOf(block), "4915123456789", now) == block)
+        assertTrue(TemporaryFirewall.blockExactMatches(listOf(block), "491512345678", now) == null)
+        assertTrue(TemporaryFirewall.blockExactMatches(listOf(block.copy(startNumber = now.toString())), "4915123456789", now) == null)
+    }
+
+    @Test
     fun `outbound callback grace matches only its active exact number`() {
         val now = 1_000_000L
         val grace = BlacklistRuleEntity(

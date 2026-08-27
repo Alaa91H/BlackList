@@ -345,6 +345,24 @@
     <string name="settings_temporary_block_tile_not_added">لم تتم إضافة حظر المكالمات المؤقت.</string>
     <string name="settings_temporary_block_tile_request_error">تعذر طلب اختصار الإعدادات السريعة. يمكنك إضافته من قائمة تعديل الإعدادات السريعة.</string>
 
+    <!-- الحظر المؤقت الدقيق -->
+    <string name="temporary_exact_block_action">حظر مؤقت</string>
+    <string name="temporary_exact_block_title">حظر رقم مؤقتاً</string>
+    <string name="temporary_exact_block_description">احظر رقم هاتف سليماً واحداً محلياً لمدة ثابتة. تظل أرقام الطوارئ والقائمة البيضاء والسماح المؤقت ذات أولوية أعلى.</string>
+    <string name="temporary_exact_block_number">رقم الهاتف</string>
+    <string name="temporary_exact_block_duration">مدة الحظر</string>
+    <string name="temporary_exact_block_duration_hour">ساعة واحدة</string>
+    <string name="temporary_exact_block_duration_day">يوم واحد</string>
+    <string name="temporary_exact_block_duration_week">7 أيام</string>
+    <string name="temporary_exact_block_duration_month">30 يوماً</string>
+    <string name="temporary_exact_block_active_section">عمليات الحظر المؤقتة النشطة</string>
+    <string name="temporary_exact_block_ends_at">ينتهي %1$s</string>
+    <string name="temporary_exact_block_cancel">إلغاء</string>
+    <string name="temporary_exact_block_added">تمت إضافة الحظر المؤقت.</string>
+    <string name="temporary_exact_block_invalid_number">أدخل رقم هاتف سليماً ليس رقم طوارئ.</string>
+    <string name="temporary_exact_block_limit_reached">بلغ حد الحظر المؤقت. ألغِ حظراً مؤقتاً نشطاً أولاً.</string>
+    <string name="temporary_exact_block_failed">تعذرت إضافة الحظر المؤقت. حاول مجدداً.</string>
+
     <!-- ملفات الحماية -->
     <string name="settings_protection_profiles">ملفات الحماية</string>
     <string name="settings_protection_profiles_desc">طبّق سياسة محلية واضحة. تظل حماية الطوارئ والسماح المؤقت والقائمة البيضاء ذات أولوية دائماً.</string>

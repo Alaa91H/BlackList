@@ -42,6 +42,68 @@ class OfflineReputationCallFirewallEngineTest {
     }
 
     @Test
+    fun `temporary exact block blocks its canonical number before permanent and risk paths`() = runBlocking {
+        val snapshot = PolicySnapshotStore.Snapshot(
+            rules = listOf(
+                BlacklistRuleEntity(
+                    ruleType = BlacklistRuleEntity.TYPE_TEMP_BLOCK_EXACT,
+                    pattern = "4930123456",
+                    startNumber = (System.currentTimeMillis() + 60_000).toString()
+                )
+            )
+        )
+
+        val decision = evaluate(snapshot)
+
+        assertEquals(Decision.BLOCK, decision.decision)
+        assertEquals("temporary_block_exact", decision.explainable.backend)
+    }
+
+    @Test
+    fun `temporary allow remains ahead of temporary exact block`() = runBlocking {
+        val expiry = (System.currentTimeMillis() + 60_000).toString()
+        val snapshot = PolicySnapshotStore.Snapshot(
+            rules = listOf(
+                BlacklistRuleEntity(
+                    ruleType = BlacklistRuleEntity.TYPE_TEMP_ALLOW,
+                    pattern = "4930123456",
+                    startNumber = expiry
+                ),
+                BlacklistRuleEntity(
+                    ruleType = BlacklistRuleEntity.TYPE_TEMP_BLOCK_EXACT,
+                    pattern = "4930123456",
+                    startNumber = expiry
+                )
+            )
+        )
+
+        val decision = evaluate(snapshot)
+
+        assertEquals(Decision.ALLOW, decision.decision)
+        assertEquals("temporary_allow", decision.explainable.backend)
+    }
+
+    @Test
+    fun `whitelist remains ahead of temporary exact block`() = runBlocking {
+        val phone = normalizer.normalize("+4930123456")
+        val snapshot = PolicySnapshotStore.Snapshot(
+            rules = listOf(
+                BlacklistRuleEntity(
+                    ruleType = BlacklistRuleEntity.TYPE_TEMP_BLOCK_EXACT,
+                    pattern = "4930123456",
+                    startNumber = (System.currentTimeMillis() + 60_000).toString()
+                )
+            ),
+            whitelist = listOf(phone)
+        )
+
+        val decision = evaluate(snapshot)
+
+        assertEquals(Decision.ALLOW, decision.decision)
+        assertEquals("whitelist", decision.explainable.backend)
+    }
+
+    @Test
     fun `explicit blacklist remains authoritative over offline reputation`() = runBlocking {
         val snapshot = snapshotWithSignal("+4930123456", 10).copy(
             rules = listOf(BlacklistRuleEntity(ruleType = BlacklistRuleEntity.TYPE_EXACT, pattern = "+4930123456"))

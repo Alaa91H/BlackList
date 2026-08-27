@@ -35,6 +35,7 @@ data class BlacklistRuleEntity(
         const val TYPE_TEMP_BLOCK_ALL = "TEMP_BLOCK_ALL"
         const val TYPE_TEMP_ALLOW = "TEMP_ALLOW"
         const val TYPE_TEMP_OUTBOUND_CALLBACK = "TEMP_OUTBOUND_CALLBACK"
+        const val TYPE_TEMP_BLOCK_EXACT = "TEMP_BLOCK_EXACT"
 
         /** All user-selectable match types (HIDDEN/UNKNOWN are policy toggles, not patterns; TEMP_* internal). */
         val USER_TYPES = listOf(TYPE_EXACT, TYPE_PREFIX, TYPE_SUFFIX, TYPE_CONTAINS, TYPE_RANGE, TYPE_COUNTRY)

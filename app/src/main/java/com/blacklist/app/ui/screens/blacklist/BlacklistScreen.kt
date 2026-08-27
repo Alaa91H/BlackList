@@ -25,9 +25,12 @@ import com.blacklist.app.R
 import com.blacklist.app.data.local.entity.BlacklistRuleEntity
 import com.blacklist.app.di.ServiceLocator
 import com.blacklist.app.di.ViewModelFactory
+import com.blacklist.app.domain.engine.TemporaryExactBlockPolicy
+import com.blacklist.app.domain.engine.TemporaryFirewall
 import com.blacklist.app.ui.components.EmptyState
 import com.blacklist.app.ui.components.PickerDialog
 import com.blacklist.app.ui.components.PickerSource
+import kotlinx.coroutines.flow.collect
 import java.text.DateFormat
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -38,18 +41,39 @@ fun BlacklistScreen(nav: NavController) {
     val vm: BlacklistViewModel = viewModel(factory = ViewModelFactory(repo))
     val list by vm.filtered.collectAsState()
     val rules by vm.filteredRules.collectAsState()
+    val temporaryExactBlocks by vm.temporaryExactBlocks.collectAsState()
     val query by vm.query.collectAsState()
     val error by vm.error.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
     var showAdd by remember { mutableStateOf(false) }
+    var showTemporaryBlock by remember { mutableStateOf(false) }
     var showPicker by remember { mutableStateOf(false) }
     var pickerSource by remember { mutableStateOf(PickerSource.CONTACTS) }
 
+    LaunchedEffect(vm) {
+        vm.temporaryExactBlockEvents.collect { event ->
+            val message = when (event) {
+                TemporaryExactBlockEvent.Added -> R.string.temporary_exact_block_added
+                TemporaryExactBlockEvent.InvalidNumber -> R.string.temporary_exact_block_invalid_number
+                TemporaryExactBlockEvent.LimitReached -> R.string.temporary_exact_block_limit_reached
+                TemporaryExactBlockEvent.Failed -> R.string.temporary_exact_block_failed
+            }
+            snackbarHostState.showSnackbar(ctx.getString(message))
+        }
+    }
+
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(R.string.blacklist_title), fontWeight = FontWeight.Bold) },
                 navigationIcon = { IconButton(onClick = { nav.popBackStack() }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null) } },
-                actions = { IconButton(onClick = { showAdd = true }) { Icon(Icons.Filled.PersonAdd, null) } }
+                actions = {
+                    IconButton(onClick = { showTemporaryBlock = true }) {
+                        Icon(Icons.Filled.Timer, stringResource(R.string.temporary_exact_block_action))
+                    }
+                    IconButton(onClick = { showAdd = true }) { Icon(Icons.Filled.PersonAdd, null) }
+                }
             )
         },
         floatingActionButton = { FloatingActionButton(onClick = { showAdd = true }) { Icon(Icons.Filled.Add, null) } }
@@ -73,10 +97,21 @@ fun BlacklistScreen(nav: NavController) {
                 }
                 Spacer(Modifier.height(8.dp))
             }
-            if (list.isEmpty() && rules.isEmpty()) {
+            if (list.isEmpty() && rules.isEmpty() && temporaryExactBlocks.isEmpty()) {
                 EmptyState(Icons.Filled.Block, stringResource(R.string.blacklist_empty), stringResource(R.string.blacklist_empty_desc), modifier = Modifier.fillMaxSize())
             } else {
                 LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    if (temporaryExactBlocks.isNotEmpty()) {
+                        item(key = "hdr_temporary_rules") {
+                            Text(stringResource(R.string.temporary_exact_block_active_section), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                        }
+                        items(temporaryExactBlocks, key = { "temp_rule_${it.id}" }) { rule ->
+                            TemporaryExactBlockCard(
+                                rule = rule,
+                                onCancel = { vm.cancelTemporaryExactBlock(rule.id) }
+                            )
+                        }
+                    }
                     if (rules.isNotEmpty()) {
                         item(key = "hdr_rules") {
                             Text(stringResource(R.string.blacklist_rules_section), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
@@ -123,6 +158,15 @@ fun BlacklistScreen(nav: NavController) {
                 }
             }
         }
+    }
+    if (showTemporaryBlock) {
+        TemporaryExactBlockDialog(
+            onDismiss = { showTemporaryBlock = false },
+            onConfirm = { number, duration ->
+                vm.addTemporaryExactBlock(number, duration)
+                showTemporaryBlock = false
+            }
+        )
     }
     if (showAdd) {
         AddRuleDialog(
@@ -172,6 +216,81 @@ private fun typeLabelRes(type: String): Int = when (type) {
     BlacklistRuleEntity.TYPE_RANGE -> R.string.rule_type_range
     BlacklistRuleEntity.TYPE_COUNTRY -> R.string.rule_type_country
     else -> R.string.rule_type_exact
+}
+
+@Composable
+private fun TemporaryExactBlockCard(rule: BlacklistRuleEntity, onCancel: () -> Unit) {
+    val expiry = TemporaryFirewall.expiryOf(rule) ?: 0L
+    ElevatedCard(shape = RoundedCornerShape(20.dp), modifier = Modifier.fillMaxWidth()) {
+        Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Surface(shape = RoundedCornerShape(12.dp), color = MaterialTheme.colorScheme.errorContainer, modifier = Modifier.size(48.dp)) {
+                Box(contentAlignment = Alignment.Center) { Icon(Icons.Filled.Timer, null, tint = MaterialTheme.colorScheme.onErrorContainer) }
+            }
+            Column(Modifier.weight(1f)) {
+                Text(rule.pattern.orEmpty(), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                Text(
+                    stringResource(
+                        R.string.temporary_exact_block_ends_at,
+                        DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT).format(java.util.Date(expiry))
+                    ),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            TextButton(onClick = onCancel) { Text(stringResource(R.string.temporary_exact_block_cancel)) }
+        }
+    }
+}
+
+@Composable
+private fun TemporaryExactBlockDialog(
+    onDismiss: () -> Unit,
+    onConfirm: (String, Long) -> Unit
+) {
+    var number by remember { mutableStateOf("") }
+    var selectedDuration by remember { mutableLongStateOf(TemporaryExactBlockPolicy.HOUR_1) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.temporary_exact_block_title)) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(stringResource(R.string.temporary_exact_block_description), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                OutlinedTextField(
+                    value = number,
+                    onValueChange = { number = it },
+                    label = { Text(stringResource(R.string.temporary_exact_block_number)) },
+                    placeholder = { Text("+49 151 12345678") },
+                    keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Phone),
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Text(stringResource(R.string.temporary_exact_block_duration), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+                TemporaryExactBlockPolicy.supportedDurationsMs.forEach { duration ->
+                    FilterChip(
+                        selected = selectedDuration == duration,
+                        onClick = { selectedDuration = duration },
+                        label = { Text(temporaryExactBlockDurationLabel(duration)) },
+                        leadingIcon = { if (selectedDuration == duration) Icon(Icons.Filled.Check, null, modifier = Modifier.size(16.dp)) }
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            Button(onClick = { onConfirm(number, selectedDuration) }, enabled = number.isNotBlank()) {
+                Text(stringResource(R.string.temporary_exact_block_action))
+            }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) } }
+    )
+}
+
+@Composable
+private fun temporaryExactBlockDurationLabel(durationMs: Long): String = when (durationMs) {
+    TemporaryExactBlockPolicy.HOUR_1 -> stringResource(R.string.temporary_exact_block_duration_hour)
+    TemporaryExactBlockPolicy.DAY_1 -> stringResource(R.string.temporary_exact_block_duration_day)
+    TemporaryExactBlockPolicy.DAYS_7 -> stringResource(R.string.temporary_exact_block_duration_week)
+    TemporaryExactBlockPolicy.DAYS_30 -> stringResource(R.string.temporary_exact_block_duration_month)
+    else -> ""
 }
 
 @Composable

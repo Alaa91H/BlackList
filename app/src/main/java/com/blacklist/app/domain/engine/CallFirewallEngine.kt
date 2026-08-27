@@ -43,6 +43,18 @@ class CallFirewallEngine(
             return decision(enrichedEvent, Decision.ALLOW, 0, ReputationLevel.TRUSTED, listOf("Whitelisted"), emptyList(), "whitelist")
         }
 
+        TemporaryFirewall.blockExactMatches(snapshot.rules, enrichedEvent.phoneNumber.digitsOnly)?.let { rule ->
+            return decision(
+                enrichedEvent,
+                Decision.BLOCK,
+                75,
+                ReputationLevel.SUSPICIOUS,
+                listOf("Temporary exact block active"),
+                listOf(toCallRule(rule)),
+                "temporary_block_exact"
+            )
+        }
+
         val matchedBlacklist = blacklistEngine.findMatching(enrichedEvent.phoneNumber, snapshot.rules)
         if (matchedBlacklist.isNotEmpty()) {
             val top = matchedBlacklist.first()

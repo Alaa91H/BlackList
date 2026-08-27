@@ -2,6 +2,31 @@
 
 All notable changes to BlackList are documented in this file. The project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.16.0] - 2026-08-27
+
+### Added
+
+- **Temporary exact-number blocking.** Blacklist now offers a deliberate local action to block one valid non-emergency phone number for 1 hour, 1 day, 7 days or 30 days. Active temporary blocks are shown separately with a localized expiry time and an explicit cancel action.
+- **Bounded local policy.** The feature accepts only canonical E.164 digit identities, replaces a temporary block for the same number atomically, and caps the set at 100 active temporary exact blocks.
+
+### Changed
+
+- **Stable safety precedence.** A temporary exact block is evaluated after emergency protection, temporary allows and whitelists, but before permanent blacklist/legacy rules and broad policies. It expires directly in the immutable policy snapshot, even before opportunistic cleanup removes its stored row.
+- **Validated backup continuity.** Encrypted local policy backups now preserve temporary exact blocks only when their number identity and expiry are valid. Existing backup formats remain compatible.
+- **Precise quiet-screening documentation.** The README now distinguishes Android’s supported `SILENCE` action—an incoming call continues without ringing—from block/reject. It makes no unsupported promise to hide a ringing call, the shared call log or missed-call notification.
+
+### Fixed
+
+- **Complete temporary-rule cleanup.** The local cleanup path now recognizes every internal temporary-rule type, including temporary exact blocks.
+
+### Quality
+
+- Added focused unit coverage for fixed expiry options, E.164 identity bounds, expiry rejection, active/expired exact matching, partial-number non-matching, and precedence over temporary allow/whitelist safeguards.
+
+### Privacy
+
+- The release adds no runtime permission, Call Log/SMS access, default-SMS role, network request, cloud service, root/Shizuku integration, hidden API bypass, analytics event, tracker, worker, timer, boot receiver, shared history export or call-screening-path I/O.
+
 ## [1.15.0] - 2026-08-27
 
 ### Added
@@ -264,6 +289,7 @@ All notable changes to BlackList are documented in this file. The project follow
 
 - Production-grade local call-firewall foundation with rule matching, risk scoring, behavior signals, reputation tracking, temporary protection controls, diagnostics, and a decision simulator.
 
+[1.16.0]: https://github.com/Alaa91H/BlackList/compare/v1.15.0...v1.16.0
 [1.15.0]: https://github.com/Alaa91H/BlackList/compare/v1.14.0...v1.15.0
 [1.14.0]: https://github.com/Alaa91H/BlackList/compare/v1.13.0...v1.14.0
 [1.13.0]: https://github.com/Alaa91H/BlackList/compare/v1.12.0...v1.13.0

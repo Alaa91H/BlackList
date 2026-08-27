@@ -3,11 +3,19 @@ package com.blacklist.app.ui.screens.blacklist
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.blacklist.app.data.local.entity.BlacklistRuleEntity
+import com.blacklist.app.domain.engine.TemporaryFirewall
 import com.blacklist.app.domain.repository.BlackListRepository
 import com.blacklist.app.util.PickerItem
 import com.blacklist.app.util.PhoneNumberUtils
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+
+sealed interface TemporaryExactBlockEvent {
+    data object Added : TemporaryExactBlockEvent
+    data object InvalidNumber : TemporaryExactBlockEvent
+    data object LimitReached : TemporaryExactBlockEvent
+    data object Failed : TemporaryExactBlockEvent
+}
 
 class BlacklistViewModel(private val repo: BlackListRepository): ViewModel() {
     val items = repo.observeBlockedNumbers().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -19,15 +27,26 @@ class BlacklistViewModel(private val repo: BlackListRepository): ViewModel() {
 
     // Pattern rules (PREFIX/SUFFIX/CONTAINS/RANGE/COUNTRY/EXACT)
     val rules = repo.observeBlacklistRules().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
-    val filteredRules = combine(rules, _query) { list, q ->
-        if (q.isBlank()) list else list.filter {
-            it.pattern?.contains(q, true) == true ||
-                it.startNumber?.contains(q, true) == true ||
-                it.endNumber?.contains(q, true) == true ||
-                it.countryIso?.contains(q, true) == true ||
-                it.ruleType.contains(q, true)
+    val temporaryExactBlocks = rules.map { list ->
+        list.filter {
+            it.ruleType == BlacklistRuleEntity.TYPE_TEMP_BLOCK_EXACT &&
+                TemporaryFirewall.isActive(it)
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    val filteredRules = combine(rules, _query) { list, q ->
+        list.filter { !TemporaryFirewall.isTempType(it.ruleType) }.let { persistentRules ->
+            if (q.isBlank()) persistentRules else persistentRules.filter {
+                it.pattern?.contains(q, true) == true ||
+                    it.startNumber?.contains(q, true) == true ||
+                    it.endNumber?.contains(q, true) == true ||
+                    it.countryIso?.contains(q, true) == true ||
+                    it.ruleType.contains(q, true)
+            }
+        }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    private val _temporaryExactBlockEvents = MutableSharedFlow<TemporaryExactBlockEvent>()
+    val temporaryExactBlockEvents = _temporaryExactBlockEvents.asSharedFlow()
 
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error
@@ -51,6 +70,25 @@ class BlacklistViewModel(private val repo: BlackListRepository): ViewModel() {
             added == 0 -> "All selected numbers are already in the blacklist."
             else -> "$added numbers added; $skipped already existed."
         }
+    }
+
+    init {
+        viewModelScope.launch { repo.cleanupExpiredTemporaryRules() }
+    }
+
+    fun addTemporaryExactBlock(number: String, durationMs: Long) = viewModelScope.launch {
+        val result = repo.addTemporaryExactBlock(number, durationMs)
+        val event = when (result.exceptionOrNull()) {
+            null -> TemporaryExactBlockEvent.Added
+            is IllegalArgumentException -> TemporaryExactBlockEvent.InvalidNumber
+            is IllegalStateException -> TemporaryExactBlockEvent.LimitReached
+            else -> TemporaryExactBlockEvent.Failed
+        }
+        _temporaryExactBlockEvents.emit(event)
+    }
+
+    fun cancelTemporaryExactBlock(id: Long) = viewModelScope.launch {
+        repo.cancelTemporaryExactBlock(id)
     }
 
     fun addRule(rule: BlacklistRuleEntity) = viewModelScope.launch {

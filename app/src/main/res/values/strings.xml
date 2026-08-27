@@ -389,6 +389,24 @@
     <string name="settings_temporary_block_tile_not_added">Temporary call block was not added.</string>
     <string name="settings_temporary_block_tile_request_error">Could not request the Quick Settings tile. You can add it from the Quick Settings edit menu.</string>
 
+    <!-- Temporary exact blocks -->
+    <string name="temporary_exact_block_action">Block temporarily</string>
+    <string name="temporary_exact_block_title">Temporarily block a number</string>
+    <string name="temporary_exact_block_description">Block one valid phone number locally for a fixed period. Emergency numbers, whitelist entries and temporary allows continue to take priority.</string>
+    <string name="temporary_exact_block_number">Phone number</string>
+    <string name="temporary_exact_block_duration">Block duration</string>
+    <string name="temporary_exact_block_duration_hour">1 hour</string>
+    <string name="temporary_exact_block_duration_day">1 day</string>
+    <string name="temporary_exact_block_duration_week">7 days</string>
+    <string name="temporary_exact_block_duration_month">30 days</string>
+    <string name="temporary_exact_block_active_section">Active temporary blocks</string>
+    <string name="temporary_exact_block_ends_at">Ends %1$s</string>
+    <string name="temporary_exact_block_cancel">Cancel</string>
+    <string name="temporary_exact_block_added">Temporary block added.</string>
+    <string name="temporary_exact_block_invalid_number">Enter a valid, non-emergency phone number.</string>
+    <string name="temporary_exact_block_limit_reached">Temporary block limit reached. Cancel an active temporary block first.</string>
+    <string name="temporary_exact_block_failed">Could not add the temporary block. Try again.</string>
+
     <!-- Protection profiles -->
     <string name="settings_protection_profiles">Protection profiles</string>
     <string name="settings_protection_profiles_desc">Apply a clear local policy preset. Emergency safeguards, temporary allows, and whitelists always take priority.</string>

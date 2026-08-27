@@ -5,7 +5,11 @@ import com.blacklist.app.data.local.BlackListDatabase
 import com.blacklist.app.data.local.entity.*
 import com.blacklist.app.domain.backup.EncryptedBackupService
 import com.blacklist.app.domain.importexport.OfflineReputationImportPreview
+import com.blacklist.app.domain.normalization.PhoneNumberNormalizer
 import com.blacklist.app.domain.repository.BlackListRepository
+import com.blacklist.app.domain.engine.TemporaryExactBlockPolicy
+import com.blacklist.app.domain.engine.TemporaryFirewall
+import com.blacklist.app.domain.model.Presentation
 import com.blacklist.app.util.PhoneNumberUtils
 import kotlinx.coroutines.flow.Flow
 import java.io.InputStream
@@ -13,7 +17,8 @@ import java.io.OutputStream
 import java.net.URI
 
 class BlackListRepositoryImpl(
-    private val db: BlackListDatabase
+    private val db: BlackListDatabase,
+    private val normalizer: PhoneNumberNormalizer
 ) : BlackListRepository {
 
     private val blockedDao get() = db.blockedNumberDao()
@@ -302,6 +307,55 @@ class BlackListRepositoryImpl(
         }
     }
 
+    override suspend fun addTemporaryExactBlock(rawNumber: String, durationMs: Long): Result<Long> = runCatching {
+        require(TemporaryExactBlockPolicy.isSupportedDuration(durationMs)) {
+            "Unsupported temporary block duration."
+        }
+        val number = normalizer.normalize(rawNumber)
+        val canonicalDigits = number.e164?.removePrefix("+").orEmpty()
+        require(number.presentation == Presentation.ALLOWED &&
+            TemporaryExactBlockPolicy.isValidE164Digits(canonicalDigits) &&
+            !normalizer.isEmergencyNumber(number)
+        ) { "Enter a valid non-emergency phone number." }
+
+        db.withTransaction {
+            val now = System.currentTimeMillis()
+            val current = ruleDao.getAll()
+            current.filter { TemporaryFirewall.isTempType(it.ruleType) && !TemporaryFirewall.isActive(it, now) }
+                .forEach { ruleDao.deleteById(it.id) }
+
+            val activeExactBlocks = current.filter {
+                it.ruleType == BlacklistRuleEntity.TYPE_TEMP_BLOCK_EXACT &&
+                    TemporaryFirewall.isActive(it, now) &&
+                    it.pattern != canonicalDigits
+            }
+            require(activeExactBlocks.size < TemporaryExactBlockPolicy.MAX_ACTIVE_RULES) {
+                "Temporary block limit reached. Remove an active temporary block first."
+            }
+            current.filter {
+                it.ruleType == BlacklistRuleEntity.TYPE_TEMP_BLOCK_EXACT && it.pattern == canonicalDigits
+            }.forEach { ruleDao.deleteById(it.id) }
+
+            ruleDao.insert(
+                BlacklistRuleEntity(
+                    ruleType = BlacklistRuleEntity.TYPE_TEMP_BLOCK_EXACT,
+                    pattern = canonicalDigits,
+                    startNumber = TemporaryExactBlockPolicy.expiryAt(durationMs, now).toString(),
+                    priority = 25,
+                    displayName = "temporary_exact_block"
+                )
+            )
+        }
+    }
+
+    override suspend fun cancelTemporaryExactBlock(id: Long) {
+        if (id <= 0) return
+        val rule = ruleDao.getAll().firstOrNull { it.id == id }
+        if (rule?.ruleType == BlacklistRuleEntity.TYPE_TEMP_BLOCK_EXACT) {
+            ruleDao.deleteById(id)
+        }
+    }
+
     override suspend fun recordOutboundCallbackGrace(rawNumber: String): Result<Long> {
         return try {
             val digits = rawNumber.filter(Char::isDigit)
@@ -341,10 +395,7 @@ class BlackListRepositoryImpl(
     override suspend fun cleanupExpiredTemporaryRules(): Int {
         val now = System.currentTimeMillis()
         val expired = ruleDao.getAll().filter {
-            (it.ruleType == BlacklistRuleEntity.TYPE_TEMP_BLOCK_ALL ||
-                it.ruleType == BlacklistRuleEntity.TYPE_TEMP_ALLOW ||
-                it.ruleType == BlacklistRuleEntity.TYPE_TEMP_OUTBOUND_CALLBACK) &&
-                !com.blacklist.app.domain.engine.TemporaryFirewall.isActive(it, now)
+            TemporaryFirewall.isTempType(it.ruleType) && !TemporaryFirewall.isActive(it, now)
         }
         expired.forEach { ruleDao.deleteById(it.id) }
         return expired.size
