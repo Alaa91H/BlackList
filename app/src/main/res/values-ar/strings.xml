@@ -90,6 +90,11 @@
     <string name="schedule_mode_blacklist">القائمة السوداء فقط</string>
     <string name="schedule_save">حفظ القاعدة</string>
     <string name="schedule_delete">حذف القاعدة</string>
+    <string name="schedule_exceptions">استثناءات الجدول</string>
+    <string name="schedule_exceptions_desc">اسمح للأرقام المحددة فقط أثناء تفعيل هذا الجدول. يظل الحظر الصريح أعلى أولوية.</string>
+    <string name="schedule_exception_number_hint">رقم هاتف موثوق</string>
+    <string name="schedule_exception_empty">لا توجد أرقام خاصة بهذا الجدول بعد</string>
+    <string name="schedule_exception_add">إضافة استثناء</string>
     <string name="schedule_start_h">ساعة البدء</string>
     <string name="schedule_start_m">دقيقة البدء</string>
     <string name="schedule_end_h">ساعة الانتهاء</string>

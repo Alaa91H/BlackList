@@ -5,7 +5,9 @@ import com.blacklist.app.data.local.BlackListDatabase
 import com.blacklist.app.data.local.entity.AppSettingsEntity
 import com.blacklist.app.data.local.entity.BlacklistRuleEntity
 import com.blacklist.app.data.local.entity.BlockedNumberEntity
+import com.blacklist.app.data.local.entity.ScheduleExceptionEntity
 import com.blacklist.app.data.local.entity.ScheduleRuleEntity
+import com.blacklist.app.util.PhoneNumberUtils
 import com.blacklist.app.data.local.entity.WhitelistedNumberEntity
 import com.blacklist.app.domain.engine.EmergencyCallbackGrace
 import com.blacklist.app.domain.model.ProtectionProfiles
@@ -55,6 +57,7 @@ class EncryptedBackupService(
             val blocked = database.blockedNumberDao().getAll()
             val whitelisted = database.whitelistedNumberDao().getAll()
             val schedules = database.scheduleRuleDao().getAll()
+            val scheduleExceptions = database.scheduleExceptionDao().getAll()
             val settings = database.appSettingsDao().get() ?: AppSettingsEntity()
             val createdAt = System.currentTimeMillis()
             val payload = JSONObject()
@@ -65,6 +68,7 @@ class EncryptedBackupService(
                 .put("blockedNumbers", JSONArray().also { array -> blocked.forEach { array.put(it.toJson()) } })
                 .put("whitelistedNumbers", JSONArray().also { array -> whitelisted.forEach { array.put(it.toJson()) } })
                 .put("schedules", JSONArray().also { array -> schedules.forEach { array.put(it.toJson()) } })
+                .put("scheduleExceptions", JSONArray().also { array -> scheduleExceptions.forEach { array.put(it.toJson()) } })
 
             val salt = randomBytes(SALT_BYTES)
             val iv = randomBytes(GCM_IV_BYTES)
@@ -111,7 +115,18 @@ class EncryptedBackupService(
                 payload.rules.forEach { database.blacklistRuleDao().insert(it.copy(id = 0)) }
                 payload.blockedNumbers.forEach { database.blockedNumberDao().insert(it.copy(id = 0)) }
                 payload.whitelistedNumbers.forEach { database.whitelistedNumberDao().insert(it.copy(id = 0)) }
-                payload.schedules.forEach { database.scheduleRuleDao().insert(it.copy(id = 0)) }
+                val restoredScheduleIds = mutableMapOf<Long, Long>()
+                payload.schedules.forEach { schedule ->
+                    val restoredId = database.scheduleRuleDao().insert(schedule.copy(id = 0))
+                    restoredScheduleIds[schedule.id] = restoredId
+                }
+                payload.scheduleExceptions.forEach { exception ->
+                    val restoredScheduleId = restoredScheduleIds[exception.scheduleRuleId]
+                        ?: throw IllegalArgumentException("Schedule exception references a missing schedule.")
+                    database.scheduleExceptionDao().insert(
+                        exception.copy(id = 0, scheduleRuleId = restoredScheduleId)
+                    )
+                }
                 database.appSettingsDao().upsert(payload.settings.copy(id = 1, updatedAt = System.currentTimeMillis()))
             }
 
@@ -124,7 +139,8 @@ class EncryptedBackupService(
         val rules: List<BlacklistRuleEntity>,
         val blockedNumbers: List<BlockedNumberEntity>,
         val whitelistedNumbers: List<WhitelistedNumberEntity>,
-        val schedules: List<ScheduleRuleEntity>
+        val schedules: List<ScheduleRuleEntity>,
+        val scheduleExceptions: List<ScheduleExceptionEntity>
     )
 
     private fun parsePayload(json: JSONObject): Payload {
@@ -133,14 +149,22 @@ class EncryptedBackupService(
         val blocked = json.requiredArray("blockedNumbers", MAX_NUMBERS).map(::blockedFromJson)
         val whitelisted = json.requiredArray("whitelistedNumbers", MAX_NUMBERS).map(::whitelistedFromJson)
         val schedules = json.requiredArray("schedules", MAX_SCHEDULES).map(::scheduleFromJson)
+        val scheduleExceptions = json.optionalArray("scheduleExceptions", MAX_SCHEDULE_EXCEPTIONS).map(::scheduleExceptionFromJson)
+        require(scheduleExceptions.all { exception -> schedules.any { it.id == exception.scheduleRuleId } }) {
+            "Schedule exception references a missing schedule."
+        }
         return Payload(
             settings = settingsFromJson(json.getJSONObject("settings")),
             rules = rules,
             blockedNumbers = blocked,
             whitelistedNumbers = whitelisted,
-            schedules = schedules
+            schedules = schedules,
+            scheduleExceptions = scheduleExceptions
         )
     }
+
+    private fun JSONObject.optionalArray(name: String, cap: Int): List<JSONObject> =
+        if (!has(name) || isNull(name)) emptyList() else requiredArray(name, cap)
 
     private fun JSONObject.requiredArray(name: String, cap: Int): List<JSONObject> {
         val array = getJSONArray(name)
@@ -185,11 +209,17 @@ class EncryptedBackupService(
         .put("createdAt", createdAt)
 
     private fun ScheduleRuleEntity.toJson(): JSONObject = JSONObject()
+        .put("id", id)
         .put("enabled", isEnabled)
         .put("startMinutes", startMinutes)
         .put("endMinutes", endMinutes)
         .put("days", daysOfWeek)
         .put("mode", mode)
+        .put("createdAt", createdAt)
+
+    private fun ScheduleExceptionEntity.toJson(): JSONObject = JSONObject()
+        .put("scheduleRuleId", scheduleRuleId)
+        .put("number", normalizedNumber)
         .put("createdAt", createdAt)
 
     private fun settingsFromJson(json: JSONObject): AppSettingsEntity {
@@ -273,11 +303,27 @@ class EncryptedBackupService(
         val mode = json.requiredText("mode", 32)
         require(mode in ALLOWED_SCHEDULE_MODES) { "Unsupported schedule mode in backup." }
         return ScheduleRuleEntity(
+            id = json.optLong("id", 0L).also { require(it >= 0) { "Invalid schedule id in backup." } },
             isEnabled = json.optBoolean("enabled", true),
             startMinutes = start,
             endMinutes = end,
             daysOfWeek = days,
             mode = mode,
+            createdAt = json.optLong("createdAt", System.currentTimeMillis())
+        )
+    }
+
+    private fun scheduleExceptionFromJson(json: JSONObject): ScheduleExceptionEntity {
+        val scheduleRuleId = json.optLong("scheduleRuleId", -1L)
+        require(scheduleRuleId > 0) { "Invalid schedule exception parent in backup." }
+        val number = json.requiredText("number", MAX_NUMBER_LENGTH)
+        val canonical = PhoneNumberUtils.normalize(number)
+        require(canonical == number && number.filter(Char::isDigit).length in 3..32) {
+            "Invalid schedule exception number in backup."
+        }
+        return ScheduleExceptionEntity(
+            scheduleRuleId = scheduleRuleId,
+            normalizedNumber = number,
             createdAt = json.optLong("createdAt", System.currentTimeMillis())
         )
     }
@@ -354,6 +400,7 @@ class EncryptedBackupService(
         const val MAX_RULES = 10_000
         const val MAX_NUMBERS = 50_000
         const val MAX_SCHEDULES = 1_000
+        const val MAX_SCHEDULE_EXCEPTIONS = 10_000
         const val MIN_PASSPHRASE_LENGTH = 12
         const val MAX_NUMBER_LENGTH = 64
         const val MAX_PATTERN_LENGTH = 128

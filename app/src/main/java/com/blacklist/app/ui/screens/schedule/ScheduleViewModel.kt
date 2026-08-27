@@ -14,4 +14,8 @@ class ScheduleViewModel(private val repo: BlackListRepository): ViewModel() {
     fun update(rule: ScheduleRuleEntity) = viewModelScope.launch { repo.updateScheduleRule(rule) }
     fun delete(rule: ScheduleRuleEntity) = viewModelScope.launch { repo.deleteScheduleRule(rule) }
     fun toggle(rule: ScheduleRuleEntity) = viewModelScope.launch { repo.updateScheduleRule(rule.copy(isEnabled = !rule.isEnabled)) }
+    fun addException(scheduleRuleId: Long, number: String) = viewModelScope.launch {
+        repo.addScheduleException(scheduleRuleId, number)
+    }
+    fun deleteException(id: Long) = viewModelScope.launch { repo.deleteScheduleException(id) }
 }

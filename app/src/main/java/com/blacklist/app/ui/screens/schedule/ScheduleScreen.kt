@@ -18,6 +18,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.blacklist.app.R
+import com.blacklist.app.data.local.entity.ScheduleExceptionEntity
 import com.blacklist.app.data.local.entity.ScheduleRuleEntity
 import com.blacklist.app.di.ServiceLocator
 import com.blacklist.app.di.ViewModelFactory
@@ -32,6 +33,7 @@ fun ScheduleScreen(nav: NavController) {
     val vm: ScheduleViewModel = viewModel(factory = ViewModelFactory(repo))
     val rules by vm.rules.collectAsState()
     var showAdd by remember { mutableStateOf(false) }
+    var exceptionRule by remember { mutableStateOf<ScheduleRuleEntity?>(null) }
 
     Scaffold(
         topBar = {
@@ -67,7 +69,18 @@ fun ScheduleScreen(nav: NavController) {
                                 }, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary
                             )
                             AssistChip(onClick = {}, label = { Text(modeLabel(rule.mode)) }, leadingIcon = { Icon(Icons.Filled.Shield, null, modifier = Modifier.size(16.dp)) })
-                            Row(horizontalArrangement = Arrangement.End, modifier = Modifier.fillMaxWidth()) { TextButton(onClick = { vm.delete(rule) }) { Icon(Icons.Filled.Delete, null, modifier = Modifier.size(16.dp)); Spacer(Modifier.width(4.dp)); Text(stringResource(R.string.schedule_delete)) } }
+                            Row(horizontalArrangement = Arrangement.End, modifier = Modifier.fillMaxWidth()) {
+                                TextButton(onClick = { exceptionRule = rule }) {
+                                    Icon(Icons.Filled.PersonAdd, null, modifier = Modifier.size(16.dp))
+                                    Spacer(Modifier.width(4.dp))
+                                    Text(stringResource(R.string.schedule_exceptions))
+                                }
+                                TextButton(onClick = { vm.delete(rule) }) {
+                                    Icon(Icons.Filled.Delete, null, modifier = Modifier.size(16.dp))
+                                    Spacer(Modifier.width(4.dp))
+                                    Text(stringResource(R.string.schedule_delete))
+                                }
+                            }
                         }
                     }
                 }
@@ -75,7 +88,68 @@ fun ScheduleScreen(nav: NavController) {
         }
     }
     if (showAdd) ScheduleAddDialog(onDismiss = { showAdd = false }, onSave = { vm.add(it); showAdd = false })
+    exceptionRule?.let { rule ->
+        val exceptions by repo.observeScheduleExceptions(rule.id).collectAsState(initial = emptyList())
+        ScheduleExceptionsDialog(
+            rule = rule,
+            exceptions = exceptions,
+            onAdd = { vm.addException(rule.id, it) },
+            onDelete = vm::deleteException,
+            onDismiss = { exceptionRule = null }
+        )
+    }
 }
+
+@Composable
+private fun ScheduleExceptionsDialog(
+    rule: ScheduleRuleEntity,
+    exceptions: List<ScheduleExceptionEntity>,
+    onAdd: (String) -> Unit,
+    onDelete: (Long) -> Unit,
+    onDismiss: () -> Unit
+) {
+    var number by remember(rule.id) { mutableStateOf("") }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.schedule_exceptions)) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text(stringResource(R.string.schedule_exceptions_desc), style = MaterialTheme.typography.bodySmall)
+                OutlinedTextField(
+                    value = number,
+                    onValueChange = { number = it },
+                    label = { Text(stringResource(R.string.schedule_exception_number_hint)) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                if (exceptions.isEmpty()) {
+                    Text(stringResource(R.string.schedule_exception_empty), style = MaterialTheme.typography.bodySmall)
+                } else {
+                    exceptions.forEach { exception ->
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(exception.normalizedNumber, style = MaterialTheme.typography.bodyMedium)
+                            IconButton(onClick = { onDelete(exception.id) }) {
+                                Icon(Icons.Filled.Delete, stringResource(R.string.schedule_delete))
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                enabled = number.filter(Char::isDigit).length >= 3,
+                onClick = { onAdd(number); number = "" }
+            ) { Text(stringResource(R.string.schedule_exception_add)) }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) } }
+    )
+}
+
 @Composable
 private fun modeLabel(m: String) = when (m) {
     ScheduleRuleEntity.MODE_ALL -> "Block All Calls"

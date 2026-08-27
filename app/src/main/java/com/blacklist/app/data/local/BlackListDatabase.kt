@@ -13,12 +13,13 @@ import com.blacklist.app.data.local.entity.*
         WhitelistedNumberEntity::class,
         BlockedCallLogEntity::class,
         ScheduleRuleEntity::class,
+        ScheduleExceptionEntity::class,
         AppSettingsEntity::class,
         BlacklistRuleEntity::class,
         CallerReputationEntity::class,
         SecurityEventEntity::class
     ],
-    version = 7,
+    version = 8,
     exportSchema = true
 )
 abstract class BlackListDatabase : RoomDatabase() {
@@ -26,6 +27,7 @@ abstract class BlackListDatabase : RoomDatabase() {
     abstract fun whitelistedNumberDao(): WhitelistedNumberDao
     abstract fun blockedCallLogDao(): BlockedCallLogDao
     abstract fun scheduleRuleDao(): ScheduleRuleDao
+    abstract fun scheduleExceptionDao(): ScheduleExceptionDao
     abstract fun appSettingsDao(): AppSettingsDao
     abstract fun blacklistRuleDao(): BlacklistRuleDao
     abstract fun callerReputationDao(): CallerReputationDao
@@ -65,6 +67,22 @@ abstract class BlackListDatabase : RoomDatabase() {
                 database.execSQL(
                     "ALTER TABLE app_settings ADD COLUMN allowOutboundCallbackGrace INTEGER NOT NULL DEFAULT 0"
                 )
+            }
+        }
+
+        /** Adds local, exact-number allow exceptions scoped to individual schedule rules. */
+        val MIGRATION_7_8 = object : Migration(7, 8) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL(
+                    "CREATE TABLE IF NOT EXISTS schedule_exceptions (" +
+                        "id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                        "scheduleRuleId INTEGER NOT NULL, " +
+                        "normalizedNumber TEXT NOT NULL, " +
+                        "createdAt INTEGER NOT NULL, " +
+                        "FOREIGN KEY(scheduleRuleId) REFERENCES schedule_rules(id) ON DELETE CASCADE)"
+                )
+                database.execSQL("CREATE INDEX IF NOT EXISTS index_schedule_exceptions_scheduleRuleId ON schedule_exceptions(scheduleRuleId)")
+                database.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS index_schedule_exceptions_scheduleRuleId_normalizedNumber ON schedule_exceptions(scheduleRuleId, normalizedNumber)")
             }
         }
     }

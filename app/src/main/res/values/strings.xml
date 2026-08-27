@@ -96,7 +96,13 @@
     <string name="schedule_mode_unknown_private">Block Unknown &amp; Private Only</string>
     <string name="schedule_mode_blacklist">Blacklist Only</string>
     <string name="schedule_save">Save Rule</string>
-    <string name="schedule_delete">Delete Rule</string>
+        <string name="schedule_delete">Delete Rule</string>
+    <string name="schedule_exceptions">Schedule exceptions</string>
+    <string name="schedule_exceptions_desc">Allow selected numbers only while this schedule is active. Explicit blacklist rules still win.</string>
+    <string name="schedule_exception_number_hint">Trusted phone number</string>
+    <string name="schedule_exception_empty">No schedule-specific callers yet</string>
+    <string name="schedule_exception_add">Add exception</string>
+
     <string name="schedule_start_h">Start H</string>
     <string name="schedule_start_m">Start M</string>
     <string name="schedule_end_h">End H</string>

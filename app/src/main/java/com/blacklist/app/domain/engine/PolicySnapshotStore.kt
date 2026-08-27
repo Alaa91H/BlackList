@@ -5,6 +5,7 @@ import com.blacklist.app.data.local.entity.AppSettingsEntity
 import com.blacklist.app.data.local.entity.BlacklistRuleEntity
 import com.blacklist.app.data.local.entity.BlockedNumberEntity
 import com.blacklist.app.data.local.entity.CallerReputationEntity
+import com.blacklist.app.data.local.entity.ScheduleExceptionEntity
 import com.blacklist.app.data.local.entity.ScheduleRuleEntity
 import com.blacklist.app.data.local.entity.WhitelistedNumberEntity
 import com.blacklist.app.domain.model.PhoneNumber
@@ -41,6 +42,7 @@ class PolicySnapshotStore(
         val refreshedAt: Long = 0,
         val rules: List<BlacklistRuleEntity> = emptyList(),
         val schedules: List<ScheduleRuleEntity> = emptyList(),
+        val scheduleExceptions: List<ScheduleExceptionEntity> = emptyList(),
         val whitelist: List<PhoneNumber> = emptyList(),
         val legacyBlocked: List<PhoneNumber> = emptyList(),
         val knownContactNumbers: List<PhoneNumber> = emptyList(),
@@ -79,6 +81,7 @@ class PolicySnapshotStore(
         scope.launch { refresh() }
         scope.launch { database.blacklistRuleDao().observeAll().collect { refresh() } }
         scope.launch { database.scheduleRuleDao().observeAll().collect { refresh() } }
+        scope.launch { database.scheduleExceptionDao().observeAll().collect { refresh() } }
         scope.launch { database.whitelistedNumberDao().observeAll().collect { refresh() } }
         scope.launch { database.blockedNumberDao().observeAll().collect { refresh() } }
         scope.launch { database.appSettingsDao().observe().collect { refresh() } }
@@ -89,6 +92,7 @@ class PolicySnapshotStore(
     suspend fun refresh() = refreshMutex.withLock {
         val rules = safe { database.blacklistRuleDao().getAll() }.orEmpty()
         val schedules = safe { database.scheduleRuleDao().getAll() }.orEmpty()
+        val scheduleExceptions = safe { database.scheduleExceptionDao().getAll() }.orEmpty()
         val whitelist = safe { database.whitelistedNumberDao().getAll() }.orEmpty()
         val legacyBlocked = safe { database.blockedNumberDao().getAll() }.orEmpty()
         val settings = safe { database.appSettingsDao().get() }
@@ -105,6 +109,7 @@ class PolicySnapshotStore(
                 refreshedAt = System.currentTimeMillis(),
                 rules = rules.filter { it.isEnabled },
                 schedules = schedules.filter { it.isEnabled },
+                scheduleExceptions = scheduleExceptions,
                 whitelist = whitelist.map(WhitelistedNumberEntity::normalizedNumber).map(normalizer::normalize),
                 legacyBlocked = legacyBlocked.map(BlockedNumberEntity::normalizedNumber).map(normalizer::normalize),
                 knownContactNumbers = contacts.map(normalizer::normalize),

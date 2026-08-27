@@ -145,6 +145,21 @@ class CallFirewallEngine(
 
     private fun evaluateSchedule(event: CallEvent, snapshot: PolicySnapshotStore.Snapshot): EnforcementDecision? {
         val rule = ScheduleEvaluator.matchingRule(snapshot.schedules) ?: return null
+        val isScheduleException = snapshot.scheduleExceptions.any { exception ->
+            exception.scheduleRuleId == rule.id &&
+                normalizer.matches(event.phoneNumber, normalizer.normalize(exception.normalizedNumber))
+        }
+        if (isScheduleException) {
+            return decision(
+                event,
+                Decision.ALLOW,
+                0,
+                ReputationLevel.TRUSTED,
+                listOf("Schedule exception active"),
+                emptyList(),
+                "schedule_exception"
+            )
+        }
         return when (rule.mode) {
             ScheduleRuleEntity.MODE_ALL -> decision(event, Decision.BLOCK, 90, ReputationLevel.NEUTRAL, listOf("Schedule: block all"), emptyList(), "schedule")
             ScheduleRuleEntity.MODE_ALL_EXCEPT_WHITELIST -> decision(event, Decision.BLOCK, 85, ReputationLevel.NEUTRAL, listOf("Schedule: all except whitelist"), emptyList(), "schedule")

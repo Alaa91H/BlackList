@@ -2,6 +2,31 @@
 
 All notable changes to BlackList are documented in this file. The project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.9.0] - 2026-08-27
+
+### Added
+
+- **Per-schedule trusted caller exceptions.** A schedule can now carry exact-number local exceptions, allowing selected callers to ring only while that specific schedule is active without making them permanent global whitelist entries.
+- **Schedule exception management.** The Schedule screen now exposes a focused local editor to add and remove validated trusted numbers for each rule, with English and Arabic localization.
+
+### Changed
+
+- **Deliberate firewall precedence.** Schedule exceptions are evaluated only after emergency safeguards, manual temporary allowances, whitelists, explicit blacklist rules, and legacy exact blocks. A matching exception bypasses only the broad action of its own active schedule.
+- **Portable local policy.** Encrypted policy backup and restore now preserve schedule exceptions while validating parent-rule relationships, normalized phone-number format, and bounded restore sizes.
+
+### Fixed
+
+- Added a non-destructive Room 7→8 migration with an indexed, cascade-deleted exception table so deleting a schedule cannot leave orphaned caller data.
+- Policy snapshots now refresh schedule exceptions in the background, keeping Room I/O out of the `CallScreeningService` decision path.
+
+### Quality
+
+- Added regression coverage proving that a schedule exception allows only its matching number during an active schedule and never overrides an explicit blacklist rule.
+
+### Privacy
+
+- Schedule exceptions store only a local normalized number and parent schedule identifier. No network request, analytics event, cloud service, permission, or background sync was introduced.
+
 ## [1.8.0] - 2026-08-27
 
 ### Added
@@ -94,6 +119,7 @@ All notable changes to BlackList are documented in this file. The project follow
 
 - Production-grade local call-firewall foundation with rule matching, risk scoring, behavior signals, reputation tracking, temporary protection controls, diagnostics, and a decision simulator.
 
+[1.9.0]: https://github.com/Alaa91H/BlackList/compare/v1.8.0...v1.9.0
 [1.8.0]: https://github.com/Alaa91H/BlackList/compare/v1.7.0...v1.8.0
 [1.7.0]: https://github.com/Alaa91H/BlackList/compare/v1.6.0...v1.7.0
 [1.6.0]: https://github.com/Alaa91H/BlackList/compare/v1.5.0...v1.6.0

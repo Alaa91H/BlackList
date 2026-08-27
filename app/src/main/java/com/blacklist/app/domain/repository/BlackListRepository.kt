@@ -40,6 +40,9 @@ interface BlackListRepository {
     suspend fun addScheduleRule(rule: ScheduleRuleEntity): Long
     suspend fun updateScheduleRule(rule: ScheduleRuleEntity)
     suspend fun deleteScheduleRule(rule: ScheduleRuleEntity)
+    fun observeScheduleExceptions(scheduleRuleId: Long): Flow<List<ScheduleExceptionEntity>>
+    suspend fun addScheduleException(scheduleRuleId: Long, rawNumber: String): Result<Long>
+    suspend fun deleteScheduleException(id: Long)
 
     // Blacklist pattern rules (EXACT/PREFIX/SUFFIX/CONTAINS/RANGE/COUNTRY)
     fun observeBlacklistRules(): Flow<List<BlacklistRuleEntity>>

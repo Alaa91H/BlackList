@@ -21,11 +21,11 @@
 
 Most call blockers send your contacts and call history to remote servers. **BlackList never does.**
 
-### New in 1.8.0
+### New in 1.9.0
 
-- **Opt-in outgoing callback grace** — after you dial a valid non-emergency number, BlackList can allow only that exact number to call back for 15 minutes. The feature is disabled by default and needs no call-log access, network connection, or new permission.
-- **Explicit blocks remain authoritative** — a manual blacklist rule or legacy exact block still wins. The short exact-number allowance protects only against broad policies such as schedules, block-all modes, and unknown/private filtering.
-- **Bounded and recoverable by design** — callback state contains only normalized digits and an expiry, is capped in memory and storage, expires automatically, and is included safely in encrypted policy backup and restore.
+- **Per-schedule trusted caller exceptions** — add a local exact-number exception to one schedule without permanently placing that number on the global whitelist. It rings only while its parent schedule is active.
+- **Explicit blocks remain authoritative** — an explicit blacklist rule or legacy exact block still wins over a schedule exception. The exception only protects against the broad action selected by its own active schedule.
+- **Bounded and portable policy state** — each schedule accepts a small bounded set of validated exceptions; they are included in encrypted policy backup and restore, with a non-destructive database migration for upgrades.
 
 ### Recent safety hardening
 
@@ -49,7 +49,7 @@ Most call blockers send your contacts and call history to remote servers. **Blac
 | **Block Private/Hidden** | Reject withheld / private / unknown callers. |
 | **Block All Except Whitelist** | Nuclear mode — only whitelisted numbers ring. |
 | **Opt-in Callback Grace** | After you dial a valid number, allow only that exact number to call back for 15 minutes; never overrides an explicit block. |
-| **Advanced Scheduling** | Time-based rules with day-of-week bitmask. Example: *Block all except whitelist 22:00–06:00 Mon–Fri*. Overnight spans supported. |
+| **Advanced Scheduling** | Time-based rules with day-of-week bitmask and per-schedule trusted caller exceptions. Example: *Block all except whitelist 22:00–06:00 Mon–Fri while allowing an on-call number*. Overnight spans supported. |
 | **Blocked Log** | Professional timeline of every blocked call: number, display name, reason, timestamp. Clear with one tap. |
 | **Smart Notifications** | Optional low-priority notification for each blocked call (off by default if you prefer total silence). |
 | **Material Design 3 (2026)** | Jetpack Compose, dynamic colors (Material You), Light/Dark/System theme, smooth animations & transitions. |
@@ -96,6 +96,7 @@ com.blacklist.app
    Explicit blacklist or legacy exact block? → BLOCK
    Recent outgoing call to this exact number and opt-in enabled? → 15-minute callback allowance
    Recent outgoing emergency call? → short responder callback allowance
+   Active schedule has a matching trusted caller exception? → ALLOW for that schedule only
    Schedule active? → evaluate schedule mode (ALL / ALL_EXCEPT_WHITELIST / UNKNOWN_PRIVATE / BLACKLIST)
    Temporary firewall or broad policy? → BLOCK
    Unknown/private policy? → BLOCK when enabled
@@ -189,7 +190,7 @@ BlackList/
 - [x] Emergency short-number safeguard, emergency callback grace, and an opt-in exact-number callback grace after a local outgoing call.
 - [x] Encrypted local backup and restore for policy data only; call history and diagnostics remain excluded.
 - [x] Optional private blocked-call history, retaining the explainable log locally while suppressing only blocked calls from Android’s shared call log.
-- [ ] Per-number schedule override.
+- [x] Per-schedule exact-number trusted caller exceptions, bounded locally and subordinate to explicit blocks.
 - [ ] Home-screen widget with today’s statistics.
 - [ ] Optional offline reputation-list import with transparent provenance and no background network access.
 

@@ -18,6 +18,7 @@ class BlackListRepositoryImpl(
     private val logDao get() = db.blockedCallLogDao()
     private val settingsDao get() = db.appSettingsDao()
     private val scheduleDao get() = db.scheduleRuleDao()
+    private val scheduleExceptionDao get() = db.scheduleExceptionDao()
     private val ruleDao get() = db.blacklistRuleDao()
     private val backupService by lazy { EncryptedBackupService(db) }
 
@@ -71,6 +72,28 @@ class BlackListRepositoryImpl(
     override suspend fun addScheduleRule(rule: ScheduleRuleEntity): Long = scheduleDao.insert(rule)
     override suspend fun updateScheduleRule(rule: ScheduleRuleEntity) = scheduleDao.update(rule)
     override suspend fun deleteScheduleRule(rule: ScheduleRuleEntity) = scheduleDao.delete(rule)
+    override fun observeScheduleExceptions(scheduleRuleId: Long): Flow<List<ScheduleExceptionEntity>> =
+        scheduleExceptionDao.observeForSchedule(scheduleRuleId)
+
+    override suspend fun addScheduleException(scheduleRuleId: Long, rawNumber: String): Result<Long> {
+        return try {
+            if (scheduleRuleId <= 0) return Result.failure(IllegalArgumentException("Invalid schedule rule"))
+            val normalized = PhoneNumberUtils.normalize(rawNumber) ?: return Result.failure(IllegalArgumentException("Invalid number"))
+            val digits = normalized.filter(Char::isDigit)
+            if (digits.length !in 3..32) return Result.failure(IllegalArgumentException("Invalid number"))
+            if (scheduleExceptionDao.countForSchedule(scheduleRuleId) >= MAX_SCHEDULE_EXCEPTIONS_PER_RULE) {
+                return Result.failure(IllegalStateException("Schedule exception limit reached"))
+            }
+            val id = scheduleExceptionDao.insert(
+                ScheduleExceptionEntity(scheduleRuleId = scheduleRuleId, normalizedNumber = normalized)
+            )
+            if (id == -1L) Result.failure(IllegalStateException("Schedule exception already exists")) else Result.success(id)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun deleteScheduleException(id: Long) = scheduleExceptionDao.deleteById(id)
 
     override fun observeBlacklistRules(): Flow<List<BlacklistRuleEntity>> = ruleDao.observeAll()
 
@@ -250,4 +273,8 @@ class BlackListRepositoryImpl(
         input: InputStream,
         passphrase: CharArray
     ): Result<EncryptedBackupService.RestoreResult> = backupService.restoreFrom(input, passphrase)
+
+    private companion object {
+        const val MAX_SCHEDULE_EXCEPTIONS_PER_RULE = 50
+    }
 }
