@@ -70,7 +70,7 @@ fun BlockedLogScreen(nav: NavController) {
     }
     if (confirmClear) {
         AlertDialog(onDismissRequest = { confirmClear = false }, title = { Text(stringResource(R.string.blocked_log_clear)) }, text = { Text(stringResource(R.string.blocked_log_clear_confirm)) },
-            confirmButton = { Button(onClick = { vm.clear(); confirmClear = false }, colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)) { Text(stringResource(R.string.action_delete)) } },
+            confirmButton = { Button(onClick = { vm.clear(ctx); confirmClear = false }, colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)) { Text(stringResource(R.string.action_delete)) } },
             dismissButton = { TextButton(onClick = { confirmClear = false }) { Text(stringResource(R.string.action_cancel)) } })
     }
     actionTarget?.let { target ->

@@ -2,6 +2,27 @@
 
 All notable changes to BlackList are documented in this file. The project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.10.0] - 2026-08-27
+
+### Added
+
+- **Home-screen blocked-call statistics widget.** A launcher-native widget now presents the number of calls blocked today and the total recorded blocked calls, with a direct app shortcut and an explicit refresh action.
+- **Aggregate-only widget data.** The widget intentionally renders only local counts; it never exposes phone numbers, contact names, call reasons, rule details, or any remote content on the launcher.
+
+### Changed
+
+- **Post-decision refresh path.** Widget updates are scheduled only after a blocked-call record has been written or the local blocked-call log is cleared. The Telecom response path remains free of widget and database work.
+- **Bounded database queries.** The widget uses direct aggregate counts rather than materializing call-history rows, including a local-calendar start-of-day boundary for its daily total.
+
+### Quality
+
+- Added regression coverage for start-of-day calculation in explicit time zones, including an overnight date-boundary case.
+- Registered the widget with Android’s standard `AppWidgetProvider` integration and a conservative 30-minute platform refresh interval.
+
+### Privacy
+
+- No network capability, analytics integration, runtime permission, cloud synchronization, call-log permission, or sensitive launcher content was introduced.
+
 ## [1.9.0] - 2026-08-27
 
 ### Added
@@ -119,6 +140,7 @@ All notable changes to BlackList are documented in this file. The project follow
 
 - Production-grade local call-firewall foundation with rule matching, risk scoring, behavior signals, reputation tracking, temporary protection controls, diagnostics, and a decision simulator.
 
+[1.10.0]: https://github.com/Alaa91H/BlackList/compare/v1.9.0...v1.10.0
 [1.9.0]: https://github.com/Alaa91H/BlackList/compare/v1.8.0...v1.9.0
 [1.8.0]: https://github.com/Alaa91H/BlackList/compare/v1.7.0...v1.8.0
 [1.7.0]: https://github.com/Alaa91H/BlackList/compare/v1.6.0...v1.7.0

@@ -26,6 +26,9 @@
     <string name="home_manage_desc">إدارة قوائمك وقواعدك</string>
     <string name="home_whitelist_bypass">القائمة البيضاء تتجاوز هذا الحظر</string>
     <string name="home_on">مفعّل</string>
+    <string name="widget_stats_title">نشاط BlackList</string>
+    <string name="widget_stats_description">إحصاءات المكالمات المحجوبة محلياً اليوم وإجمالاً</string>
+    <string name="widget_stats_refresh">تحديث</string>
 
     <string name="blacklist_title">القائمة السوداء</string>
     <string name="blacklist_empty">لا توجد أرقام محظورة بعد</string>

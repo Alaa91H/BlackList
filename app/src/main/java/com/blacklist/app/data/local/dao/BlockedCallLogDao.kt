@@ -15,6 +15,9 @@ interface BlockedCallLogDao {
     @Query("SELECT COUNT(*) FROM blocked_call_logs")
     fun observeCount(): Flow<Int>
 
+    @Query("SELECT COUNT(*) FROM blocked_call_logs")
+    suspend fun count(): Int
+
     @Query("SELECT COUNT(*) FROM blocked_call_logs WHERE timestamp >= :since")
     suspend fun countSince(since: Long): Int
 

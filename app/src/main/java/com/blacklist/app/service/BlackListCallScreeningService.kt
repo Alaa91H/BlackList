@@ -15,6 +15,7 @@ import com.blacklist.app.domain.events.FirewallEvent
 import com.blacklist.app.domain.events.FirewallEventBus
 import com.blacklist.app.domain.model.Decision
 import com.blacklist.app.domain.notification.BlockedNotificationGate
+import com.blacklist.app.widget.BlockedCallStatsWidgetProvider
 import com.blacklist.app.domain.model.EnforcementDecision
 import com.blacklist.app.domain.model.Presentation
 import kotlinx.coroutines.CoroutineScope
@@ -226,6 +227,8 @@ class BlackListCallScreeningService : CallScreeningService() {
                 }
 
                 notifyBlockedIfEnabled(number, decision)
+                runCatching { BlockedCallStatsWidgetProvider.refreshAll(applicationContext) }
+                    .onFailure { error -> Log.w(TAG, "Could not refresh blocked-call widget", error) }
             } else if (decision.decision == Decision.ALLOW && event.phoneNumber.presentation == Presentation.ALLOWED) {
                 runCatching {
                     ServiceLocator.provideReputationEngine(applicationContext)

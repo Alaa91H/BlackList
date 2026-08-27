@@ -21,11 +21,11 @@
 
 Most call blockers send your contacts and call history to remote servers. **BlackList never does.**
 
-### New in 1.9.0
+### New in 1.10.0
 
-- **Per-schedule trusted caller exceptions** — add a local exact-number exception to one schedule without permanently placing that number on the global whitelist. It rings only while its parent schedule is active.
-- **Explicit blocks remain authoritative** — an explicit blacklist rule or legacy exact block still wins over a schedule exception. The exception only protects against the broad action selected by its own active schedule.
-- **Bounded and portable policy state** — each schedule accepts a small bounded set of validated exceptions; they are included in encrypted policy backup and restore, with a non-destructive database migration for upgrades.
+- **Home-screen blocked-call statistics widget** — add a compact, launcher-native view of today’s and total blocked-call counts, with one-tap app opening and manual refresh.
+- **Fresh without call-screening delay** — the widget refreshes after a blocked call has already been logged, when the user clears the local log, and through the platform’s periodic widget refresh; no database work is added before the Telecom response.
+- **Aggregate-only visibility** — the widget exposes counts, never phone numbers, contacts, rule details, call reasons, or network data.
 
 ### Recent safety hardening
 
@@ -50,6 +50,7 @@ Most call blockers send your contacts and call history to remote servers. **Blac
 | **Block All Except Whitelist** | Nuclear mode — only whitelisted numbers ring. |
 | **Opt-in Callback Grace** | After you dial a valid number, allow only that exact number to call back for 15 minutes; never overrides an explicit block. |
 | **Advanced Scheduling** | Time-based rules with day-of-week bitmask and per-schedule trusted caller exceptions. Example: *Block all except whitelist 22:00–06:00 Mon–Fri while allowing an on-call number*. Overnight spans supported. |
+| **Home-screen Stats Widget** | Compact local counts for blocked calls today and in total, with manual refresh and direct opening of the app. No number, contact, or call-reason content is exposed. |
 | **Blocked Log** | Professional timeline of every blocked call: number, display name, reason, timestamp. Clear with one tap. |
 | **Smart Notifications** | Optional low-priority notification for each blocked call (off by default if you prefer total silence). |
 | **Material Design 3 (2026)** | Jetpack Compose, dynamic colors (Material You), Light/Dark/System theme, smooth animations & transitions. |
@@ -191,7 +192,7 @@ BlackList/
 - [x] Encrypted local backup and restore for policy data only; call history and diagnostics remain excluded.
 - [x] Optional private blocked-call history, retaining the explainable log locally while suppressing only blocked calls from Android’s shared call log.
 - [x] Per-schedule exact-number trusted caller exceptions, bounded locally and subordinate to explicit blocks.
-- [ ] Home-screen widget with today’s statistics.
+- [x] Home-screen blocked-call statistics widget with aggregate-only counts, safe refresh actions, and no additional permission.
 - [ ] Optional offline reputation-list import with transparent provenance and no background network access.
 
 See [CHANGELOG.md](CHANGELOG.md) for the complete release history.

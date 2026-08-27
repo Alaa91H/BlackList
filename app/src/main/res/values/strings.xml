@@ -29,6 +29,9 @@
     <string name="home_manage_desc">Manage your lists and rules</string>
     <string name="home_whitelist_bypass">Whitelist bypasses this</string>
     <string name="home_on">ON</string>
+    <string name="widget_stats_title">BlackList activity</string>
+    <string name="widget_stats_description">Local blocked-call statistics with today and total counts</string>
+    <string name="widget_stats_refresh">Refresh</string>
 
     <!-- Blacklist -->
     <string name="blacklist_title">Blacklist</string>

@@ -42,6 +42,18 @@
             </intent-filter>
         </service>
 
+        <receiver
+            android:name=".widget.BlockedCallStatsWidgetProvider"
+            android:exported="false"
+            android:label="@string/widget_stats_title">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/blocked_call_stats_widget_info" />
+        </receiver>
+
         <!-- Modern Call Screening Service - silently blocks before ringing -->
         <service
             android:name=".service.BlackListCallScreeningService"
