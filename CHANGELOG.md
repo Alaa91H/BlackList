@@ -2,6 +2,26 @@
 
 All notable changes to BlackList are documented in this file. The project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.17.0] - 2026-08-27
+
+### Added
+
+- **Explicit shared-number intake.** BlackList is now available as a `text/plain` Android share target. A user can deliberately share text from another app, review a bounded set of valid local number suggestions, and choose one candidate.
+- **Confirmed rule creation.** The review screen requires an explicit action before it persists an exact permanent block, whitelist entry, or one of the existing validated temporary exact blocks. The original shared text is retained only in memory for the current review.
+
+### Changed
+
+- **Bounded untrusted-text handling.** The share receiver accepts `text/plain` only, keeps at most 2,048 input characters, identifies at most eight de-duplicated phone-like candidates, and applies regional normalization plus emergency-number protection before a candidate reaches the action controls.
+- **Accurate product boundaries.** README documentation now distinguishes a user-initiated share selection from Call Log/SMS access. BlackList neither reads Android’s shared call history, message inbox, attachments or clipboard in the background, nor requests the default Phone, Assistant or SMS role.
+
+### Quality
+
+- Added focused unit coverage for empty and non-phone payloads, duplicate candidate removal, bounded candidate output, bounded input handling, and rejection of alphanumeric embedded number fragments.
+
+### Privacy
+
+- The share flow adds no runtime permission, Call Log/SMS permission, default-handler role, content-provider query, retained URI permission, network request, cloud service, analytics event, tracker, worker, timer, boot receiver, root/Shizuku dependency, hidden-API bypass, shared-text log, or call-screening-path I/O.
+
 ## [1.16.0] - 2026-08-27
 
 ### Added
@@ -289,6 +309,7 @@ All notable changes to BlackList are documented in this file. The project follow
 
 - Production-grade local call-firewall foundation with rule matching, risk scoring, behavior signals, reputation tracking, temporary protection controls, diagnostics, and a decision simulator.
 
+[1.17.0]: https://github.com/Alaa91H/BlackList/compare/v1.16.0...v1.17.0
 [1.16.0]: https://github.com/Alaa91H/BlackList/compare/v1.15.0...v1.16.0
 [1.15.0]: https://github.com/Alaa91H/BlackList/compare/v1.14.0...v1.15.0
 [1.14.0]: https://github.com/Alaa91H/BlackList/compare/v1.13.0...v1.14.0

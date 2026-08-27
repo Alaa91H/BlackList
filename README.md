@@ -21,6 +21,12 @@
 
 Most call blockers send your contacts and call history to remote servers. **BlackList never does.**
 
+### New in 1.17.0
+
+- **Explicit share-to-rule intake** — choose BlackList from Android’s share sheet after you deliberately share plain text from a call detail, message, clipboard utility, browser or another app. BlackList extracts a small set of valid number suggestions, and keeps the original shared text in memory only for that review screen.
+- **Confirm before any policy change** — choose one canonical non-emergency number and explicitly add a permanent exact block, a whitelist entry, or a validated temporary exact block. Sharing never auto-blocks, auto-allows, logs the source text, reads call history/SMS/attachments/clipboard in the background, or changes a screening decision before you confirm.
+- **Bounded and private external input** — the share target accepts only `text/plain`, examines at most 2,048 characters and surfaces at most eight de-duplicated phone-like candidates. It adds no runtime permission, Call Log/SMS access, default-handler role, internet request, cloud service, analytics, tracker, background worker, root/Shizuku integration or call-screening-path I/O.
+
 ### New in 1.16.0
 
 - **Temporary exact-number blocks** — in **Blacklist**, enter one valid phone number and choose a fixed local expiry of **1 hour, 1 day, 7 days or 30 days**. The active temporary-block section shows the canonical number and localized end time; each rule can be cancelled directly.
@@ -82,7 +88,7 @@ Most call blockers send your contacts and call history to remote servers. **Blac
 
 | Feature | Description |
 |---------|-------------|
-| **Blacklist** | Add numbers manually, from contacts, or from call log. Wildcard-aware normalization (E.164 + national). |
+| **Blacklist** | Add numbers manually, from contacts, or through an explicitly shared plain-text selection. Rules use privacy-preserving local normalization (E.164 + national); BlackList does not read Android’s shared call history or SMS inbox. |
 | **Whitelist** | Family / priority numbers that **always bypass** any blocking rule. |
 | **Block Unknown** | Reject numbers not in your contacts (uses `READ_CONTACTS`), or optionally silence eligible unknown calls instead. |
 | **Block Private/Hidden** | Reject withheld / private callers, or optionally silence them instead. |
@@ -201,7 +207,7 @@ No Firebase, no analytics SDK, no internet permission.
 | `POST_NOTIFICATIONS` | Optional; shows BlackList's low-priority blocked-call notification on Android 13+. |
 | `BIND_SCREENING_SERVICE` | Service-level permission used by Android to bind `CallScreeningService`; it is not requested from the user. |
 
-BlackList declares **no** `INTERNET`, call-log, phone-state, call-placement, or call-answering permission. The user grants the Call Screening role through Android's standard role UI.
+BlackList declares **no** `INTERNET`, Call Log, SMS, phone-state, call-placement, or call-answering permission. It does not request the default Phone, Assistant, or SMS role. The user grants the Call Screening role through Android's standard role UI; a deliberate `text/plain` share is the only external number-intake path added in 1.17.0.
 
 ---
 

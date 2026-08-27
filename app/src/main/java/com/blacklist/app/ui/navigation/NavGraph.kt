@@ -11,6 +11,7 @@ import com.blacklist.app.ui.screens.diagnostics.DiagnosticsScreen
 import com.blacklist.app.ui.screens.home.HomeScreen
 import com.blacklist.app.ui.screens.permissions.PermissionCenterScreen
 import com.blacklist.app.ui.screens.schedule.ScheduleScreen
+import com.blacklist.app.ui.screens.sharednumber.SharedNumberScreen
 import com.blacklist.app.ui.screens.simulator.DecisionSimulatorScreen
 import com.blacklist.app.ui.screens.security.SecurityEventsScreen
 import com.blacklist.app.ui.screens.settings.SettingsScreen
@@ -30,10 +31,15 @@ object Routes {
     const val SECURITY_EVENTS = "security_events"
     const val PERMISSIONS = "permissions"
     const val DECISION_SIMULATOR = "decision_simulator"
+    const val SHARED_NUMBER = "shared_number"
 }
 
 @Composable
-fun AppNavGraph(navController: NavHostController) {
+fun AppNavGraph(
+    navController: NavHostController,
+    sharedText: CharSequence? = null,
+    onSharedTextConsumed: () -> Unit = {}
+) {
     NavHost(navController = navController, startDestination = Routes.HOME) {
         composable(Routes.HOME) { HomeScreen(navController) }
         composable(Routes.BLACKLIST) { BlacklistScreen(navController) }
@@ -47,5 +53,12 @@ fun AppNavGraph(navController: NavHostController) {
         composable(Routes.SECURITY_EVENTS) { SecurityEventsScreen(navController) }
         composable(Routes.PERMISSIONS) { PermissionCenterScreen(navController) }
         composable(Routes.DECISION_SIMULATOR) { DecisionSimulatorScreen(navController) }
+        composable(Routes.SHARED_NUMBER) {
+            SharedNumberScreen(
+                nav = navController,
+                sharedText = sharedText,
+                onSharedTextConsumed = onSharedTextConsumed
+            )
+        }
     }
 }

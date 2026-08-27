@@ -363,6 +363,22 @@
     <string name="temporary_exact_block_limit_reached">بلغ حد الحظر المؤقت. ألغِ حظراً مؤقتاً نشطاً أولاً.</string>
     <string name="temporary_exact_block_failed">تعذرت إضافة الحظر المؤقت. حاول مجدداً.</string>
 
+    <!-- استقبال رقم مشترك صراحةً -->
+    <string name="shared_number_title">إضافة رقم مُشارَك</string>
+    <string name="shared_number_privacy_title">يبقى النص المُشارَك خاصاً</string>
+    <string name="shared_number_privacy_description">يفحص BlackList النص الذي تشاركه صراحةً فقط. لا يُحفظ النص الأصلي، ولا يضاف أي رقم قبل تأكيد الإجراء.</string>
+    <string name="shared_number_choose_number">اختر رقماً سليماً</string>
+    <string name="shared_number_choose_action">اختر إجراءً</string>
+    <string name="shared_number_action_block">حظر دائم</string>
+    <string name="shared_number_action_allow">السماح دائماً</string>
+    <string name="shared_number_action_temporary_block">حظر مؤقت</string>
+    <string name="shared_number_confirm">تأكيد</string>
+    <string name="shared_number_empty_title">لم يُعثر على رقم هاتف سليم</string>
+    <string name="shared_number_empty_description">شارك نصاً عادياً يحتوي على رقم هاتف سليم ليس رقم طوارئ. لا يقرأ BlackList سجل مكالماتك أو رسائلك أو مرفقاتك أو الحافظة.</string>
+    <string name="shared_number_applied">أُضيفت القاعدة محلياً.</string>
+    <string name="shared_number_invalid_selection">اختر أحد الأرقام المعروضة.</string>
+    <string name="shared_number_failed">تعذرت إضافة هذه القاعدة. حاول مجدداً.</string>
+
     <!-- ملفات الحماية -->
     <string name="settings_protection_profiles">ملفات الحماية</string>
     <string name="settings_protection_profiles_desc">طبّق سياسة محلية واضحة. تظل حماية الطوارئ والسماح المؤقت والقائمة البيضاء ذات أولوية دائماً.</string>

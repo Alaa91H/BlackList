@@ -407,6 +407,22 @@
     <string name="temporary_exact_block_limit_reached">Temporary block limit reached. Cancel an active temporary block first.</string>
     <string name="temporary_exact_block_failed">Could not add the temporary block. Try again.</string>
 
+    <!-- Explicit shared-number intake -->
+    <string name="shared_number_title">Add shared number</string>
+    <string name="shared_number_privacy_title">Your shared text stays private</string>
+    <string name="shared_number_privacy_description">BlackList only checks text you explicitly share. The original text is not saved, and no number is added until you confirm an action.</string>
+    <string name="shared_number_choose_number">Choose a valid number</string>
+    <string name="shared_number_choose_action">Choose an action</string>
+    <string name="shared_number_action_block">Block permanently</string>
+    <string name="shared_number_action_allow">Always allow</string>
+    <string name="shared_number_action_temporary_block">Block temporarily</string>
+    <string name="shared_number_confirm">Confirm</string>
+    <string name="shared_number_empty_title">No valid phone number found</string>
+    <string name="shared_number_empty_description">Share plain text containing a valid, non-emergency phone number. BlackList does not read your call history, messages, attachments or clipboard.</string>
+    <string name="shared_number_applied">Your rule was added locally.</string>
+    <string name="shared_number_invalid_selection">Choose one of the displayed numbers.</string>
+    <string name="shared_number_failed">Could not add this rule. Try again.</string>
+
     <!-- Protection profiles -->
     <string name="settings_protection_profiles">Protection profiles</string>
     <string name="settings_protection_profiles_desc">Apply a clear local policy preset. Emergency safeguards, temporary allows, and whitelists always take priority.</string>

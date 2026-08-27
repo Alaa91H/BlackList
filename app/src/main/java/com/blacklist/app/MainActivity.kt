@@ -1,5 +1,6 @@
 package com.blacklist.app
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -19,12 +20,15 @@ import com.blacklist.app.R
 import com.blacklist.app.di.ServiceLocator
 import com.blacklist.app.ui.navigation.AppNavGraph
 import com.blacklist.app.ui.navigation.Routes
+import com.blacklist.app.domain.sharing.SharedPhoneNumberExtractor
 import com.blacklist.app.ui.theme.BlackListTheme
 
 class MainActivity : ComponentActivity() {
+    private var pendingSharedText by mutableStateOf<CharSequence?>(null)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        pendingSharedText = sharedPlainText(intent)
         enableEdgeToEdge()
         val repo = ServiceLocator.provideRepository(applicationContext)
         setContent {
@@ -34,6 +38,13 @@ class MainActivity : ComponentActivity() {
                 val navController = rememberNavController()
                 val backStack by navController.currentBackStackEntryAsState()
                 val currentRoute = backStack?.destination?.route
+                val sharedText = pendingSharedText
+
+                LaunchedEffect(sharedText) {
+                    if (!sharedText.isNullOrBlank() && currentRoute != Routes.SHARED_NUMBER) {
+                        navController.navigate(Routes.SHARED_NUMBER) { launchSingleTop = true }
+                    }
+                }
 
                 data class BottomItem(val route: String, val labelRes: Int, val icon: androidx.compose.ui.graphics.vector.ImageVector)
                 val bottomItems = listOf(
@@ -70,10 +81,33 @@ class MainActivity : ComponentActivity() {
                     }
                 ) { inner ->
                     Surface(modifier = Modifier.fillMaxSize().padding(inner), color = MaterialTheme.colorScheme.background) {
-                        AppNavGraph(navController = navController)
+                        AppNavGraph(
+                            navController = navController,
+                            sharedText = sharedText,
+                            onSharedTextConsumed = ::clearPendingSharedText
+                        )
                     }
                 }
             }
         }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        pendingSharedText = sharedPlainText(intent)
+    }
+
+    private fun clearPendingSharedText() {
+        pendingSharedText = null
+        intent?.removeExtra(Intent.EXTRA_TEXT)
+    }
+
+    private fun sharedPlainText(intent: Intent?): CharSequence? {
+        if (intent?.action != Intent.ACTION_SEND || intent.type != "text/plain") return null
+        return intent.getCharSequenceExtra(Intent.EXTRA_TEXT)
+            ?.toString()
+            ?.take(SharedPhoneNumberExtractor.MAX_INPUT_LENGTH)
+            ?.takeIf { it.isNotBlank() }
     }
 }
