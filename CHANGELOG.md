@@ -2,6 +2,28 @@
 
 All notable changes to BlackList are documented in this file. The project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.22.0] - 2026-08-31
+
+### Added
+
+- **Call Log and SMS number intake.** Users can explicitly choose numbers from the device call history or messages alongside Contacts, with source switching, search, deduplication, and a bounded in-memory picker result.
+- **Per-rule enforcement choice.** Every new blacklist rule can independently reject an incoming call or silence its ringtone while leaving the call connected.
+- **Per-rule schedules.** Rules can be enabled for selected weekdays and local start/end times, including overnight windows that continue across midnight.
+
+### Changed
+
+- **Permission-gated history access.** `READ_CALL_LOG` and `READ_SMS` are requested only after the user selects the corresponding picker source and presses Grant. The call-screening service never reads Contacts, Call Log, or SMS.
+- **Rule evaluation.** Scheduled rules are skipped outside their configured local window while preserving existing precedence and offline behavior.
+
+### Quality
+
+- Added focused coverage for regular and overnight per-rule windows, weekday boundaries, disabled and invalid schedules, and stable schedule formatting.
+- Bounded history reads to the most recent 300 unique normalized numbers per source and safely return an empty list when access is unavailable.
+
+### Privacy
+
+- BlackList remains offline-first with no network permission, analytics, tracker, cloud sync, Root/Shizuku dependency, hidden-API bypass, or background history scan. Call Log and SMS data is read only after an explicit user action, used for the current picker session, and not persisted by the picker.
+
 ## [1.21.0] - 2026-08-27
 
 ### Added
@@ -394,6 +416,7 @@ All notable changes to BlackList are documented in this file. The project follow
 
 - Production-grade local call-firewall foundation with rule matching, risk scoring, behavior signals, reputation tracking, temporary protection controls, diagnostics, and a decision simulator.
 
+[1.22.0]: https://github.com/Alaa91H/BlackList/compare/v1.21.0...v1.22.0
 [1.21.0]: https://github.com/Alaa91H/BlackList/compare/v1.20.0...v1.21.0
 [1.20.0]: https://github.com/Alaa91H/BlackList/compare/v1.19.0...v1.20.0
 [1.19.0]: https://github.com/Alaa91H/BlackList/compare/v1.18.0...v1.19.0

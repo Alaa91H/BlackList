@@ -213,7 +213,7 @@ jobs:
 
             ## Privacy commitment
 
-            BlackList remains fully local: this release introduces no cloud service, analytics SDK, tracker, network permission, or new runtime permission.
+            BlackList remains fully local: this release introduces no cloud service, analytics SDK, tracker, network permission, or background data collection. READ_CALL_LOG and READ_SMS are optional runtime permissions requested only after the user explicitly chooses the corresponding picker source.
 
             **Checksums (SHA-256):**
           files: |

@@ -13,8 +13,8 @@ import com.google.i18n.phonenumbers.PhoneNumberUtil
 class BlacklistEngine(
     private val normalizer: PhoneNumberNormalizer
 ) {
-    fun matches(eventNumber: PhoneNumber, rule: BlacklistRuleEntity): Boolean {
-        if (!rule.isEnabled) return false
+    fun matches(eventNumber: PhoneNumber, rule: BlacklistRuleEntity, nowMillis: Long = System.currentTimeMillis()): Boolean {
+        if (!rule.isEnabled || !com.blacklist.app.util.ScheduleEvaluator.isRuleActive(rule, nowMillis)) return false
         return when (rule.ruleType) {
             BlacklistRuleEntity.TYPE_EXACT -> {
                 if (eventNumber.presentation != Presentation.ALLOWED) return false
@@ -87,8 +87,8 @@ class BlacklistEngine(
         }
     }
 
-    fun findMatching(eventNumber: PhoneNumber, rules: List<BlacklistRuleEntity>): List<BlacklistRuleEntity> {
-        return rules.filter { matches(eventNumber, it) }.sortedWith(
+    fun findMatching(eventNumber: PhoneNumber, rules: List<BlacklistRuleEntity>, nowMillis: Long = System.currentTimeMillis()): List<BlacklistRuleEntity> {
+        return rules.filter { matches(eventNumber, it, nowMillis) }.sortedWith(
             compareBy<BlacklistRuleEntity> { it.priority }
                 .thenByDescending { it.createdAt }
                 .thenByDescending { it.id }

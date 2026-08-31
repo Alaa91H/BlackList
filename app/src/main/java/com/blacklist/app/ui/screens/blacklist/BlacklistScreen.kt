@@ -23,6 +23,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.blacklist.app.R
 import com.blacklist.app.data.local.entity.BlacklistRuleEntity
+import com.blacklist.app.data.local.entity.ScheduleRuleEntity
 import com.blacklist.app.di.ServiceLocator
 import com.blacklist.app.di.ViewModelFactory
 import com.blacklist.app.domain.engine.BlacklistRuleConflictAnalyzer
@@ -388,6 +389,31 @@ private fun AddRuleDialog(
     var countryIso by remember { mutableStateOf("") }
     var displayName by remember { mutableStateOf("") }
     var testNumber by remember { mutableStateOf("") }
+    var scheduleEnabled by remember { mutableStateOf(false) }
+    var scheduleStart by remember { mutableStateOf("09:00") }
+    var scheduleEnd by remember { mutableStateOf("17:00") }
+    var scheduleDays by remember { mutableIntStateOf(ScheduleRuleEntity.ALL_DAYS) }
+
+    fun parseScheduleTime(value: String): Int? {
+        val parts = value.trim().split(":")
+        if (parts.size != 2) return null
+        val hour = parts[0].toIntOrNull() ?: return null
+        val minute = parts[1].toIntOrNull() ?: return null
+        return if (hour in 0..23 && minute in 0..59) hour * 60 + minute else null
+    }
+
+    fun withSchedule(rule: BlacklistRuleEntity): BlacklistRuleEntity? {
+        if (!scheduleEnabled) return rule
+        val start = parseScheduleTime(scheduleStart) ?: return null
+        val end = parseScheduleTime(scheduleEnd) ?: return null
+        if (scheduleDays !in 1..ScheduleRuleEntity.ALL_DAYS) return null
+        return rule.copy(
+            scheduleEnabled = true,
+            scheduleStartMinutes = start,
+            scheduleEndMinutes = end,
+            scheduleDaysOfWeek = scheduleDays
+        )
+    }
 
     fun buildRule(): BlacklistRuleEntity? {
         return when (selectedType) {
@@ -395,17 +421,17 @@ private fun AddRuleDialog(
                 val s = rangeStart.filter { it.isDigit() }
                 val e = rangeEnd.filter { it.isDigit() }
                 if (s.isEmpty() || e.isEmpty()) null else if (s.length != e.length || s >= e) null else
-                    BlacklistRuleEntity(ruleType = selectedType, enforcement = selectedEnforcement, startNumber = s, endNumber = e, displayName = displayName.takeIf { it.isNotBlank() })
+                    withSchedule(BlacklistRuleEntity(ruleType = selectedType, enforcement = selectedEnforcement, startNumber = s, endNumber = e, displayName = displayName.takeIf { it.isNotBlank() }))
             }
             BlacklistRuleEntity.TYPE_COUNTRY -> {
                 val iso = countryIso.trim().uppercase()
                 if (iso.length != 2 || iso.any { !it.isLetter() }) null else
-                    BlacklistRuleEntity(ruleType = selectedType, enforcement = selectedEnforcement, countryIso = iso, displayName = displayName.takeIf { it.isNotBlank() })
+                    withSchedule(BlacklistRuleEntity(ruleType = selectedType, enforcement = selectedEnforcement, countryIso = iso, displayName = displayName.takeIf { it.isNotBlank() }))
             }
             else -> {
                 val p = pattern.trim()
                 if (p.isBlank()) null else
-                    BlacklistRuleEntity(ruleType = selectedType, enforcement = selectedEnforcement, pattern = p, displayName = displayName.takeIf { it.isNotBlank() })
+                    withSchedule(BlacklistRuleEntity(ruleType = selectedType, enforcement = selectedEnforcement, pattern = p, displayName = displayName.takeIf { it.isNotBlank() }))
             }
         }
     }
@@ -496,6 +522,55 @@ private fun AddRuleDialog(
                 if (conflictPreview != null) {
                     RuleConflictPreviewCard(conflictPreview)
                 }
+                HorizontalDivider()
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
+                    Column(Modifier.weight(1f)) {
+                        Text(stringResource(R.string.schedule_title), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+                        Text(stringResource(R.string.schedule_desc), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    Switch(checked = scheduleEnabled, onCheckedChange = { scheduleEnabled = it; onClearPreview() })
+                }
+                if (scheduleEnabled) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                        OutlinedTextField(
+                            value = scheduleStart,
+                            onValueChange = { scheduleStart = it; onClearPreview() },
+                            label = { Text(stringResource(R.string.schedule_start_time)) },
+                            placeholder = { Text("09:00") },
+                            singleLine = true,
+                            modifier = Modifier.weight(1f)
+                        )
+                        OutlinedTextField(
+                            value = scheduleEnd,
+                            onValueChange = { scheduleEnd = it; onClearPreview() },
+                            label = { Text(stringResource(R.string.schedule_end_time)) },
+                            placeholder = { Text("17:00") },
+                            singleLine = true,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                    Text(stringResource(R.string.schedule_days), style = MaterialTheme.typography.labelMedium)
+                    FlowRow(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        listOf(
+                            ScheduleRuleEntity.MON to R.string.day_mon,
+                            ScheduleRuleEntity.TUE to R.string.day_tue,
+                            ScheduleRuleEntity.WED to R.string.day_wed,
+                            ScheduleRuleEntity.THU to R.string.day_thu,
+                            ScheduleRuleEntity.FRI to R.string.day_fri,
+                            ScheduleRuleEntity.SAT to R.string.day_sat,
+                            ScheduleRuleEntity.SUN to R.string.day_sun
+                        ).forEach { (bit, labelRes) ->
+                            FilterChip(
+                                selected = scheduleDays and bit != 0,
+                                onClick = {
+                                    scheduleDays = if (scheduleDays and bit != 0) scheduleDays and bit.inv() else scheduleDays or bit
+                                    onClearPreview()
+                                },
+                                label = { Text(stringResource(labelRes), style = MaterialTheme.typography.labelSmall) }
+                            )
+                        }
+                    }
+                }
                 OutlinedTextField(value = displayName, onValueChange = { displayName = it }, label = { Text(stringResource(R.string.blacklist_add_name_hint)) }, singleLine = true, modifier = Modifier.fillMaxWidth())
                 HorizontalDivider()
                 Text(stringResource(R.string.draft_decision_preview_title), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
@@ -550,10 +625,22 @@ private fun AddRuleDialog(
                 if (selectedType == BlacklistRuleEntity.TYPE_EXACT) {
                     HorizontalDivider()
                     Text(stringResource(R.string.blacklist_pick_source), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    OutlinedButton(onClick = { onPickSource(PickerSource.CONTACTS) }, modifier = Modifier.fillMaxWidth()) {
-                        Icon(Icons.Filled.Contacts, null, modifier = Modifier.size(16.dp))
-                        Spacer(Modifier.width(4.dp))
-                        Text(stringResource(R.string.blacklist_add_from_contacts), style = MaterialTheme.typography.labelSmall)
+                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        OutlinedButton(onClick = { onPickSource(PickerSource.CONTACTS) }) {
+                            Icon(Icons.Filled.Contacts, null, modifier = Modifier.size(16.dp))
+                            Spacer(Modifier.width(4.dp))
+                            Text(stringResource(R.string.blacklist_add_from_contacts), style = MaterialTheme.typography.labelSmall)
+                        }
+                        OutlinedButton(onClick = { onPickSource(PickerSource.CALL_LOG) }) {
+                            Icon(Icons.Filled.Call, null, modifier = Modifier.size(16.dp))
+                            Spacer(Modifier.width(4.dp))
+                            Text(stringResource(R.string.blacklist_add_from_log), style = MaterialTheme.typography.labelSmall)
+                        }
+                        OutlinedButton(onClick = { onPickSource(PickerSource.MESSAGES) }) {
+                            Icon(Icons.Filled.Message, null, modifier = Modifier.size(16.dp))
+                            Spacer(Modifier.width(4.dp))
+                            Text(stringResource(R.string.blacklist_add_from_messages), style = MaterialTheme.typography.labelSmall)
+                        }
                     }
                 }
             }
@@ -572,7 +659,7 @@ private fun AddRuleDialog(
                         pattern = ""; rangeStart = ""; rangeEnd = ""; countryIso = ""; displayName = ""
                     }
                 },
-                enabled = ready && conflictPreview?.hasDuplicate != true
+                enabled = ready && (!scheduleEnabled || (parseScheduleTime(scheduleStart) != null && parseScheduleTime(scheduleEnd) != null && scheduleDays in 1..ScheduleRuleEntity.ALL_DAYS)) && conflictPreview?.hasDuplicate != true
             ) { Text(stringResource(R.string.action_save)) }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) } }

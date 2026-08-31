@@ -38,9 +38,12 @@ import kotlinx.coroutines.withContext
  */
 enum class PickerSource(
     val permission: String,
-    val titleRes: Int
+    val titleRes: Int,
+    val permissionDescriptionRes: Int
 ) {
-    CONTACTS(Manifest.permission.READ_CONTACTS, R.string.picker_contacts)
+    CONTACTS(Manifest.permission.READ_CONTACTS, R.string.picker_contacts, R.string.picker_permission_contacts),
+    CALL_LOG(Manifest.permission.READ_CALL_LOG, R.string.picker_call_log, R.string.picker_permission_call_log),
+    MESSAGES(Manifest.permission.READ_SMS, R.string.picker_messages, R.string.picker_permission_messages)
 }
 
 @Composable
@@ -50,24 +53,31 @@ fun PickerDialog(
     onConfirm: (List<PickerItem>) -> Unit
 ) {
     val context = LocalContext.current
+    var source by remember { mutableStateOf(initialSource) }
     var items by remember { mutableStateOf<List<PickerItem>>(emptyList()) }
     var query by remember { mutableStateOf("") }
     var loading by remember { mutableStateOf(false) }
-    var hasPermission by remember { mutableStateOf(PickerSource.CONTACTS.isGranted(context)) }
+    var hasPermission by remember { mutableStateOf(source.isGranted(context)) }
     val selectedNumbers = remember { mutableStateListOf<String>() }
 
     val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         hasPermission = granted
     }
 
-    LaunchedEffect(hasPermission) {
+    LaunchedEffect(source, hasPermission) {
         if (!hasPermission) {
             items = emptyList()
             loading = false
             return@LaunchedEffect
         }
         loading = true
-        items = withContext(Dispatchers.IO) { PickerUtils.getContacts(context) }
+        items = withContext(Dispatchers.IO) {
+            when (source) {
+                PickerSource.CONTACTS -> PickerUtils.getContacts(context)
+                PickerSource.CALL_LOG -> PickerUtils.getCallLog(context)
+                PickerSource.MESSAGES -> PickerUtils.getMessages(context)
+            }
+        }
         loading = false
     }
 
@@ -84,15 +94,24 @@ fun PickerDialog(
         title = { Text(stringResource(R.string.picker_title)) },
         text = {
             Column(modifier = Modifier.fillMaxWidth().heightIn(min = 340.dp, max = 560.dp)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Filled.Contacts, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                    Spacer(Modifier.width(8.dp))
-                    Text(stringResource(PickerSource.CONTACTS.titleRes), style = MaterialTheme.typography.titleSmall)
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    PickerSource.values().forEach { candidate ->
+                        FilterChip(
+                            selected = source == candidate,
+                            onClick = {
+                                source = candidate
+                                query = ""
+                                selectedNumbers.clear()
+                                hasPermission = candidate.isGranted(context)
+                            },
+                            label = { Text(stringResource(candidate.titleRes), style = MaterialTheme.typography.labelSmall) }
+                        )
+                    }
                 }
                 Spacer(Modifier.height(8.dp))
                 when {
-                    !hasPermission -> PermissionExplanation(onGrant = {
-                        permissionLauncher.launch(PickerSource.CONTACTS.permission)
+                    !hasPermission -> PermissionExplanation(source = source, onGrant = {
+                        permissionLauncher.launch(source.permission)
                     })
                     loading -> Box(Modifier.fillMaxWidth().height(220.dp), contentAlignment = Alignment.Center) {
                         CircularProgressIndicator()
@@ -200,7 +219,7 @@ private fun PickerRow(item: PickerItem, selected: Boolean, onToggle: () -> Unit)
 }
 
 @Composable
-private fun PermissionExplanation(onGrant: () -> Unit) {
+private fun PermissionExplanation(source: PickerSource, onGrant: () -> Unit) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier.fillMaxWidth().padding(16.dp),
@@ -208,7 +227,7 @@ private fun PermissionExplanation(onGrant: () -> Unit) {
     ) {
         Icon(Icons.Filled.Lock, null, modifier = Modifier.size(48.dp), tint = MaterialTheme.colorScheme.primary)
         Text(
-            stringResource(R.string.picker_permission_contacts),
+            stringResource(source.permissionDescriptionRes),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )

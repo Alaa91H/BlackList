@@ -25,6 +25,11 @@ data class BlacklistRuleEntity(
     val countryIso: String? = null, // for COUNTRY (e.g. DE)
     val displayName: String? = null,
     val showNotification: Boolean = true,
+    /** Optional local window; disabled preserves the historical always-active behavior. */
+    val scheduleEnabled: Boolean = false,
+    val scheduleStartMinutes: Int? = null,
+    val scheduleEndMinutes: Int? = null,
+    val scheduleDaysOfWeek: Int = 127,
     val createdAt: Long = System.currentTimeMillis()
 ) {
     companion object {

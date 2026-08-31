@@ -38,6 +38,19 @@ object ScheduleEvaluator {
         }
     }
 
+    /** Returns whether an individual blacklist rule is active at the supplied instant. */
+    fun isRuleActive(rule: com.blacklist.app.data.local.entity.BlacklistRuleEntity, nowMillis: Long = System.currentTimeMillis()): Boolean {
+        if (!rule.scheduleEnabled) return true
+        val start = rule.scheduleStartMinutes ?: return false
+        val end = rule.scheduleEndMinutes ?: return false
+        if (start !in 0..1439 || end !in 0..1439 || rule.scheduleDaysOfWeek !in 1..127) return false
+        val cal = Calendar.getInstance().apply { timeInMillis = nowMillis }
+        val minutes = cal.get(Calendar.HOUR_OF_DAY) * 60 + cal.get(Calendar.MINUTE)
+        val overnight = start > end
+        val effectiveDayBit = if (overnight && minutes <= end) previousDayBit(cal) else dayToBit(cal.get(Calendar.DAY_OF_WEEK))
+        return (rule.scheduleDaysOfWeek and effectiveDayBit) != 0 && isInTimeWindow(minutes, start, end)
+    }
+
     private fun previousDayBit(calendar: Calendar): Int = Calendar.getInstance().run {
         timeInMillis = calendar.timeInMillis
         add(Calendar.DAY_OF_YEAR, -1)
