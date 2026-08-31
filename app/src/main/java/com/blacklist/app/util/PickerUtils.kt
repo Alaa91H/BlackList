@@ -4,7 +4,7 @@ import android.content.Context
 import android.provider.CallLog
 import android.provider.ContactsContract
 import android.provider.Telephony
-import android.telephony.PhoneNumberUtils
+import com.blacklist.app.util.PhoneNumberUtils
 
 data class PickerItem(
     val number: String,
