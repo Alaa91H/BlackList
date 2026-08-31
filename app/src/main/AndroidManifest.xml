@@ -9,6 +9,9 @@
     <!-- For notification of blocked calls -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
+    <!-- Call Log/SMS are optional capabilities; do not exclude ChromeOS devices. -->
+    <uses-feature android:name="android.hardware.telephony" android:required="false" />
+
     <application
         android:name=".BlackListApp"
         android:allowBackup="false"
