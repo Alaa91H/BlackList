@@ -52,7 +52,6 @@ class MainActivity : ComponentActivity() {
                     BottomItem(Routes.BLACKLIST, R.string.nav_blacklist, Icons.Filled.Block),
                     BottomItem(Routes.WHITELIST, R.string.nav_whitelist, Icons.Filled.VerifiedUser),
                     BottomItem(Routes.BLOCKED_LOG, R.string.nav_blocked_log, Icons.Filled.ListAlt),
-                    BottomItem(Routes.SCHEDULE, R.string.nav_schedule, Icons.Filled.Schedule),
                 )
                 val showBottomBar = currentRoute in bottomItems.map { it.route }
 

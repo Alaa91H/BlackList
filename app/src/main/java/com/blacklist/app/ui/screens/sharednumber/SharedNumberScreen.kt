@@ -31,6 +31,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.Button
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.LaunchedEffect
@@ -68,6 +71,8 @@ fun SharedNumberScreen(
     var selectedNumber by remember { mutableStateOf<String?>(null) }
     var action by remember { mutableStateOf(SharedNumberAction.BLOCK) }
     var temporaryDuration by remember { mutableLongStateOf(TemporaryExactBlockPolicy.HOUR_1) }
+    var manualDurationEnabled by remember { mutableStateOf(false) }
+    var manualDurationMinutes by remember { mutableStateOf("") }
 
     LaunchedEffect(sharedText) {
         vm.loadSharedText(sharedText)
@@ -170,9 +175,24 @@ fun SharedNumberScreen(
                             Text(stringResource(R.string.temporary_exact_block_duration), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
                             TemporaryExactBlockPolicy.supportedDurationsMs.forEach { duration ->
                                 FilterChip(
-                                    selected = temporaryDuration == duration,
-                                    onClick = { temporaryDuration = duration },
+                                    selected = !manualDurationEnabled && temporaryDuration == duration,
+                                    onClick = { manualDurationEnabled = false; temporaryDuration = duration },
                                     label = { Text(temporaryExactBlockDurationLabel(duration)) }
+                                )
+                            }
+                            FilterChip(
+                                selected = manualDurationEnabled,
+                                onClick = { manualDurationEnabled = true },
+                                label = { Text(stringResource(R.string.temporary_exact_block_duration_custom)) }
+                            )
+                            if (manualDurationEnabled) {
+                                OutlinedTextField(
+                                    value = manualDurationMinutes,
+                                    onValueChange = { manualDurationMinutes = it.filter(Char::isDigit) },
+                                    label = { Text(stringResource(R.string.temporary_exact_block_duration_custom_minutes)) },
+                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                    singleLine = true,
+                                    modifier = Modifier.fillMaxWidth()
                                 )
                             }
                         }
@@ -180,8 +200,15 @@ fun SharedNumberScreen(
                 }
                 item {
                     Button(
-                        onClick = { selectedNumber?.let { vm.apply(it, action, temporaryDuration) } },
-                        enabled = selectedNumber != null,
+                        onClick = {
+                            selectedNumber?.let {
+                                val duration = if (manualDurationEnabled) {
+                                    TemporaryExactBlockPolicy.manualDurationMs(manualDurationMinutes.toLongOrNull() ?: -1L)
+                                } else temporaryDuration
+                                vm.apply(it, action, duration)
+                            }
+                        },
+                        enabled = selectedNumber != null && (action != SharedNumberAction.TEMPORARY_BLOCK || !manualDurationEnabled || TemporaryExactBlockPolicy.manualDurationMs(manualDurationMinutes.toLongOrNull() ?: -1L) != null),
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Text(stringResource(R.string.shared_number_confirm))

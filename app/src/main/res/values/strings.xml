@@ -397,8 +397,8 @@
     <string name="settings_temporary_block_tile_request_error">Could not request the Quick Settings tile. You can add it from the Quick Settings edit menu.</string>
 
     <!-- Temporary exact blocks -->
-    <string name="temporary_exact_block_action">Block temporarily</string>
-    <string name="temporary_exact_block_title">Temporarily block a number</string>
+    <string name="temporary_exact_block_action">Add temporary block</string>
+    <string name="temporary_exact_block_title">Temporary block</string>
     <string name="temporary_exact_block_description">Block one valid phone number locally for a fixed period. Emergency numbers, whitelist entries and temporary allows continue to take priority.</string>
     <string name="temporary_exact_block_number">Phone number</string>
     <string name="temporary_exact_block_duration">Block duration</string>
@@ -406,6 +406,8 @@
     <string name="temporary_exact_block_duration_day">1 day</string>
     <string name="temporary_exact_block_duration_week">7 days</string>
     <string name="temporary_exact_block_duration_month">30 days</string>
+    <string name="temporary_exact_block_duration_custom">Custom duration</string>
+    <string name="temporary_exact_block_duration_custom_minutes">Duration in minutes (1–43200)</string>
     <string name="temporary_exact_block_active_section">Active temporary blocks</string>
     <string name="temporary_exact_block_ends_at">Ends %1$s</string>
     <string name="temporary_exact_block_cancel">Cancel</string>

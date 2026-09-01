@@ -349,8 +349,8 @@
     <string name="settings_temporary_block_tile_request_error">تعذر طلب اختصار الإعدادات السريعة. يمكنك إضافته من قائمة تعديل الإعدادات السريعة.</string>
 
     <!-- الحظر المؤقت الدقيق -->
-    <string name="temporary_exact_block_action">حظر مؤقت</string>
-    <string name="temporary_exact_block_title">حظر رقم مؤقتاً</string>
+    <string name="temporary_exact_block_action">إضافة حظر مؤقت</string>
+    <string name="temporary_exact_block_title">الحظر المؤقت</string>
     <string name="temporary_exact_block_description">احظر رقم هاتف سليماً واحداً محلياً لمدة ثابتة. تظل أرقام الطوارئ والقائمة البيضاء والسماح المؤقت ذات أولوية أعلى.</string>
     <string name="temporary_exact_block_number">رقم الهاتف</string>
     <string name="temporary_exact_block_duration">مدة الحظر</string>
@@ -358,6 +358,8 @@
     <string name="temporary_exact_block_duration_day">يوم واحد</string>
     <string name="temporary_exact_block_duration_week">7 أيام</string>
     <string name="temporary_exact_block_duration_month">30 يوماً</string>
+    <string name="temporary_exact_block_duration_custom">مدة مخصصة</string>
+    <string name="temporary_exact_block_duration_custom_minutes">المدة بالدقائق (1–43200)</string>
     <string name="temporary_exact_block_active_section">عمليات الحظر المؤقتة النشطة</string>
     <string name="temporary_exact_block_ends_at">ينتهي %1$s</string>
     <string name="temporary_exact_block_cancel">إلغاء</string>

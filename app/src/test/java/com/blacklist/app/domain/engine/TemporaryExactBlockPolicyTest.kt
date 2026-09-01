@@ -19,7 +19,9 @@ class TemporaryExactBlockPolicyTest {
             TemporaryExactBlockPolicy.supportedDurationsMs
         )
         assertFalse(TemporaryExactBlockPolicy.isSupportedDuration(0))
-        assertFalse(TemporaryExactBlockPolicy.isSupportedDuration(TemporaryExactBlockPolicy.HOUR_1 * 2))
+        assertTrue(TemporaryExactBlockPolicy.isSupportedDuration(TemporaryExactBlockPolicy.HOUR_1 * 2))
+        assertTrue(TemporaryExactBlockPolicy.manualDurationMs(90) == 90L * 60_000L)
+        assertFalse(TemporaryExactBlockPolicy.isSupportedDuration(TemporaryExactBlockPolicy.MAX_MANUAL_DURATION_MS + 1))
     }
 
     @Test

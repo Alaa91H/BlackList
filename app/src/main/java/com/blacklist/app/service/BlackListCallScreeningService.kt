@@ -151,7 +151,9 @@ class BlackListCallScreeningService : CallScreeningService() {
                         setSilenceCall(true)
                     }
                     setSkipCallLog(false)
-                    setSkipNotification(false)
+                    // Suppress an extra Telecom notification. OEM call UI and
+                    // missed-call history remain system-controlled.
+                    setSkipNotification(true)
                 }.build()
                 Decision.ALLOW -> CallResponse.Builder()
                     .setDisallowCall(false)

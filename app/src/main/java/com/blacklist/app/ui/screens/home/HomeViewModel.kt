@@ -20,7 +20,6 @@ class HomeViewModel(
     val blockedCount = repo.observeBlockedCount().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
     val blockedLogs = repo.observeBlockedLogs().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
     val blockedNumbers = repo.observeBlockedNumbers().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
-    val scheduleRules = repo.observeScheduleRules().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     private val _todayCount = MutableStateFlow(0)
     val todayCount: StateFlow<Int> = _todayCount

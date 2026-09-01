@@ -11,12 +11,18 @@ object TemporaryExactBlockPolicy {
     val DAYS_30 = 30L * DAY_1
 
     val supportedDurationsMs = listOf(HOUR_1, DAY_1, DAYS_7, DAYS_30)
+    const val MIN_MANUAL_DURATION_MS = 60L * 1000
+    const val MAX_MANUAL_DURATION_MS = DAYS_30
 
     const val MAX_ACTIVE_RULES = 100
     const val MIN_E164_DIGITS = 7
     const val MAX_E164_DIGITS = 15
 
-    fun isSupportedDuration(durationMs: Long): Boolean = durationMs in supportedDurationsMs
+    fun isSupportedDuration(durationMs: Long): Boolean =
+        durationMs in MIN_MANUAL_DURATION_MS..MAX_MANUAL_DURATION_MS
+
+    fun manualDurationMs(minutes: Long): Long? =
+        (minutes * 60_000L).takeIf { isSupportedDuration(it) }
 
     fun expiryAt(durationMs: Long, nowMillis: Long): Long {
         require(isSupportedDuration(durationMs)) { "Unsupported temporary block duration." }

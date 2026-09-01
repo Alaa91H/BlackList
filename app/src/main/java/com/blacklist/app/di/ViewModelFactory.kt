@@ -7,7 +7,6 @@ import com.blacklist.app.domain.repository.BlackListRepository
 import com.blacklist.app.ui.screens.blacklist.BlacklistViewModel
 import com.blacklist.app.ui.screens.blockedlog.BlockedLogViewModel
 import com.blacklist.app.ui.screens.home.HomeViewModel
-import com.blacklist.app.ui.screens.schedule.ScheduleViewModel
 import com.blacklist.app.ui.screens.sharednumber.SharedNumberViewModel
 import com.blacklist.app.ui.screens.simulator.DecisionSimulatorViewModel
 import com.blacklist.app.ui.screens.settings.SettingsViewModel
@@ -36,7 +35,6 @@ class ViewModelFactory(
                 normalizer = ServiceLocator.provideNormalizer(appContext!!),
                 reputationEngine = ServiceLocator.provideReputationEngine(appContext!!)
             ) as T
-            modelClass.isAssignableFrom(ScheduleViewModel::class.java) -> ScheduleViewModel(repo) as T
             modelClass.isAssignableFrom(SharedNumberViewModel::class.java) -> SharedNumberViewModel(
                 repo = repo,
                 normalizer = ServiceLocator.provideNormalizer(appContext!!)

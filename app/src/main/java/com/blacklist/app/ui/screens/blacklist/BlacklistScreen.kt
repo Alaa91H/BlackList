@@ -279,6 +279,8 @@ private fun TemporaryExactBlockDialog(
 ) {
     var number by remember { mutableStateOf("") }
     var selectedDuration by remember { mutableLongStateOf(TemporaryExactBlockPolicy.HOUR_1) }
+    var manualDurationEnabled by remember { mutableStateOf(false) }
+    var manualDurationMinutes by remember { mutableStateOf("") }
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.temporary_exact_block_title)) },
@@ -297,16 +299,38 @@ private fun TemporaryExactBlockDialog(
                 Text(stringResource(R.string.temporary_exact_block_duration), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
                 TemporaryExactBlockPolicy.supportedDurationsMs.forEach { duration ->
                     FilterChip(
-                        selected = selectedDuration == duration,
-                        onClick = { selectedDuration = duration },
+                        selected = !manualDurationEnabled && selectedDuration == duration,
+                        onClick = { manualDurationEnabled = false; selectedDuration = duration },
                         label = { Text(temporaryExactBlockDurationLabel(duration)) },
-                        leadingIcon = { if (selectedDuration == duration) Icon(Icons.Filled.Check, null, modifier = Modifier.size(16.dp)) }
+                        leadingIcon = { if (!manualDurationEnabled && selectedDuration == duration) Icon(Icons.Filled.Check, null, modifier = Modifier.size(16.dp)) }
+                    )
+                }
+                FilterChip(
+                    selected = manualDurationEnabled,
+                    onClick = { manualDurationEnabled = true },
+                    label = { Text(stringResource(R.string.temporary_exact_block_duration_custom)) },
+                    leadingIcon = { if (manualDurationEnabled) Icon(Icons.Filled.Check, null, modifier = Modifier.size(16.dp)) }
+                )
+                if (manualDurationEnabled) {
+                    OutlinedTextField(
+                        value = manualDurationMinutes,
+                        onValueChange = { manualDurationMinutes = it.filter(Char::isDigit) },
+                        label = { Text(stringResource(R.string.temporary_exact_block_duration_custom_minutes)) },
+                        placeholder = { Text("90") },
+                        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Number),
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
                     )
                 }
             }
         },
         confirmButton = {
-            Button(onClick = { onConfirm(number, selectedDuration) }, enabled = number.isNotBlank()) {
+            val duration = if (manualDurationEnabled) {
+                TemporaryExactBlockPolicy.manualDurationMs(manualDurationMinutes.toLongOrNull() ?: -1L)
+            } else {
+                selectedDuration
+            }
+            Button(onClick = { onConfirm(number, duration ?: selectedDuration) }, enabled = number.isNotBlank() && duration != null) {
                 Text(stringResource(R.string.temporary_exact_block_action))
             }
         },

@@ -2,6 +2,24 @@
 
 All notable changes to BlackList are documented in this file. The project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.25.0] - 2026-09-01
+
+### Changed
+
+- **Per-rule scheduling only.** Removed the standalone schedule page, navigation entry, and global schedule enforcement path. Scheduling is now configured exclusively inside each blacklist rule.
+- **Manual temporary-block duration.** Renamed the user-facing flow to Temporary block and added a custom duration input in minutes. Values are bounded locally from 1 minute through 30 days.
+- **Consistent temporary-block intake.** The custom duration is available both from the blacklist screen and from the explicitly shared-number flow.
+
+### Privacy and safety
+
+- Existing global schedule records remain migration-safe for older installations but are no longer applied by the call-screening engine. New enforcement decisions use only the schedules attached to matching rules.
+- Temporary blocks remain exact-number, local, bounded, and subject to emergency, whitelist, and temporary-allow precedence.
+
+### Quality
+
+- Updated policy tests for the manual duration range and kept invalid/overflowing duration rejection coverage.
+- Removed the obsolete ScheduleScreen and ScheduleViewModel registrations so no user-facing global scheduler remains.
+
 ## [1.24.0] - 2026-09-01
 
 ### Added
@@ -453,6 +471,7 @@ All notable changes to BlackList are documented in this file. The project follow
 
 - Production-grade local call-firewall foundation with rule matching, risk scoring, behavior signals, reputation tracking, temporary protection controls, diagnostics, and a decision simulator.
 
+[1.25.0]: https://github.com/Alaa91H/BlackList/compare/v1.24.0...v1.25.0
 [1.24.0]: https://github.com/Alaa91H/BlackList/compare/v1.23.0...v1.24.0
 [1.23.0]: https://github.com/Alaa91H/BlackList/compare/v1.22.0...v1.23.0
 [1.22.0]: https://github.com/Alaa91H/BlackList/compare/v1.21.0...v1.22.0

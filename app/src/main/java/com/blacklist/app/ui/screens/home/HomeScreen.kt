@@ -219,7 +219,6 @@ private fun formatRemaining(ms: Long): String {
         Triple(stringResource(R.string.nav_blacklist), Icons.Filled.Block, Routes.BLACKLIST),
         Triple(stringResource(R.string.nav_whitelist), Icons.Filled.VerifiedUser, Routes.WHITELIST),
         Triple(stringResource(R.string.nav_blocked_log), Icons.Filled.ListAlt, Routes.BLOCKED_LOG),
-        Triple(stringResource(R.string.nav_schedule), Icons.Filled.Schedule, Routes.SCHEDULE),
         Triple("Diagnostics", Icons.Filled.BugReport, Routes.DIAGNOSTICS),
         Triple("Statistics", Icons.Filled.BarChart, Routes.STATISTICS),
         Triple("Security", Icons.Filled.Security, Routes.SECURITY_EVENTS),

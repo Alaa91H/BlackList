@@ -10,7 +10,6 @@ import com.blacklist.app.ui.screens.blockedlog.BlockedLogScreen
 import com.blacklist.app.ui.screens.diagnostics.DiagnosticsScreen
 import com.blacklist.app.ui.screens.home.HomeScreen
 import com.blacklist.app.ui.screens.permissions.PermissionCenterScreen
-import com.blacklist.app.ui.screens.schedule.ScheduleScreen
 import com.blacklist.app.ui.screens.sharednumber.SharedNumberScreen
 import com.blacklist.app.ui.screens.simulator.DecisionSimulatorScreen
 import com.blacklist.app.ui.screens.security.SecurityEventsScreen
@@ -23,7 +22,6 @@ object Routes {
     const val BLACKLIST = "blacklist"
     const val WHITELIST = "whitelist"
     const val BLOCKED_LOG = "blocked_log"
-    const val SCHEDULE = "schedule"
     const val SETTINGS = "settings"
     const val ABOUT = "about"
     const val DIAGNOSTICS = "diagnostics"
@@ -45,7 +43,6 @@ fun AppNavGraph(
         composable(Routes.BLACKLIST) { BlacklistScreen(navController) }
         composable(Routes.WHITELIST) { WhitelistScreen(navController) }
         composable(Routes.BLOCKED_LOG) { BlockedLogScreen(navController) }
-        composable(Routes.SCHEDULE) { ScheduleScreen(navController) }
         composable(Routes.SETTINGS) { SettingsScreen(navController) }
         composable(Routes.ABOUT) { AboutScreen(navController) }
         composable(Routes.DIAGNOSTICS) { DiagnosticsScreen(navController) }

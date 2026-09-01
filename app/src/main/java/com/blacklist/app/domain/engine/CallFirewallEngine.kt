@@ -1,10 +1,8 @@
 package com.blacklist.app.domain.engine
 
 import com.blacklist.app.data.local.entity.BlacklistRuleEntity
-import com.blacklist.app.data.local.entity.ScheduleRuleEntity
 import com.blacklist.app.domain.model.*
 import com.blacklist.app.domain.normalization.PhoneNumberNormalizer
-import com.blacklist.app.util.ScheduleEvaluator
 
 /**
  * Deterministic local decision engine for the call-screening hot path.
@@ -113,8 +111,6 @@ class CallFirewallEngine(
             )
         }
 
-        evaluateSchedule(enrichedEvent, snapshot)?.let { return it }
-
         TemporaryFirewall.blockAllActive(snapshot.rules)?.let {
             return decision(enrichedEvent, Decision.BLOCK, 90, ReputationLevel.SUSPICIOUS, listOf("Temporary firewall active"), emptyList(), "temporary_block_all")
         }
@@ -204,38 +200,6 @@ class CallFirewallEngine(
         if (event.phoneNumber.presentation != Presentation.ALLOWED || !snapshot.canReadContacts) return event
         val known = snapshot.isKnownContact(event.phoneNumber, normalizer)
         return event.copy(contact = CallerContact(displayName = null, isInContacts = known))
-    }
-
-    private fun evaluateSchedule(event: CallEvent, snapshot: PolicySnapshotStore.Snapshot): EnforcementDecision? {
-        val rule = ScheduleEvaluator.matchingRule(snapshot.schedules) ?: return null
-        val isScheduleException = snapshot.scheduleExceptions.any { exception ->
-            exception.scheduleRuleId == rule.id &&
-                normalizer.matches(event.phoneNumber, normalizer.normalize(exception.normalizedNumber))
-        }
-        if (isScheduleException) {
-            return decision(
-                event,
-                Decision.ALLOW,
-                0,
-                ReputationLevel.TRUSTED,
-                listOf("Schedule exception active"),
-                emptyList(),
-                "schedule_exception"
-            )
-        }
-        return when (rule.mode) {
-            ScheduleRuleEntity.MODE_ALL -> decision(event, Decision.BLOCK, 90, ReputationLevel.NEUTRAL, listOf("Schedule: block all"), emptyList(), "schedule")
-            ScheduleRuleEntity.MODE_ALL_EXCEPT_WHITELIST -> decision(event, Decision.BLOCK, 85, ReputationLevel.NEUTRAL, listOf("Schedule: all except whitelist"), emptyList(), "schedule")
-            ScheduleRuleEntity.MODE_UNKNOWN_PRIVATE -> {
-                val unknown = event.phoneNumber.presentation != Presentation.ALLOWED || event.contact?.isInContacts == false
-                if (unknown) decision(event, Decision.BLOCK, 60, ReputationLevel.NEUTRAL, listOf("Schedule: unknown or private"), emptyList(), "schedule") else null
-            }
-            ScheduleRuleEntity.MODE_BLACKLIST -> {
-                val matched = blacklistEngine.findMatching(event.phoneNumber, snapshot.rules)
-                if (matched.isNotEmpty()) decision(event, Decision.BLOCK, 70, ReputationLevel.SUSPICIOUS, listOf("Schedule: blacklist rule"), matched.map(::toCallRule), "schedule") else null
-            }
-            else -> null
-        }
     }
 
     private fun isSuspiciousPrefix(number: PhoneNumber): Boolean {
