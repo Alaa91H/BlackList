@@ -2,8 +2,6 @@ package com.blacklist.app.domain.engine
 
 import com.blacklist.app.data.local.entity.AppSettingsEntity
 import com.blacklist.app.data.local.entity.BlacklistRuleEntity
-import com.blacklist.app.data.local.entity.ScheduleExceptionEntity
-import com.blacklist.app.data.local.entity.ScheduleRuleEntity
 import com.blacklist.app.domain.model.CallEvent
 import com.blacklist.app.domain.model.Decision
 import com.blacklist.app.domain.model.VerificationStatus
@@ -274,51 +272,34 @@ class CallFirewallEngineTest {
     }
 
     @Test
-    fun `schedule exception allows only its number through the active schedule`() = runTest {
-        val trusted = normalizer.normalize("+49 151 23456789")
-        val other = normalizer.normalize("+49 151 11111111")
-        val schedule = ScheduleRuleEntity(
-            id = 42,
-            startMinutes = 0,
-            endMinutes = 1439,
-            daysOfWeek = ScheduleRuleEntity.ALL_DAYS,
-            mode = ScheduleRuleEntity.MODE_ALL
-        )
+    fun `legacy global schedules are ignored after per-rule scheduling migration`() = runTest {
+        val number = normalizer.normalize("+49 151 23456789")
         val snapshot = PolicySnapshotStore.Snapshot(
-            schedules = listOf(schedule),
-            scheduleExceptions = listOf(
-                ScheduleExceptionEntity(scheduleRuleId = schedule.id, normalizedNumber = trusted.normalized)
-            )
+            rules = emptyList(),
+            schedules = emptyList(),
+            scheduleExceptions = emptyList()
         )
 
-        val allowed = engine(snapshot).evaluate(event("schedule-exception", trusted.raw))
-        val blocked = engine(snapshot).evaluate(event("schedule-exception-other", other.raw))
+        val decision = engine(snapshot).evaluate(event("global-schedule-removed", number.raw))
 
-        assertEquals(Decision.ALLOW, allowed.decision)
-        assertEquals("schedule_exception", allowed.explainable.backend)
-        assertEquals(Decision.BLOCK, blocked.decision)
-        assertEquals("schedule", blocked.explainable.backend)
+        assertEquals(Decision.ALLOW, decision.decision)
+        assertEquals("default_allow", decision.explainable.backend)
     }
 
     @Test
-    fun `schedule exception never overrides explicit blacklist`() = runTest {
+    fun `per-rule schedule still blocks only while the rule is active`() = runTest {
         val number = normalizer.normalize("+49 151 23456789")
-        val schedule = ScheduleRuleEntity(
-            id = 43,
-            startMinutes = 0,
-            endMinutes = 1439,
-            daysOfWeek = ScheduleRuleEntity.ALL_DAYS,
-            mode = ScheduleRuleEntity.MODE_ALL
+        val rule = BlacklistRuleEntity(
+            ruleType = BlacklistRuleEntity.TYPE_EXACT,
+            pattern = number.normalized,
+            scheduleEnabled = true,
+            scheduleStartMinutes = 0,
+            scheduleEndMinutes = 1439,
+            scheduleDaysOfWeek = 127
         )
-        val snapshot = PolicySnapshotStore.Snapshot(
-            rules = listOf(BlacklistRuleEntity(ruleType = BlacklistRuleEntity.TYPE_EXACT, pattern = number.normalized)),
-            schedules = listOf(schedule),
-            scheduleExceptions = listOf(
-                ScheduleExceptionEntity(scheduleRuleId = schedule.id, normalizedNumber = number.normalized)
-            )
-        )
+        val snapshot = PolicySnapshotStore.Snapshot(rules = listOf(rule))
 
-        val decision = engine(snapshot).evaluate(event("schedule-exception-explicit", number.raw))
+        val decision = engine(snapshot).evaluate(event("per-rule-schedule", number.raw))
 
         assertEquals(Decision.BLOCK, decision.decision)
         assertEquals("blacklist", decision.explainable.backend)
