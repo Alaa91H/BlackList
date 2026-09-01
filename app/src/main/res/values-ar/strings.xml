@@ -39,6 +39,8 @@
     <string name="blacklist_add_from_contacts">اختيار من جهات الاتصال</string>
     <string name="blacklist_add_from_log">اختيار من سجل المكالمات</string>
     <string name="blacklist_add_from_messages">اختيار من الرسائل</string>
+    <string name="blacklist_hidden_rule_hint">يطابق المتصلين الذين أخفت الشبكة أرقامهم أو قيّدتها.</string>
+    <string name="blacklist_unknown_rule_hint">يطابق المتصلين الذين يتعذر على الجهاز تحديد أرقامهم.</string>
     <string name="blacklist_delete">حذف</string>
     <string name="blacklist_search_hint">ابحث في الأرقام…</string>
     <string name="blacklist_added">تمت الإضافة إلى القائمة السوداء</string>

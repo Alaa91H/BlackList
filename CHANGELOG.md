@@ -2,6 +2,27 @@
 
 All notable changes to BlackList are documented in this file. The project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.23.0] - 2026-09-01
+
+### Added
+
+- **Hidden and unknown caller rules.** The blacklist editor now exposes the engine's existing restricted/hidden and unidentifiable caller matchers as first-class rules, with independent Reject or Silence enforcement and optional schedules.
+- **Capability roadmap.** Added a documented capability matrix separating public Android APIs, policy-sensitive permissions, and optional Root/Shizuku integrations.
+
+### Changed
+
+- **Clear capability boundaries.** The product documentation now distinguishes ringtone silence from guaranteed suppression of Android's system call UI, call log, or missed-call artifacts.
+- **Privilege safety posture.** Root/Shizuku support is planned as an optional, capability-detected adapter rather than a hidden-API or undocumented Telecom bypass.
+
+### Quality
+
+- Reused the existing hidden/unknown engine coverage and added UI paths that create valid rules without requiring a phone number pattern.
+- Preserved the offline-first call-screening hot path and existing whitelist/emergency precedence.
+
+### Privacy
+
+- No AccessibilityService, hidden API, embedded ADB shell, cloud lookup, or destructive SMS/Telecom database mutation is introduced by this cycle.
+
 ## [1.22.0] - 2026-08-31
 
 ### Added
@@ -416,6 +437,7 @@ All notable changes to BlackList are documented in this file. The project follow
 
 - Production-grade local call-firewall foundation with rule matching, risk scoring, behavior signals, reputation tracking, temporary protection controls, diagnostics, and a decision simulator.
 
+[1.23.0]: https://github.com/Alaa91H/BlackList/compare/v1.22.0...v1.23.0
 [1.22.0]: https://github.com/Alaa91H/BlackList/compare/v1.21.0...v1.22.0
 [1.21.0]: https://github.com/Alaa91H/BlackList/compare/v1.20.0...v1.21.0
 [1.20.0]: https://github.com/Alaa91H/BlackList/compare/v1.19.0...v1.20.0

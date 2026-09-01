@@ -43,6 +43,9 @@
     <string name="blacklist_add_from_contacts">Pick from contacts</string>
     <string name="blacklist_add_from_log">Pick from call log</string>
     <string name="blacklist_add_from_messages">Pick from messages</string>
+    <string name="blacklist_hidden_rule_hint">Matches callers whose number is restricted or hidden by the network.</string>
+    <string name="blacklist_unknown_rule_hint">Matches callers whose number cannot be identified by the device.</string>
+
     <string name="blacklist_delete">Delete</string>
     <string name="blacklist_search_hint">Search numbers…</string>
     <string name="blacklist_added">Added to blacklist</string>

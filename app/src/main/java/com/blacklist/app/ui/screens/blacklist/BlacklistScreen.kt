@@ -428,6 +428,8 @@ private fun AddRuleDialog(
                 if (iso.length != 2 || iso.any { !it.isLetter() }) null else
                     withSchedule(BlacklistRuleEntity(ruleType = selectedType, enforcement = selectedEnforcement, countryIso = iso, displayName = displayName.takeIf { it.isNotBlank() }))
             }
+            BlacklistRuleEntity.TYPE_HIDDEN, BlacklistRuleEntity.TYPE_UNKNOWN ->
+                withSchedule(BlacklistRuleEntity(ruleType = selectedType, enforcement = selectedEnforcement, displayName = displayName.takeIf { it.isNotBlank() }))
             else -> {
                 val p = pattern.trim()
                 if (p.isBlank()) null else
@@ -448,7 +450,7 @@ private fun AddRuleDialog(
             Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(stringResource(R.string.blacklist_match_type), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    BlacklistRuleEntity.USER_TYPES.forEach { type ->
+                    (BlacklistRuleEntity.USER_TYPES + listOf(BlacklistRuleEntity.TYPE_HIDDEN, BlacklistRuleEntity.TYPE_UNKNOWN)).forEach { type ->
                         FilterChip(
                             selected = selectedType == type,
                             onClick = {
@@ -491,6 +493,19 @@ private fun AddRuleDialog(
                     }
                     BlacklistRuleEntity.TYPE_COUNTRY -> {
                         OutlinedTextField(value = countryIso, onValueChange = { countryIso = it; onClearPreview() }, label = { Text(stringResource(R.string.blacklist_country_hint)) }, placeholder = { Text("DE") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+                    }
+                    BlacklistRuleEntity.TYPE_HIDDEN, BlacklistRuleEntity.TYPE_UNKNOWN -> {
+                        Text(
+                            stringResource(
+                                if (selectedType == BlacklistRuleEntity.TYPE_HIDDEN) {
+                                    R.string.blacklist_hidden_rule_hint
+                                } else {
+                                    R.string.blacklist_unknown_rule_hint
+                                }
+                            ),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
                     else -> {
                         OutlinedTextField(
