@@ -12,7 +12,7 @@ object TemporaryExactBlockPolicy {
 
     val supportedDurationsMs = listOf(HOUR_1, DAY_1, DAYS_7, DAYS_30)
     const val MIN_MANUAL_DURATION_MS = 60L * 1000
-    const val MAX_MANUAL_DURATION_MS = DAYS_30
+    val MAX_MANUAL_DURATION_MS = DAYS_30
 
     const val MAX_ACTIVE_RULES = 100
     const val MIN_E164_DIGITS = 7
