@@ -556,6 +556,7 @@ class EncryptedBackupService(
             BlacklistRuleEntity.TYPE_CONTAINS,
             BlacklistRuleEntity.TYPE_RANGE,
             BlacklistRuleEntity.TYPE_COUNTRY,
+            BlacklistRuleEntity.TYPE_INTERNATIONAL,
             BlacklistRuleEntity.TYPE_HIDDEN,
             BlacklistRuleEntity.TYPE_UNKNOWN,
             BlacklistRuleEntity.TYPE_TEMP_BLOCK_ALL,

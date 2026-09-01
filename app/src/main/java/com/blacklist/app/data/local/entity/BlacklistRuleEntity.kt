@@ -39,6 +39,7 @@ data class BlacklistRuleEntity(
         const val TYPE_CONTAINS = "CONTAINS"
         const val TYPE_RANGE = "RANGE"
         const val TYPE_COUNTRY = "COUNTRY"
+        const val TYPE_INTERNATIONAL = "INTERNATIONAL"
         const val TYPE_HIDDEN = "HIDDEN"
         const val TYPE_UNKNOWN = "UNKNOWN"
 
@@ -53,6 +54,6 @@ data class BlacklistRuleEntity(
         const val TYPE_TEMP_BLOCK_EXACT = "TEMP_BLOCK_EXACT"
 
         /** All user-selectable match types (HIDDEN/UNKNOWN are policy toggles, not patterns; TEMP_* internal). */
-        val USER_TYPES = listOf(TYPE_EXACT, TYPE_PREFIX, TYPE_SUFFIX, TYPE_CONTAINS, TYPE_RANGE, TYPE_COUNTRY)
+        val USER_TYPES = listOf(TYPE_EXACT, TYPE_PREFIX, TYPE_SUFFIX, TYPE_CONTAINS, TYPE_RANGE, TYPE_COUNTRY, TYPE_INTERNATIONAL)
     }
 }

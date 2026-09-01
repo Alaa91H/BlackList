@@ -224,6 +224,7 @@ fun ruleTypeLabel(type: String): String = when (type) {
     BlacklistRuleEntity.TYPE_CONTAINS -> stringResource(R.string.rule_type_contains)
     BlacklistRuleEntity.TYPE_RANGE -> stringResource(R.string.rule_type_range)
     BlacklistRuleEntity.TYPE_COUNTRY -> stringResource(R.string.rule_type_country)
+    BlacklistRuleEntity.TYPE_INTERNATIONAL -> stringResource(R.string.rule_type_international)
     BlacklistRuleEntity.TYPE_HIDDEN -> stringResource(R.string.rule_type_hidden)
     BlacklistRuleEntity.TYPE_UNKNOWN -> stringResource(R.string.rule_type_unknown)
     else -> type
@@ -243,6 +244,7 @@ private fun typeLabelRes(type: String): Int = when (type) {
     BlacklistRuleEntity.TYPE_CONTAINS -> R.string.rule_type_contains
     BlacklistRuleEntity.TYPE_RANGE -> R.string.rule_type_range
     BlacklistRuleEntity.TYPE_COUNTRY -> R.string.rule_type_country
+    BlacklistRuleEntity.TYPE_INTERNATIONAL -> R.string.rule_type_international
     else -> R.string.rule_type_exact
 }
 
@@ -333,7 +335,7 @@ private fun RuleCard(rule: BlacklistRuleEntity, onToggle: (Boolean) -> Unit, onD
                             BlacklistRuleEntity.TYPE_SUFFIX -> Icons.Filled.CallReceived
                             BlacklistRuleEntity.TYPE_CONTAINS -> Icons.Filled.Grain
                             BlacklistRuleEntity.TYPE_RANGE -> Icons.Filled.SwapVert
-                            BlacklistRuleEntity.TYPE_COUNTRY -> Icons.Filled.Public
+                            BlacklistRuleEntity.TYPE_COUNTRY, BlacklistRuleEntity.TYPE_INTERNATIONAL -> Icons.Filled.Public
                             else -> Icons.Filled.Block
                         },
                         null, tint = MaterialTheme.colorScheme.onSecondaryContainer
@@ -357,6 +359,8 @@ private fun RuleCard(rule: BlacklistRuleEntity, onToggle: (Boolean) -> Unit, onD
                     when (rule.ruleType) {
                         BlacklistRuleEntity.TYPE_RANGE -> "${rule.startNumber} … ${rule.endNumber}"
                         BlacklistRuleEntity.TYPE_COUNTRY -> rule.countryIso ?: ""
+                        BlacklistRuleEntity.TYPE_INTERNATIONAL -> stringResource(R.string.rule_type_international)
+                        BlacklistRuleEntity.TYPE_HIDDEN, BlacklistRuleEntity.TYPE_UNKNOWN -> stringResource(typeLabelRes(rule.ruleType))
                         else -> rule.pattern ?: ""
                     },
                     style = MaterialTheme.typography.titleMedium,
@@ -428,7 +432,9 @@ private fun AddRuleDialog(
                 if (iso.length != 2 || iso.any { !it.isLetter() }) null else
                     withSchedule(BlacklistRuleEntity(ruleType = selectedType, enforcement = selectedEnforcement, countryIso = iso, displayName = displayName.takeIf { it.isNotBlank() }))
             }
-            BlacklistRuleEntity.TYPE_HIDDEN, BlacklistRuleEntity.TYPE_UNKNOWN ->
+            BlacklistRuleEntity.TYPE_INTERNATIONAL,
+            BlacklistRuleEntity.TYPE_HIDDEN,
+            BlacklistRuleEntity.TYPE_UNKNOWN ->
                 withSchedule(BlacklistRuleEntity(ruleType = selectedType, enforcement = selectedEnforcement, displayName = displayName.takeIf { it.isNotBlank() }))
             else -> {
                 val p = pattern.trim()
@@ -664,6 +670,7 @@ private fun AddRuleDialog(
             val ready = when (selectedType) {
                 BlacklistRuleEntity.TYPE_RANGE -> rangeStart.filter { it.isDigit() }.isNotEmpty() && rangeEnd.filter { it.isDigit() }.isNotEmpty()
                 BlacklistRuleEntity.TYPE_COUNTRY -> countryIso.trim().length == 2
+                BlacklistRuleEntity.TYPE_INTERNATIONAL, BlacklistRuleEntity.TYPE_HIDDEN, BlacklistRuleEntity.TYPE_UNKNOWN -> true
                 else -> pattern.isNotBlank()
             }
             Button(

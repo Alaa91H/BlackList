@@ -100,6 +100,17 @@ class FirewallEngineTest {
     }
 
     @Test
+    fun testInternationalMatching() {
+        val local = normalizer.normalize("+49123456789")
+        val international = normalizer.normalize("+14155552671")
+        val rule = BlacklistRuleEntity(ruleType = BlacklistRuleEntity.TYPE_INTERNATIONAL, priority = 30)
+        assertFalse(normalizer.isInternational(local))
+        assertTrue(normalizer.isInternational(international))
+        assertFalse(blacklistEngine.matches(local, rule))
+        assertTrue(blacklistEngine.matches(international, rule))
+    }
+
+    @Test
     fun testHiddenUnknown() {
         val hidden = normalizer.normalize("private")
         assertEquals(Presentation.RESTRICTED, hidden.presentation)

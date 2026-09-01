@@ -258,6 +258,7 @@
     <string name="rule_type_contains">يحتوي على</string>
     <string name="rule_type_range">نطاق رقمي</string>
     <string name="rule_type_country">بلد</string>
+    <string name="rule_type_international">دولي</string>
     <string name="rule_type_hidden">مخفي</string>
     <string name="rule_type_unknown">غير معروف</string>
 

@@ -74,6 +74,12 @@ class PhoneNumberNormalizer(
      * The number's parsed region is preferred; the device locale region is used
      * as a safe fallback for short codes that cannot be formatted as E.164.
      */
+    fun isInternational(number: PhoneNumber): Boolean {
+        if (number.presentation != Presentation.ALLOWED) return false
+        val region = number.countryIso?.uppercase() ?: return false
+        return region != defaultRegion.uppercase()
+    }
+
     fun isEmergencyNumber(number: PhoneNumber): Boolean {
         val raw = number.raw.filter(Char::isDigit)
         if (raw.isBlank()) return false

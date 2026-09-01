@@ -7,7 +7,7 @@ import com.blacklist.app.domain.normalization.PhoneNumberNormalizer
 import com.google.i18n.phonenumbers.PhoneNumberUtil
 
 /**
- * Unified blacklist engine: exact / prefix / range / country / hidden / unknown.
+ * Unified blacklist engine: exact / prefix / range / country / international / hidden / unknown.
  * All matching goes through PhoneNumberNormalizer (single source).
  */
 class BlacklistEngine(
@@ -61,6 +61,7 @@ class BlacklistEngine(
                     }
                 } catch (_: Exception) { false }
             }
+            BlacklistRuleEntity.TYPE_INTERNATIONAL -> normalizer.isInternational(eventNumber)
             BlacklistRuleEntity.TYPE_COUNTRY -> {
                 if (eventNumber.presentation != Presentation.ALLOWED) return false
                 val iso = rule.countryIso ?: return false

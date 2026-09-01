@@ -2,6 +2,22 @@
 
 All notable changes to BlackList are documented in this file. The project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.24.0] - 2026-09-01
+
+### Added
+
+- **International caller rule.** Users can now create a dedicated rule that matches numbers outside the device's configured home region, using the local libphonenumber metadata and no network lookup.
+- **International rule actions.** International rules support the same independent Reject or Silence enforcement and per-rule schedule controls as other blacklist rules.
+
+### Quality
+
+- Added engine coverage proving that a local-region number is not classified as international while a valid foreign E.164 number is matched.
+- Extended encrypted backup validation to accept and restore the new rule type safely.
+
+### Privacy
+
+- International classification is deterministic and offline. No caller number is uploaded, queried against a remote reputation service, or persisted outside the existing local rule database.
+
 ## [1.23.0] - 2026-09-01
 
 ### Added
@@ -437,6 +453,7 @@ All notable changes to BlackList are documented in this file. The project follow
 
 - Production-grade local call-firewall foundation with rule matching, risk scoring, behavior signals, reputation tracking, temporary protection controls, diagnostics, and a decision simulator.
 
+[1.24.0]: https://github.com/Alaa91H/BlackList/compare/v1.23.0...v1.24.0
 [1.23.0]: https://github.com/Alaa91H/BlackList/compare/v1.22.0...v1.23.0
 [1.22.0]: https://github.com/Alaa91H/BlackList/compare/v1.21.0...v1.22.0
 [1.21.0]: https://github.com/Alaa91H/BlackList/compare/v1.20.0...v1.21.0
