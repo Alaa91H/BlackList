@@ -135,7 +135,7 @@
     <string name="settings_general">General</string>
         <string name="settings_block_unknown_desc">Silently reject calls from numbers not in contacts</string>
     <string name="settings_block_international">Block international callers</string>
-    <string name="settings_block_international_desc">Reject callers outside the device's configured home region using local phone-number metadata.</string>
+    <string name="settings_block_international_desc">Reject callers outside the configured home region using local phone-number metadata.</string>
     <string name="settings_silence_international">Silence international callers instead</string>
     <string name="settings_silence_international_desc">When international blocking is enabled, keep matching calls connected but mute their ringtone. Android may still show call UI or history.</string>
 
