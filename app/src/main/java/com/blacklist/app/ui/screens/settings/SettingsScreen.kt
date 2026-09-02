@@ -260,6 +260,21 @@ fun SettingsScreen(nav: NavController) {
                         enabled = settings?.blockPrivate ?: true
                     ) { vm.setSilencePrivate(it) }
                     HorizontalDivider()
+                    SettingSwitch(
+                        stringResource(R.string.settings_block_international),
+                        stringResource(R.string.settings_block_international_desc),
+                        Icons.Filled.Public,
+                        settings?.blockInternational ?: false
+                    ) { vm.setBlockInternational(it) }
+                    HorizontalDivider()
+                    SettingSwitch(
+                        stringResource(R.string.settings_silence_international),
+                        stringResource(R.string.settings_silence_international_desc),
+                        Icons.AutoMirrored.Filled.VolumeOff,
+                        settings?.silenceInternational ?: false,
+                        enabled = settings?.blockInternational ?: false
+                    ) { vm.setSilenceInternational(it) }
+                    HorizontalDivider()
                     SettingSwitch(stringResource(R.string.home_block_all_except_whitelist), stringResource(R.string.settings_block_all_except_desc), Icons.Filled.DoNotDisturbOn, settings?.blockAllExceptWhitelist ?: false) { vm.setBlockAllExcept(it) }
                     HorizontalDivider()
                     SettingSwitch(stringResource(R.string.settings_outbound_callback_grace), stringResource(R.string.settings_outbound_callback_grace_desc), Icons.Filled.PersonOff, settings?.allowOutboundCallbackGrace ?: false) { vm.setOutboundCallbackGrace(it) }

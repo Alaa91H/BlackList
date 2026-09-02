@@ -206,6 +206,8 @@ class EncryptedBackupService(
         .put("silenceUnknown", silenceUnknown)
         .put("blockPrivate", blockPrivate)
         .put("silencePrivate", silencePrivate)
+        .put("blockInternational", blockInternational)
+        .put("silenceInternational", silenceInternational)
         .put("blockAllExceptWhitelist", blockAllExceptWhitelist)
         .put("showBlockedNotification", showBlockedNotification)
         .put("hideBlockedCallsFromSystemLog", hideBlockedCallsFromSystemLog)
@@ -288,6 +290,8 @@ class EncryptedBackupService(
             silenceUnknown = json.optBoolean("silenceUnknown", false),
             blockPrivate = json.optBoolean("blockPrivate", true),
             silencePrivate = json.optBoolean("silencePrivate", false),
+            blockInternational = json.optBoolean("blockInternational", false),
+            silenceInternational = json.optBoolean("silenceInternational", false),
             blockAllExceptWhitelist = json.optBoolean("blockAllExceptWhitelist", false),
             showBlockedNotification = json.optBoolean("showBlockedNotification", true),
             hideBlockedCallsFromSystemLog = json.optBoolean("hideBlockedCallsFromSystemLog", false),

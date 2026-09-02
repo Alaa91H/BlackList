@@ -2,6 +2,24 @@
 
 All notable changes to BlackList are documented in this file. The project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.26.0] - 2026-09-03
+
+### Added
+
+- **Configurable international caller policy.** Settings now provide an opt-in policy for callers outside the device's configured home region.
+- **International silence mode.** Users can choose to silence matching international calls instead of rejecting them.
+
+### Privacy and compatibility
+
+- International classification remains deterministic and offline through the existing local phone-number metadata.
+- Existing installations keep international blocking disabled by default through a Room 13→14 migration.
+- Encrypted backups now preserve both international policy settings while older backups restore with safe defaults.
+- Explicit blacklist rules, emergency handling, whitelist precedence, and per-rule schedules remain higher-priority controls.
+
+### Quality
+
+- Added engine coverage for foreign-vs-home-region behavior and both block and silence actions.
+
 ## [1.25.0] - 2026-09-01
 
 ### Changed

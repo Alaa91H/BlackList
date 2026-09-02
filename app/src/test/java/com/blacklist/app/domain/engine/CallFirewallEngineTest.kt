@@ -332,6 +332,31 @@ class CallFirewallEngineTest {
         assertTrue(decision.reasons.single().contains("Not in contacts"))
     }
 
+    @Test
+    fun `international policy blocks foreign caller but allows home region`() = runTest {
+        val snapshot = PolicySnapshotStore.Snapshot(
+            settings = AppSettingsEntity(blockInternational = true)
+        )
+        val foreign = engine(snapshot).evaluate(event("international-foreign", "+1 202 555 0100"))
+        val local = engine(snapshot).evaluate(event("international-local", "+49 151 23456789"))
+
+        assertEquals(Decision.BLOCK, foreign.decision)
+        assertEquals("international", foreign.explainable.backend)
+        assertEquals(Decision.ALLOW, local.decision)
+    }
+
+    @Test
+    fun `international policy can silence foreign caller`() = runTest {
+        val snapshot = PolicySnapshotStore.Snapshot(
+            settings = AppSettingsEntity(blockInternational = true, silenceInternational = true)
+        )
+
+        val decision = engine(snapshot).evaluate(event("international-silence", "+1 202 555 0100"))
+
+        assertEquals(Decision.SILENCE, decision.decision)
+        assertEquals("international_silence", decision.explainable.backend)
+    }
+
     private fun engine(snapshot: PolicySnapshotStore.Snapshot): CallFirewallEngine = CallFirewallEngine(
         policySnapshots = PolicySnapshotProvider { snapshot },
         normalizer = normalizer,

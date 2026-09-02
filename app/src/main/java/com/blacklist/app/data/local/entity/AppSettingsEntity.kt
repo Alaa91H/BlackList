@@ -12,6 +12,10 @@ data class AppSettingsEntity(
     val blockPrivate: Boolean = true,
     /** When enabled with blockPrivate, screen private callers quietly rather than rejecting them. */
     val silencePrivate: Boolean = false,
+    /** Optional policy for callers outside the device's configured home region. */
+    val blockInternational: Boolean = false,
+    /** When enabled with blockInternational, mute international callers rather than rejecting them. */
+    val silenceInternational: Boolean = false,
     val blockAllExceptWhitelist: Boolean = false,
     val showBlockedNotification: Boolean = true,
     /** Keeps blocked-call history out of Android's shared call log while preserving BlackList's local log. */

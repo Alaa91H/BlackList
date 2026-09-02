@@ -84,6 +84,18 @@ class CallFirewallEngine(
         }
 
         val settings = snapshot.settings
+        if (settings?.blockInternational == true && normalizer.isInternational(enrichedEvent.phoneNumber)) {
+            val action = if (settings.silenceInternational) Decision.SILENCE else Decision.BLOCK
+            return decision(
+                enrichedEvent,
+                action,
+                65,
+                ReputationLevel.SUSPICIOUS,
+                listOf(if (action == Decision.SILENCE) "International caller policy: silence" else "International caller policy: block"),
+                emptyList(),
+                if (action == Decision.SILENCE) "international_silence" else "international"
+            )
+        }
         if ((settings?.allowOutboundCallbackGrace ?: false) &&
             (OutboundCallbackGrace.isActive(enrichedEvent.phoneNumber.digitsOnly) ||
                 TemporaryFirewall.outboundCallbackMatches(snapshot.rules, enrichedEvent.phoneNumber.digitsOnly))
