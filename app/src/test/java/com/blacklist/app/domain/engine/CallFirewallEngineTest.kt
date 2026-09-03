@@ -395,8 +395,9 @@ class CallFirewallEngineTest {
                 repeatedCallerWindowMinutes = 15
             )
         )
-        val first = engine(snapshot).evaluate(event("repeat-1", "+49 151 23456789"))
-        val second = engine(snapshot).evaluate(event("repeat-2", "+49 151 23456789"))
+        val firewall = engine(snapshot)
+        val first = firewall.evaluate(event("repeat-1", "+49 151 23456789"))
+        val second = firewall.evaluate(event("repeat-2", "+49 151 23456789"))
 
         assertEquals(Decision.ALLOW, first.decision)
         assertEquals(Decision.SILENCE, second.decision)
@@ -409,8 +410,9 @@ class CallFirewallEngineTest {
             settings = AppSettingsEntity(repeatedCallerThreshold = 2)
         )
 
-        val first = engine(snapshot).evaluate(event("repeat-off-1", "+49 151 23456789"))
-        val second = engine(snapshot).evaluate(event("repeat-off-2", "+49 151 23456789"))
+        val firewall = engine(snapshot)
+        val first = firewall.evaluate(event("repeat-off-1", "+49 151 23456789"))
+        val second = firewall.evaluate(event("repeat-off-2", "+49 151 23456789"))
 
         assertEquals(Decision.ALLOW, first.decision)
         assertEquals(Decision.ALLOW, second.decision)
