@@ -2,6 +2,31 @@
 
 All notable changes to BlackList are documented in this file. The project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.27.0] - 2026-09-03
+
+### Added
+
+- **First-time caller policy.** Users can optionally block or silence unsaved callers that have no prior local BlackList reputation history.
+- **Repeated caller policy.** Users can optionally block or silence repeated attempts from the same number after a configurable local threshold.
+- **Configurable repetition window.** The repeated-caller detector now supports a bounded 1–60 minute window and a bounded 2–10 attempt threshold.
+
+### Changed
+
+- Behavioral decisions remain local and memory-first on the CallScreeningService hot path. Contact-dependent first-time caller protection fails open when Contacts permission or contact data is unavailable.
+- Emergency numbers, temporary allows, whitelisted numbers, and explicit blacklist rules retain precedence over the new behavioral policies.
+- Encrypted backups preserve the new policies and safely restore older backups with both policies disabled.
+- Added Room 14→15 migration with conservative defaults that preserve existing behavior.
+
+### Quality
+
+- Added engine coverage for first-time blocking, whitelist precedence, repeated-call silence at the configured threshold, and disabled repeated-call behavior.
+- CI passed after correcting the test fixture to share the in-memory behavior engine across repeated attempts.
+
+### Privacy and compatibility
+
+- No network lookup, cloud reputation service, AccessibilityService, hidden API, ADB shell, or privileged Root/Shizuku operation is introduced.
+- The feature uses only local contact availability, local reputation snapshots, and bounded in-memory behavioral state.
+
 ## [1.26.0] - 2026-09-03
 
 ### Added
