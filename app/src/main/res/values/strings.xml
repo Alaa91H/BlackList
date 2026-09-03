@@ -138,6 +138,14 @@
     <string name="settings_block_international_desc">Reject callers outside the configured home region using local phone-number metadata.</string>
     <string name="settings_silence_international">Silence international callers instead</string>
     <string name="settings_silence_international_desc">When international blocking is enabled, keep matching calls connected but mute their ringtone. Android may still show call UI or history.</string>
+    <string name="settings_first_time_caller">First-time caller policy</string>
+    <string name="settings_first_time_caller_desc">Apply a local action to unsaved callers with no previous BlackList history.</string>
+    <string name="settings_first_time_block">Block first-time callers</string>
+    <string name="settings_first_time_silence">Silence first-time callers</string>
+    <string name="settings_repeated_caller">Repeated caller policy</string>
+    <string name="settings_repeated_caller_desc">Apply an action after repeated attempts from the same number in a short local window.</string>
+    <string name="settings_repeated_block">Block repeated callers</string>
+    <string name="settings_repeated_silence">Silence repeated callers</string>
 
         <string name="settings_block_private_desc">Reject hidden / private numbers</string>
     <string name="settings_silence_unknown">Silence unknown callers instead</string>

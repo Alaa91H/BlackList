@@ -23,7 +23,7 @@ class BehaviorEngine {
         }
     }
 
-    suspend fun signalsFor(number: PhoneNumber): BehaviorSignals {
+    suspend fun signalsFor(number: PhoneNumber, windowMinutes: Int = 10): BehaviorSignals {
         val digits = number.digitsOnly
         mutex.withLock {
             val now = System.currentTimeMillis()
@@ -31,8 +31,9 @@ class BehaviorEngine {
             while (recentCalls.isNotEmpty() && now - recentCalls.first().second > 15 * 60 * 1000) {
                 recentCalls.removeFirst()
             }
-            val last10 = recentCalls.count { now - it.second <= 10 * 60 * 1000 }
-            val sameNumber = recentCalls.count { it.first == digits && now - it.second <= 10 * 60 * 1000 }
+            val windowMillis = windowMinutes.coerceIn(1, 60) * 60 * 1000L
+            val last10 = recentCalls.count { now - it.second <= windowMillis }
+            val sameNumber = recentCalls.count { it.first == digits && now - it.second <= windowMillis }
             val burst = last10 >= 5
             // sequential numbers: check if last 5 share prefix 6 digits
             val isSequential = if (recentCalls.size >= 4) {

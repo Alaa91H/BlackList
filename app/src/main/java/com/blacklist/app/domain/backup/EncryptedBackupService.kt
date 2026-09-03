@@ -208,6 +208,10 @@ class EncryptedBackupService(
         .put("silencePrivate", silencePrivate)
         .put("blockInternational", blockInternational)
         .put("silenceInternational", silenceInternational)
+        .put("firstTimeCallerPolicy", firstTimeCallerPolicy)
+        .put("repeatedCallerPolicy", repeatedCallerPolicy)
+        .put("repeatedCallerThreshold", repeatedCallerThreshold)
+        .put("repeatedCallerWindowMinutes", repeatedCallerWindowMinutes)
         .put("blockAllExceptWhitelist", blockAllExceptWhitelist)
         .put("showBlockedNotification", showBlockedNotification)
         .put("hideBlockedCallsFromSystemLog", hideBlockedCallsFromSystemLog)
@@ -283,6 +287,7 @@ class EncryptedBackupService(
         }
         val blockedLogRetentionDays = json.optLong("blockedLogRetentionDays", BlockedCallLogRetentionPolicy.NEVER)
         require(BlockedCallLogRetentionPolicy.isSupported(blockedLogRetentionDays)) {
+
             "Invalid blocked-call history retention in backup."
         }
         return AppSettingsEntity(
@@ -292,6 +297,12 @@ class EncryptedBackupService(
             silencePrivate = json.optBoolean("silencePrivate", false),
             blockInternational = json.optBoolean("blockInternational", false),
             silenceInternational = json.optBoolean("silenceInternational", false),
+            firstTimeCallerPolicy = json.optString("firstTimeCallerPolicy", AppSettingsEntity.FIRST_TIME_OFF)
+                .also { require(it in setOf(AppSettingsEntity.FIRST_TIME_OFF, AppSettingsEntity.FIRST_TIME_BLOCK, AppSettingsEntity.FIRST_TIME_SILENCE)) { "Unsupported first-time caller policy." } },
+            repeatedCallerPolicy = json.optString("repeatedCallerPolicy", AppSettingsEntity.REPEATED_OFF)
+                .also { require(it in setOf(AppSettingsEntity.REPEATED_OFF, AppSettingsEntity.REPEATED_BLOCK, AppSettingsEntity.REPEATED_SILENCE)) { "Unsupported repeated caller policy." } },
+            repeatedCallerThreshold = json.optInt("repeatedCallerThreshold", 3).also { require(it in 2..10) { "Invalid repeated caller threshold." } },
+            repeatedCallerWindowMinutes = json.optInt("repeatedCallerWindowMinutes", 10).also { require(it in 1..60) { "Invalid repeated caller window." } },
             blockAllExceptWhitelist = json.optBoolean("blockAllExceptWhitelist", false),
             showBlockedNotification = json.optBoolean("showBlockedNotification", true),
             hideBlockedCallsFromSystemLog = json.optBoolean("hideBlockedCallsFromSystemLog", false),

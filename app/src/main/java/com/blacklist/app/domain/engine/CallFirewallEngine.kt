@@ -1,5 +1,6 @@
 package com.blacklist.app.domain.engine
 
+import com.blacklist.app.data.local.entity.AppSettingsEntity
 import com.blacklist.app.data.local.entity.BlacklistRuleEntity
 import com.blacklist.app.domain.model.*
 import com.blacklist.app.domain.normalization.PhoneNumberNormalizer
@@ -31,7 +32,11 @@ class CallFirewallEngine(
         // Keep behavioral signals entirely in memory. This is intentionally
         // cheap and independent from the persistent blocked-call log.
         behaviorEngine.recordAttempt(enrichedEvent.phoneNumber.digitsOnly)
-        val signals = behaviorEngine.signalsFor(enrichedEvent.phoneNumber)
+        val settings = snapshot.settings
+        val signals = behaviorEngine.signalsFor(
+            enrichedEvent.phoneNumber,
+            settings?.repeatedCallerWindowMinutes ?: 10
+        )
 
         // The precedence order is deliberately explicit and stable.
         if (TemporaryFirewall.allowMatches(snapshot.rules, enrichedEvent.phoneNumber.digitsOnly)) {
@@ -83,7 +88,6 @@ class CallFirewallEngine(
             return decision(enrichedEvent, Decision.BLOCK, 60, ReputationLevel.SUSPICIOUS, listOf("Legacy blacklist exact match"), emptyList(), "legacy_blacklist")
         }
 
-        val settings = snapshot.settings
         if (settings?.blockInternational == true && normalizer.isInternational(enrichedEvent.phoneNumber)) {
             val action = if (settings.silenceInternational) Decision.SILENCE else Decision.BLOCK
             return decision(
@@ -96,6 +100,36 @@ class CallFirewallEngine(
                 if (action == Decision.SILENCE) "international_silence" else "international"
             )
         }
+        val isFirstTimeLocalCaller = snapshot.canReadContacts &&
+            enrichedEvent.phoneNumber.presentation == Presentation.ALLOWED &&
+            enrichedEvent.contact?.isInContacts != true &&
+            snapshot.reputationFor(enrichedEvent.phoneNumber) == null
+        if (isFirstTimeLocalCaller && settings?.firstTimeCallerPolicy != AppSettingsEntity.FIRST_TIME_OFF) {
+            val action = if (settings?.firstTimeCallerPolicy == AppSettingsEntity.FIRST_TIME_SILENCE) Decision.SILENCE else Decision.BLOCK
+            return decision(
+                enrichedEvent,
+                action,
+                58,
+                ReputationLevel.NEUTRAL,
+                listOf(if (action == Decision.SILENCE) "First-time caller policy: silence" else "First-time caller policy: block"),
+                emptyList(),
+                if (action == Decision.SILENCE) "first_time_silence" else "first_time"
+            )
+        }
+        if (signals.repeatedCount >= (settings?.repeatedCallerThreshold ?: 3) &&
+            settings?.repeatedCallerPolicy != AppSettingsEntity.REPEATED_OFF) {
+            val action = if (settings?.repeatedCallerPolicy == AppSettingsEntity.REPEATED_SILENCE) Decision.SILENCE else Decision.BLOCK
+            return decision(
+                enrichedEvent,
+                action,
+                72,
+                ReputationLevel.SUSPICIOUS,
+                listOf(if (action == Decision.SILENCE) "Repeated caller policy: silence" else "Repeated caller policy: block", "Attempts in window: ${signals.repeatedCount}"),
+                emptyList(),
+                if (action == Decision.SILENCE) "repeated_silence" else "repeated"
+            )
+        }
+
         if ((settings?.allowOutboundCallbackGrace ?: false) &&
             (OutboundCallbackGrace.isActive(enrichedEvent.phoneNumber.digitsOnly) ||
                 TemporaryFirewall.outboundCallbackMatches(snapshot.rules, enrichedEvent.phoneNumber.digitsOnly))

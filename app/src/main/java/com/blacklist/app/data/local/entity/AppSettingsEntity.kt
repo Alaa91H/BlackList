@@ -16,6 +16,14 @@ data class AppSettingsEntity(
     val blockInternational: Boolean = false,
     /** When enabled with blockInternational, mute international callers rather than rejecting them. */
     val silenceInternational: Boolean = false,
+    /** Optional local policy for callers not seen in BlackList's local reputation history. */
+    val firstTimeCallerPolicy: String = "OFF",
+    /** Optional local policy for repeated attempts from the same number in a short window. */
+    val repeatedCallerPolicy: String = "OFF",
+    /** Minimum attempts, including the current attempt, before repeated-caller policy applies. */
+    val repeatedCallerThreshold: Int = 3,
+    /** Window in minutes used by the repeated-caller policy. */
+    val repeatedCallerWindowMinutes: Int = 10,
     val blockAllExceptWhitelist: Boolean = false,
     val showBlockedNotification: Boolean = true,
     /** Keeps blocked-call history out of Android's shared call log while preserving BlackList's local log. */
@@ -29,4 +37,13 @@ data class AppSettingsEntity(
     /** UTC expiry for the short local allowance after an outgoing emergency call. */
     val emergencyCallbackGraceUntil: Long = 0L,
     val updatedAt: Long = System.currentTimeMillis()
-)
+) {
+    companion object {
+        const val FIRST_TIME_OFF = "OFF"
+        const val FIRST_TIME_BLOCK = "BLOCK"
+        const val FIRST_TIME_SILENCE = "SILENCE"
+        const val REPEATED_OFF = "OFF"
+        const val REPEATED_BLOCK = "BLOCK"
+        const val REPEATED_SILENCE = "SILENCE"
+    }
+}

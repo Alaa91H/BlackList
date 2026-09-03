@@ -357,6 +357,65 @@ class CallFirewallEngineTest {
         assertEquals("international_silence", decision.explainable.backend)
     }
 
+    @Test
+    fun `first-time caller policy blocks an unsaved caller with no local history`() = runTest {
+        val number = normalizer.normalize("+49 151 23456789")
+        val snapshot = PolicySnapshotStore.Snapshot(
+            canReadContacts = true,
+            settings = AppSettingsEntity(firstTimeCallerPolicy = AppSettingsEntity.FIRST_TIME_BLOCK)
+        )
+
+        val decision = engine(snapshot).evaluate(event("first-time", number.raw))
+
+        assertEquals(Decision.BLOCK, decision.decision)
+        assertEquals("first_time", decision.explainable.backend)
+    }
+
+    @Test
+    fun `first-time caller policy never overrides whitelist`() = runTest {
+        val number = normalizer.normalize("+49 151 23456789")
+        val snapshot = PolicySnapshotStore.Snapshot(
+            canReadContacts = true,
+            whitelist = listOf(number),
+            settings = AppSettingsEntity(firstTimeCallerPolicy = AppSettingsEntity.FIRST_TIME_BLOCK)
+        )
+
+        val decision = engine(snapshot).evaluate(event("first-time-whitelist", number.raw))
+
+        assertEquals(Decision.ALLOW, decision.decision)
+        assertEquals("whitelist", decision.explainable.backend)
+    }
+
+    @Test
+    fun `repeated caller policy applies on configured attempt threshold`() = runTest {
+        val snapshot = PolicySnapshotStore.Snapshot(
+            settings = AppSettingsEntity(
+                repeatedCallerPolicy = AppSettingsEntity.REPEATED_SILENCE,
+                repeatedCallerThreshold = 2,
+                repeatedCallerWindowMinutes = 15
+            )
+        )
+        val first = engine(snapshot).evaluate(event("repeat-1", "+49 151 23456789"))
+        val second = engine(snapshot).evaluate(event("repeat-2", "+49 151 23456789"))
+
+        assertEquals(Decision.ALLOW, first.decision)
+        assertEquals(Decision.SILENCE, second.decision)
+        assertEquals("repeated_silence", second.explainable.backend)
+    }
+
+    @Test
+    fun `repeated caller policy fails open when disabled`() = runTest {
+        val snapshot = PolicySnapshotStore.Snapshot(
+            settings = AppSettingsEntity(repeatedCallerThreshold = 2)
+        )
+
+        val first = engine(snapshot).evaluate(event("repeat-off-1", "+49 151 23456789"))
+        val second = engine(snapshot).evaluate(event("repeat-off-2", "+49 151 23456789"))
+
+        assertEquals(Decision.ALLOW, first.decision)
+        assertEquals(Decision.ALLOW, second.decision)
+    }
+
     private fun engine(snapshot: PolicySnapshotStore.Snapshot): CallFirewallEngine = CallFirewallEngine(
         policySnapshots = PolicySnapshotProvider { snapshot },
         normalizer = normalizer,

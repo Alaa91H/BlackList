@@ -128,6 +128,14 @@
     <string name="settings_block_international_desc">رفض المتصلين من خارج منطقة الجهاز المحلية باستخدام بيانات أرقام الهاتف محلياً.</string>
     <string name="settings_silence_international">إسكات المتصلين الدوليين بدلاً من ذلك</string>
     <string name="settings_silence_international_desc">عند تفعيل الحظر الدولي، أبقِ المكالمة متصلة مع كتم الرنين. قد يظل Android يعرض واجهة المكالمة أو يسجلها.</string>
+    <string name="settings_first_time_caller">سياسة المتصل الأول</string>
+    <string name="settings_first_time_caller_desc">طبّق إجراءً محلياً على الأرقام غير المحفوظة التي لا تملك سجلاً سابقاً في BlackList.</string>
+    <string name="settings_first_time_block">حظر المتصلين لأول مرة</string>
+    <string name="settings_first_time_silence">إسكات المتصلين لأول مرة</string>
+    <string name="settings_repeated_caller">سياسة المكالمات المتكررة</string>
+    <string name="settings_repeated_caller_desc">طبّق إجراءً بعد تكرار المحاولات من الرقم نفسه ضمن نافذة زمنية محلية قصيرة.</string>
+    <string name="settings_repeated_block">حظر المتصلين المتكررين</string>
+    <string name="settings_repeated_silence">إسكات المتصلين المتكررين</string>
     <string name="settings_block_private_desc">رفض الأرقام المخفية/الخاصة</string>
     <string name="settings_silence_unknown">إسكات المتصلين غير المعروفين بدلاً من ذلك</string>
     <string name="settings_silence_unknown_desc">عند تفعيل حظر غير المعروفين، اسمح للمكالمات المؤهلة بالاستمرار دون رنين أو رفض. قد يظل Android يعرض واجهة المكالمة أو سجلها أو إشعار مكالمة فائتة.</string>

@@ -32,6 +32,7 @@ import com.blacklist.app.R
 import com.blacklist.app.di.ServiceLocator
 import com.blacklist.app.di.ViewModelFactory
 import com.blacklist.app.domain.importexport.CsvListTarget
+import com.blacklist.app.data.local.entity.AppSettingsEntity
 import com.blacklist.app.domain.retention.BlockedCallLogRetentionPolicy
 import com.blacklist.app.service.TemporaryBlockTileService
 import com.blacklist.app.ui.navigation.Routes
@@ -274,6 +275,34 @@ fun SettingsScreen(nav: NavController) {
                         settings?.silenceInternational ?: false,
                         enabled = settings?.blockInternational ?: false
                     ) { vm.setSilenceInternational(it) }
+                    HorizontalDivider()
+                    SettingSwitch(
+                        stringResource(R.string.settings_first_time_block),
+                        stringResource(R.string.settings_first_time_caller_desc),
+                        Icons.Filled.PersonAdd,
+                        settings?.firstTimeCallerPolicy == AppSettingsEntity.FIRST_TIME_BLOCK
+                    ) { vm.setFirstTimeCallerPolicy(if (it) AppSettingsEntity.FIRST_TIME_BLOCK else AppSettingsEntity.FIRST_TIME_OFF) }
+                    HorizontalDivider()
+                    SettingSwitch(
+                        stringResource(R.string.settings_first_time_silence),
+                        stringResource(R.string.settings_first_time_caller),
+                        Icons.AutoMirrored.Filled.VolumeOff,
+                        settings?.firstTimeCallerPolicy == AppSettingsEntity.FIRST_TIME_SILENCE
+                    ) { vm.setFirstTimeCallerPolicy(if (it) AppSettingsEntity.FIRST_TIME_SILENCE else AppSettingsEntity.FIRST_TIME_OFF) }
+                    HorizontalDivider()
+                    SettingSwitch(
+                        stringResource(R.string.settings_repeated_block),
+                        stringResource(R.string.settings_repeated_caller_desc),
+                        Icons.Filled.Repeat,
+                        settings?.repeatedCallerPolicy == AppSettingsEntity.REPEATED_BLOCK
+                    ) { vm.setRepeatedCallerPolicy(if (it) AppSettingsEntity.REPEATED_BLOCK else AppSettingsEntity.REPEATED_OFF) }
+                    HorizontalDivider()
+                    SettingSwitch(
+                        stringResource(R.string.settings_repeated_silence),
+                        stringResource(R.string.settings_repeated_caller),
+                        Icons.AutoMirrored.Filled.VolumeOff,
+                        settings?.repeatedCallerPolicy == AppSettingsEntity.REPEATED_SILENCE
+                    ) { vm.setRepeatedCallerPolicy(if (it) AppSettingsEntity.REPEATED_SILENCE else AppSettingsEntity.REPEATED_OFF) }
                     HorizontalDivider()
                     SettingSwitch(stringResource(R.string.home_block_all_except_whitelist), stringResource(R.string.settings_block_all_except_desc), Icons.Filled.DoNotDisturbOn, settings?.blockAllExceptWhitelist ?: false) { vm.setBlockAllExcept(it) }
                     HorizontalDivider()

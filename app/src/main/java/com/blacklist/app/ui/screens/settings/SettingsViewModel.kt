@@ -91,6 +91,22 @@ class SettingsViewModel(private val repo: BlackListRepository) : ViewModel() {
         repo.updateSettings { it.copy(silenceInternational = value, activeProfileId = ProtectionProfiles.CUSTOM) }
     }
 
+    fun setFirstTimeCallerPolicy(policy: String) = viewModelScope.launch {
+        repo.updateSettings { it.copy(firstTimeCallerPolicy = policy, activeProfileId = ProtectionProfiles.CUSTOM) }
+    }
+
+    fun setRepeatedCallerPolicy(policy: String) = viewModelScope.launch {
+        repo.updateSettings { it.copy(repeatedCallerPolicy = policy, activeProfileId = ProtectionProfiles.CUSTOM) }
+    }
+
+    fun setRepeatedCallerThreshold(value: Int) = viewModelScope.launch {
+        repo.updateSettings { it.copy(repeatedCallerThreshold = value.coerceIn(2, 10), activeProfileId = ProtectionProfiles.CUSTOM) }
+    }
+
+    fun setRepeatedCallerWindowMinutes(value: Int) = viewModelScope.launch {
+        repo.updateSettings { it.copy(repeatedCallerWindowMinutes = value.coerceIn(1, 60), activeProfileId = ProtectionProfiles.CUSTOM) }
+    }
+
     fun setBlockAllExcept(value: Boolean) = viewModelScope.launch {
         repo.updateSettings { it.copy(blockAllExceptWhitelist = value, activeProfileId = ProtectionProfiles.CUSTOM) }
     }

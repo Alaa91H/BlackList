@@ -50,7 +50,8 @@ object ServiceLocator {
                     BlackListDatabase.MIGRATION_10_11,
                     BlackListDatabase.MIGRATION_11_12,
                     BlackListDatabase.MIGRATION_12_13,
-                    BlackListDatabase.MIGRATION_13_14
+                    BlackListDatabase.MIGRATION_13_14,
+                    BlackListDatabase.MIGRATION_14_15
                 )
                 // Spec §48: never wipe user data on schema change.
                 // Destructive fallback is allowed ONLY on downgrade (e.g. installing an older build).
