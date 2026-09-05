@@ -80,6 +80,26 @@ class BlacklistRuleConflictAnalyzerTest {
     }
 
     @Test
+    fun `contact group rules with same group id are duplicates`() {
+        val existing = BlacklistRuleEntity(
+            id = 15,
+            ruleType = BlacklistRuleEntity.TYPE_CONTACT_GROUP,
+            contactGroupId = 7L,
+            contactGroupTitle = "Family"
+        )
+        val draft = BlacklistRuleEntity(
+            ruleType = BlacklistRuleEntity.TYPE_CONTACT_GROUP,
+            contactGroupId = 7L,
+            contactGroupTitle = "Family"
+        )
+
+        val preview = analyzer.analyze(draft, listOf(existing))
+
+        assertTrue(preview.hasDuplicate)
+        assertEquals(RuleConflictKind.DUPLICATE, preview.conflicts.single().kind)
+    }
+
+    @Test
     fun `disabled rules do not participate in the draft preview`() {
         val disabled = BlacklistRuleEntity(
             id = 9,

@@ -111,6 +111,27 @@ class FirewallEngineTest {
     }
 
     @Test
+    fun testContactGroupMatchingRequiresLocalSnapshot() {
+        val member = normalizer.normalize("+49123456789")
+        val rule = BlacklistRuleEntity(
+            ruleType = BlacklistRuleEntity.TYPE_CONTACT_GROUP,
+            contactGroupId = 42L,
+            contactGroupTitle = "Family",
+            priority = 30
+        )
+        assertTrue(blacklistEngine.matches(member, rule, contactGroupNumbers = mapOf(42L to setOf(member.digitsOnly))))
+        assertFalse(blacklistEngine.matches(member, rule, contactGroupNumbers = emptyMap()))
+        assertFalse(blacklistEngine.matches(normalizer.normalize("+49876543210"), rule, contactGroupNumbers = mapOf(42L to setOf(member.digitsOnly))))
+    }
+
+    @Test
+    fun testContactGroupRuleFailsOpenWhenGroupIdIsMissing() {
+        val member = normalizer.normalize("+49123456789")
+        val rule = BlacklistRuleEntity(ruleType = BlacklistRuleEntity.TYPE_CONTACT_GROUP, contactGroupTitle = "Family")
+        assertFalse(blacklistEngine.matches(member, rule, contactGroupNumbers = mapOf(42L to setOf(member.digitsOnly))))
+    }
+
+    @Test
     fun testHiddenUnknown() {
         val hidden = normalizer.normalize("private")
         assertEquals(Presentation.RESTRICTED, hidden.presentation)
