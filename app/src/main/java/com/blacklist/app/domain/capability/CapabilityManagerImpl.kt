@@ -96,6 +96,15 @@ class CapabilityManagerImpl(
             remediation = "Restart the app or restore a manual encrypted backup if local storage is unavailable."
         ),
         CapabilityDescriptor(
+            id = PRIVILEGED_ADAPTER,
+            name = "Optional privileged bridge",
+            description = "Reports whether an optional Shizuku-compatible bridge is present. BlackList does not execute commands or mutate Telecom/system databases through this capability.",
+            category = CapabilityCategory.SPECIAL_ACCESS,
+            required = false,
+            optional = true,
+            remediation = "Install and explicitly authorize a compatible bridge only if you understand its permissions; core blocking does not require it."
+        ),
+        CapabilityDescriptor(
             id = SECURITY_EVENTS,
             name = "Local protection health",
             description = "Records health events locally after a fallback or a policy failure.",
@@ -126,6 +135,7 @@ class CapabilityManagerImpl(
         descriptor: CapabilityDescriptor,
         currentStates: Map<String, CapabilityState>
     ): CapabilityState {
+        if (descriptor.id == PRIVILEGED_ADAPTER) return evaluatePrivilegedAdapter()
         if (descriptor.minimumSdk > Build.VERSION.SDK_INT ||
             (descriptor.maximumSdk != null && Build.VERSION.SDK_INT > descriptor.maximumSdk)
         ) return CapabilityState.NOT_SUPPORTED
@@ -159,6 +169,16 @@ class CapabilityManagerImpl(
             }
         }
         return CapabilityState.AVAILABLE
+    }
+
+    private fun evaluatePrivilegedAdapter(): CapabilityState = try {
+        val clazz = Class.forName("rikka.shizuku.Shizuku")
+        val ping = clazz.getMethod("pingBinder").invoke(null) as? Boolean ?: false
+        if (ping) CapabilityState.AVAILABLE else CapabilityState.DEGRADED
+    } catch (_: ClassNotFoundException) {
+        CapabilityState.NOT_SUPPORTED
+    } catch (_: Throwable) {
+        CapabilityState.DEGRADED
     }
 
     override fun getState(id: String): CapabilityState = _capabilityStates.value[id] ?: CapabilityState.UNKNOWN
@@ -195,5 +215,6 @@ class CapabilityManagerImpl(
         const val BATTERY_OPTIMIZATION_ACCESS = "battery_optimization"
         const val DATABASE = "DATABASE"
         const val SECURITY_EVENTS = "SECURITY_EVENTS"
+        const val PRIVILEGED_ADAPTER = "PRIVILEGED_ADAPTER"
     }
 }

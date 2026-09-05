@@ -9,8 +9,11 @@ import com.blacklist.app.domain.model.EnforcementDecision
 import com.blacklist.app.domain.repository.BlackListRepository
 import com.blacklist.app.util.PickerItem
 import com.blacklist.app.util.PhoneNumberUtils
+import com.blacklist.app.util.ContactGroupSnapshot
+import com.blacklist.app.util.ContactUtils
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 sealed interface TemporaryExactBlockEvent {
     data object Added : TemporaryExactBlockEvent
@@ -32,7 +35,8 @@ data class DraftRulePreviewState(
 
 class BlacklistViewModel(
     private val repo: BlackListRepository,
-    private val draftPreviewer: DraftRuleDecisionPreviewer
+    private val draftPreviewer: DraftRuleDecisionPreviewer,
+    private val contactUtils: ContactUtils
 ) : ViewModel() {
     val items = repo.observeBlockedNumbers().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
     private val _query = MutableStateFlow("")
@@ -69,8 +73,20 @@ class BlacklistViewModel(
 
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error
+    private val _contactGroups = MutableStateFlow<List<ContactGroupSnapshot>>(emptyList())
+    val contactGroups: StateFlow<List<ContactGroupSnapshot>> = _contactGroups.asStateFlow()
+    private val _contactGroupsLoading = MutableStateFlow(false)
+    val contactGroupsLoading: StateFlow<Boolean> = _contactGroupsLoading.asStateFlow()
 
     fun setQuery(v: String) { _query.value = v }
+
+    fun loadContactGroups() = viewModelScope.launch {
+        _contactGroupsLoading.value = true
+        _contactGroups.value = withContext(kotlinx.coroutines.Dispatchers.IO) {
+            contactUtils.getGroupsWithPhoneNumbers()
+        }
+        _contactGroupsLoading.value = false
+    }
     fun add(number: String, name: String?) = viewModelScope.launch {
         val res = repo.addBlockedNumber(number, name?.takeIf { it.isNotBlank() })
         if (res.isFailure) _error.value = res.exceptionOrNull()?.message ?: "Error"

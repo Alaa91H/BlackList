@@ -44,6 +44,8 @@
     <string name="blacklist_add_from_log">Pick from call log</string>
     <string name="blacklist_add_from_messages">Pick from messages</string>
     <string name="blacklist_hidden_rule_hint">Matches callers whose number is restricted or hidden by the network.</string>
+    <string name="blacklist_contact_group_hint">Block or silence every number currently belonging to a selected local contact group. Membership is refreshed locally outside call screening.</string>
+    <string name="blacklist_contact_group_empty">No readable contact groups were found. Grant Contacts access or create a group first.</string>
     <string name="blacklist_unknown_rule_hint">Matches callers whose number cannot be identified by the device.</string>
 
     <string name="blacklist_delete">Delete</string>
@@ -319,6 +321,7 @@
     <string name="rule_type_range">Range</string>
     <string name="rule_type_country">Country</string>
     <string name="rule_type_international">International</string>
+    <string name="rule_type_contact_group">Contact group</string>
 
     <string name="rule_type_hidden">Hidden</string>
     <string name="rule_type_unknown">Unknown</string>

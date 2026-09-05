@@ -71,6 +71,7 @@ class BlacklistRuleConflictAnalyzer(
                 digits(first.startNumber) == digits(second.startNumber) &&
                     digits(first.endNumber) == digits(second.endNumber)
             BlacklistRuleEntity.TYPE_COUNTRY -> first.countryIso.equals(second.countryIso, ignoreCase = true)
+            BlacklistRuleEntity.TYPE_CONTACT_GROUP -> first.contactGroupId != null && first.contactGroupId == second.contactGroupId
             else -> false
         }
     }

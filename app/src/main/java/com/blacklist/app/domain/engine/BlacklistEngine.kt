@@ -13,7 +13,12 @@ import com.google.i18n.phonenumbers.PhoneNumberUtil
 class BlacklistEngine(
     private val normalizer: PhoneNumberNormalizer
 ) {
-    fun matches(eventNumber: PhoneNumber, rule: BlacklistRuleEntity, nowMillis: Long = System.currentTimeMillis()): Boolean {
+    fun matches(
+        eventNumber: PhoneNumber,
+        rule: BlacklistRuleEntity,
+        nowMillis: Long = System.currentTimeMillis(),
+        contactGroupNumbers: Map<Long, Set<String>> = emptyMap()
+    ): Boolean {
         if (!rule.isEnabled || !com.blacklist.app.util.ScheduleEvaluator.isRuleActive(rule, nowMillis)) return false
         return when (rule.ruleType) {
             BlacklistRuleEntity.TYPE_EXACT -> {
@@ -62,6 +67,12 @@ class BlacklistEngine(
                 } catch (_: Exception) { false }
             }
             BlacklistRuleEntity.TYPE_INTERNATIONAL -> normalizer.isInternational(eventNumber)
+            BlacklistRuleEntity.TYPE_CONTACT_GROUP -> {
+                if (eventNumber.presentation != Presentation.ALLOWED) false
+                else rule.contactGroupId?.let { groupId ->
+                    contactGroupNumbers[groupId]?.contains(eventNumber.digitsOnly) == true
+                } == true
+            }
             BlacklistRuleEntity.TYPE_COUNTRY -> {
                 if (eventNumber.presentation != Presentation.ALLOWED) return false
                 val iso = rule.countryIso ?: return false
@@ -88,8 +99,13 @@ class BlacklistEngine(
         }
     }
 
-    fun findMatching(eventNumber: PhoneNumber, rules: List<BlacklistRuleEntity>, nowMillis: Long = System.currentTimeMillis()): List<BlacklistRuleEntity> {
-        return rules.filter { matches(eventNumber, it, nowMillis) }.sortedWith(
+    fun findMatching(
+        eventNumber: PhoneNumber,
+        rules: List<BlacklistRuleEntity>,
+        nowMillis: Long = System.currentTimeMillis(),
+        contactGroupNumbers: Map<Long, Set<String>> = emptyMap()
+    ): List<BlacklistRuleEntity> {
+        return rules.filter { matches(eventNumber, it, nowMillis, contactGroupNumbers) }.sortedWith(
             compareBy<BlacklistRuleEntity> { it.priority }
                 .thenByDescending { it.createdAt }
                 .thenByDescending { it.id }

@@ -237,6 +237,17 @@ class BlackListRepositoryImpl(
                         return Result.failure(IllegalArgumentException("Invalid country ISO"))
                     }
                 }
+                BlacklistRuleEntity.TYPE_CONTACT_GROUP -> {
+                    if ((rule.contactGroupId ?: 0L) <= 0L) {
+                        return Result.failure(IllegalArgumentException("Contact group id required"))
+                    }
+                    if (rule.contactGroupTitle?.trim().isNullOrBlank() || rule.contactGroupTitle!!.length > 200) {
+                        return Result.failure(IllegalArgumentException("Contact group title required"))
+                    }
+                }
+                BlacklistRuleEntity.TYPE_INTERNATIONAL,
+                BlacklistRuleEntity.TYPE_HIDDEN,
+                BlacklistRuleEntity.TYPE_UNKNOWN -> Unit
                 else -> return Result.failure(IllegalArgumentException("Unsupported rule type"))
             }
 
@@ -247,6 +258,7 @@ class BlackListRepositoryImpl(
                     endNumber = rule.endNumber?.filter { it.isDigit() }
                 )
                 BlacklistRuleEntity.TYPE_COUNTRY -> rule.copy(countryIso = rule.countryIso?.uppercase())
+                BlacklistRuleEntity.TYPE_CONTACT_GROUP -> rule.copy(contactGroupTitle = rule.contactGroupTitle?.trim())
                 else -> rule.copy(pattern = rule.pattern?.trim())
             }
             if (BlacklistRuleConflictAnalyzer(normalizer).analyze(toInsert, ruleDao.getAll()).hasDuplicate) {

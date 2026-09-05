@@ -1,5 +1,26 @@
 # Changelog
 
+## [1.28.0] - 2026-09-05
+
+### Added
+
+- **Contact-group rules.** Users can now select a local Android contact group and apply the existing Reject or Silence enforcement to its current phone-number membership.
+- **Local group snapshot.** Group membership is loaded outside the `CallScreeningService` hot path, normalized into an immutable snapshot, and refreshed with the rest of local policy data.
+- **Optional privileged capability status.** Capability health can report whether a Shizuku-compatible bridge is present through a non-invasive Binder check; no privileged command execution is included.
+
+### Changed
+
+- Contact-group rules support the same per-rule schedules, precedence, draft conflict preview, encrypted backup, and restore validation as other persistent rules.
+- Missing Contacts permission, unavailable groups, provider failures, or stale group membership fail open for group rules rather than creating a global block.
+- Room 15→16 adds nullable group identity fields without rewriting existing rules.
+
+### Quality and privacy
+
+- Added coverage for group matching, missing snapshots, missing group IDs, duplicate group-rule detection, and whitelist/emergency precedence through the existing decision order.
+- Contact data is read only through the optional Contacts integration, outside call screening, with bounded group and membership reads.
+- No network lookup, AccessibilityService, hidden API, shell command, Telecom database mutation, or mandatory Root/Shizuku dependency is introduced.
+
+
 All notable changes to BlackList are documented in this file. The project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [1.27.0] - 2026-09-03

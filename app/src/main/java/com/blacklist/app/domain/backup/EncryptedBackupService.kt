@@ -230,6 +230,8 @@ class EncryptedBackupService(
         .put("start", startNumber)
         .put("end", endNumber)
         .put("country", countryIso)
+        .put("contactGroupId", contactGroupId)
+        .put("contactGroupTitle", contactGroupTitle)
         .put("name", displayName)
         .put("notify", showNotification)
         .put("createdAt", createdAt)
@@ -326,6 +328,12 @@ class EncryptedBackupService(
         val pattern = json.optionalText("pattern", MAX_PATTERN_LENGTH)
         val startNumber = json.optionalText("start", MAX_PATTERN_LENGTH)
         val endNumber = json.optionalText("end", MAX_PATTERN_LENGTH)
+        val contactGroupId = json.optLong("contactGroupId", 0L).takeIf { it > 0L }
+        val contactGroupTitle = json.optionalText("contactGroupTitle", MAX_TEXT_LENGTH)
+        if (type == BlacklistRuleEntity.TYPE_CONTACT_GROUP) {
+            require(contactGroupId != null) { "Contact-group rules require a valid group id." }
+            require(!contactGroupTitle.isNullOrBlank()) { "Contact-group rules require a group title." }
+        }
         when (type) {
             BlacklistRuleEntity.TYPE_TEMP_BLOCK_ALL -> require(isSaneTemporaryExpiry(pattern)) {
                 "Invalid temporary firewall expiry in backup."
@@ -356,6 +364,8 @@ class EncryptedBackupService(
             startNumber = startNumber,
             endNumber = endNumber,
             countryIso = json.optionalText("country", 2)?.uppercase(),
+            contactGroupId = contactGroupId,
+            contactGroupTitle = contactGroupTitle,
             displayName = json.optionalText("name", MAX_TEXT_LENGTH),
             showNotification = json.optBoolean("notify", true),
             createdAt = json.optLong("createdAt", System.currentTimeMillis())
@@ -572,6 +582,7 @@ class EncryptedBackupService(
             BlacklistRuleEntity.TYPE_RANGE,
             BlacklistRuleEntity.TYPE_COUNTRY,
             BlacklistRuleEntity.TYPE_INTERNATIONAL,
+            BlacklistRuleEntity.TYPE_CONTACT_GROUP,
             BlacklistRuleEntity.TYPE_HIDDEN,
             BlacklistRuleEntity.TYPE_UNKNOWN,
             BlacklistRuleEntity.TYPE_TEMP_BLOCK_ALL,

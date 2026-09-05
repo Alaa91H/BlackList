@@ -38,6 +38,7 @@ import com.blacklist.app.domain.model.EnforcementDecision
 import com.blacklist.app.ui.components.EmptyState
 import com.blacklist.app.ui.components.PickerDialog
 import com.blacklist.app.ui.components.PickerSource
+import com.blacklist.app.util.ContactGroupSnapshot
 import kotlinx.coroutines.flow.collect
 import java.text.DateFormat
 
@@ -56,6 +57,8 @@ fun BlacklistScreen(nav: NavController) {
     val query by vm.query.collectAsState()
     val error by vm.error.collectAsState()
     val draftPreview by vm.draftRulePreview.collectAsState()
+    val contactGroups by vm.contactGroups.collectAsState()
+    val contactGroupsLoading by vm.contactGroupsLoading.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     var showAdd by remember { mutableStateOf(false) }
     var showTemporaryBlock by remember { mutableStateOf(false) }
@@ -199,7 +202,10 @@ fun BlacklistScreen(nav: NavController) {
             onPickSource = { source ->
                 pickerSource = source
                 showPicker = true
-            }
+            },
+            contactGroups = contactGroups,
+            contactGroupsLoading = contactGroupsLoading,
+            onLoadContactGroups = vm::loadContactGroups
         )
     }
     if (showPicker) {
@@ -225,6 +231,7 @@ fun ruleTypeLabel(type: String): String = when (type) {
     BlacklistRuleEntity.TYPE_RANGE -> stringResource(R.string.rule_type_range)
     BlacklistRuleEntity.TYPE_COUNTRY -> stringResource(R.string.rule_type_country)
     BlacklistRuleEntity.TYPE_INTERNATIONAL -> stringResource(R.string.rule_type_international)
+    BlacklistRuleEntity.TYPE_CONTACT_GROUP -> stringResource(R.string.rule_type_contact_group)
     BlacklistRuleEntity.TYPE_HIDDEN -> stringResource(R.string.rule_type_hidden)
     BlacklistRuleEntity.TYPE_UNKNOWN -> stringResource(R.string.rule_type_unknown)
     else -> type
@@ -245,6 +252,7 @@ private fun typeLabelRes(type: String): Int = when (type) {
     BlacklistRuleEntity.TYPE_RANGE -> R.string.rule_type_range
     BlacklistRuleEntity.TYPE_COUNTRY -> R.string.rule_type_country
     BlacklistRuleEntity.TYPE_INTERNATIONAL -> R.string.rule_type_international
+    BlacklistRuleEntity.TYPE_CONTACT_GROUP -> R.string.rule_type_contact_group
     else -> R.string.rule_type_exact
 }
 
@@ -360,6 +368,7 @@ private fun RuleCard(rule: BlacklistRuleEntity, onToggle: (Boolean) -> Unit, onD
                             BlacklistRuleEntity.TYPE_CONTAINS -> Icons.Filled.Grain
                             BlacklistRuleEntity.TYPE_RANGE -> Icons.Filled.SwapVert
                             BlacklistRuleEntity.TYPE_COUNTRY, BlacklistRuleEntity.TYPE_INTERNATIONAL -> Icons.Filled.Public
+                            BlacklistRuleEntity.TYPE_CONTACT_GROUP -> Icons.Filled.Group
                             else -> Icons.Filled.Block
                         },
                         null, tint = MaterialTheme.colorScheme.onSecondaryContainer
@@ -384,6 +393,7 @@ private fun RuleCard(rule: BlacklistRuleEntity, onToggle: (Boolean) -> Unit, onD
                         BlacklistRuleEntity.TYPE_RANGE -> "${rule.startNumber} … ${rule.endNumber}"
                         BlacklistRuleEntity.TYPE_COUNTRY -> rule.countryIso ?: ""
                         BlacklistRuleEntity.TYPE_INTERNATIONAL -> stringResource(R.string.rule_type_international)
+                        BlacklistRuleEntity.TYPE_CONTACT_GROUP -> rule.contactGroupTitle ?: stringResource(R.string.rule_type_contact_group)
                         BlacklistRuleEntity.TYPE_HIDDEN, BlacklistRuleEntity.TYPE_UNKNOWN -> stringResource(typeLabelRes(rule.ruleType))
                         else -> rule.pattern ?: ""
                     },
@@ -407,7 +417,10 @@ private fun AddRuleDialog(
     onClearPreview: () -> Unit,
     onDismiss: () -> Unit,
     onSaveRule: (BlacklistRuleEntity) -> Unit,
-    onPickSource: (PickerSource) -> Unit
+    onPickSource: (PickerSource) -> Unit,
+    contactGroups: List<ContactGroupSnapshot>,
+    contactGroupsLoading: Boolean,
+    onLoadContactGroups: () -> Unit
 ) {
     var selectedType by remember { mutableStateOf(BlacklistRuleEntity.TYPE_EXACT) }
     var selectedEnforcement by remember { mutableStateOf(BlacklistRuleEntity.ENFORCEMENT_BLOCK) }
@@ -415,6 +428,7 @@ private fun AddRuleDialog(
     var rangeStart by remember { mutableStateOf("") }
     var rangeEnd by remember { mutableStateOf("") }
     var countryIso by remember { mutableStateOf("") }
+    var selectedContactGroup by remember { mutableStateOf<ContactGroupSnapshot?>(null) }
     var displayName by remember { mutableStateOf("") }
     var testNumber by remember { mutableStateOf("") }
     var scheduleEnabled by remember { mutableStateOf(false) }
@@ -455,6 +469,9 @@ private fun AddRuleDialog(
                 val iso = countryIso.trim().uppercase()
                 if (iso.length != 2 || iso.any { !it.isLetter() }) null else
                     withSchedule(BlacklistRuleEntity(ruleType = selectedType, enforcement = selectedEnforcement, countryIso = iso, displayName = displayName.takeIf { it.isNotBlank() }))
+            }
+            BlacklistRuleEntity.TYPE_CONTACT_GROUP -> selectedContactGroup?.let { group ->
+                withSchedule(BlacklistRuleEntity(ruleType = selectedType, enforcement = selectedEnforcement, contactGroupId = group.id, contactGroupTitle = group.title, displayName = displayName.takeIf { it.isNotBlank() }))
             }
             BlacklistRuleEntity.TYPE_INTERNATIONAL,
             BlacklistRuleEntity.TYPE_HIDDEN,
@@ -523,6 +540,24 @@ private fun AddRuleDialog(
                     }
                     BlacklistRuleEntity.TYPE_COUNTRY -> {
                         OutlinedTextField(value = countryIso, onValueChange = { countryIso = it; onClearPreview() }, label = { Text(stringResource(R.string.blacklist_country_hint)) }, placeholder = { Text("DE") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+                    }
+                    BlacklistRuleEntity.TYPE_CONTACT_GROUP -> {
+                        LaunchedEffect(Unit) { onLoadContactGroups() }
+                        Text(stringResource(R.string.blacklist_contact_group_hint), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        if (contactGroupsLoading) {
+                            CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                        } else if (contactGroups.isEmpty()) {
+                            Text(stringResource(R.string.blacklist_contact_group_empty), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
+                        } else {
+                            contactGroups.forEach { group ->
+                                FilterChip(
+                                    selected = selectedContactGroup?.id == group.id,
+                                    onClick = { selectedContactGroup = group; onClearPreview() },
+                                    label = { Text("${group.title} (${group.phoneNumbers.size})") },
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                            }
+                        }
                     }
                     BlacklistRuleEntity.TYPE_HIDDEN, BlacklistRuleEntity.TYPE_UNKNOWN -> {
                         Text(
@@ -694,6 +729,7 @@ private fun AddRuleDialog(
             val ready = when (selectedType) {
                 BlacklistRuleEntity.TYPE_RANGE -> rangeStart.filter { it.isDigit() }.isNotEmpty() && rangeEnd.filter { it.isDigit() }.isNotEmpty()
                 BlacklistRuleEntity.TYPE_COUNTRY -> countryIso.trim().length == 2
+                BlacklistRuleEntity.TYPE_CONTACT_GROUP -> selectedContactGroup != null
                 BlacklistRuleEntity.TYPE_INTERNATIONAL, BlacklistRuleEntity.TYPE_HIDDEN, BlacklistRuleEntity.TYPE_UNKNOWN -> true
                 else -> pattern.isNotBlank()
             }

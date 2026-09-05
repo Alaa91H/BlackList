@@ -21,7 +21,7 @@ import com.blacklist.app.data.local.entity.*
         OfflineReputationEntryEntity::class,
         SecurityEventEntity::class
     ],
-    version = 15,
+    version = 16,
     exportSchema = true
 )
 abstract class BlackListDatabase : RoomDatabase() {
@@ -168,6 +168,14 @@ abstract class BlackListDatabase : RoomDatabase() {
                 database.execSQL("ALTER TABLE app_settings ADD COLUMN repeatedCallerPolicy TEXT NOT NULL DEFAULT 'OFF'")
                 database.execSQL("ALTER TABLE app_settings ADD COLUMN repeatedCallerThreshold INTEGER NOT NULL DEFAULT 3")
                 database.execSQL("ALTER TABLE app_settings ADD COLUMN repeatedCallerWindowMinutes INTEGER NOT NULL DEFAULT 10")
+            }
+        }
+
+        /** Adds optional Android contact-group identity fields to persistent rules. */
+        val MIGRATION_15_16 = object : Migration(15, 16) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL("ALTER TABLE blacklist_rules ADD COLUMN contactGroupId INTEGER")
+                database.execSQL("ALTER TABLE blacklist_rules ADD COLUMN contactGroupTitle TEXT")
             }
         }
     }

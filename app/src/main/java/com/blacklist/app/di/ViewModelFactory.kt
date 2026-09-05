@@ -27,7 +27,8 @@ class ViewModelFactory(
                     normalizer = ServiceLocator.provideNormalizer(appContext),
                     blacklistEngine = ServiceLocator.provideBlacklistEngine(appContext),
                     riskEngine = ServiceLocator.provideRiskEngine()
-                )
+                ),
+                contactUtils = ServiceLocator.provideContactUtils(appContext)
             ) as T
             modelClass.isAssignableFrom(WhitelistViewModel::class.java) -> WhitelistViewModel(repo) as T
             modelClass.isAssignableFrom(BlockedLogViewModel::class.java) -> BlockedLogViewModel(

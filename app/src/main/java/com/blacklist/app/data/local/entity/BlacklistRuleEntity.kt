@@ -23,6 +23,10 @@ data class BlacklistRuleEntity(
     val startNumber: String? = null, // for RANGE
     val endNumber: String? = null, // for RANGE
     val countryIso: String? = null, // for COUNTRY (e.g. DE)
+    /** Android ContactsContract.Groups._ID for CONTACT_GROUP rules. */
+    val contactGroupId: Long? = null,
+    /** Cached user-visible group title for explainability and backup portability. */
+    val contactGroupTitle: String? = null,
     val displayName: String? = null,
     val showNotification: Boolean = true,
     /** Optional local window; disabled preserves the historical always-active behavior. */
@@ -40,6 +44,7 @@ data class BlacklistRuleEntity(
         const val TYPE_RANGE = "RANGE"
         const val TYPE_COUNTRY = "COUNTRY"
         const val TYPE_INTERNATIONAL = "INTERNATIONAL"
+        const val TYPE_CONTACT_GROUP = "CONTACT_GROUP"
         const val TYPE_HIDDEN = "HIDDEN"
         const val TYPE_UNKNOWN = "UNKNOWN"
 
@@ -54,6 +59,6 @@ data class BlacklistRuleEntity(
         const val TYPE_TEMP_BLOCK_EXACT = "TEMP_BLOCK_EXACT"
 
         /** All user-selectable match types (HIDDEN/UNKNOWN are policy toggles, not patterns; TEMP_* internal). */
-        val USER_TYPES = listOf(TYPE_EXACT, TYPE_PREFIX, TYPE_SUFFIX, TYPE_CONTAINS, TYPE_RANGE, TYPE_COUNTRY, TYPE_INTERNATIONAL)
+        val USER_TYPES = listOf(TYPE_EXACT, TYPE_PREFIX, TYPE_SUFFIX, TYPE_CONTAINS, TYPE_RANGE, TYPE_COUNTRY, TYPE_INTERNATIONAL, TYPE_CONTACT_GROUP)
     }
 }

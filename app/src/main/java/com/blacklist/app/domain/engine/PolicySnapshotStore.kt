@@ -13,6 +13,7 @@ import com.blacklist.app.data.local.entity.WhitelistedNumberEntity
 import com.blacklist.app.domain.model.PhoneNumber
 import com.blacklist.app.domain.normalization.PhoneNumberNormalizer
 import com.blacklist.app.util.ContactUtils
+import com.blacklist.app.util.ContactGroupSnapshot
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -48,6 +49,8 @@ class PolicySnapshotStore(
         val whitelist: List<PhoneNumber> = emptyList(),
         val legacyBlocked: List<PhoneNumber> = emptyList(),
         val knownContactNumbers: List<PhoneNumber> = emptyList(),
+        val contactGroupNumbers: Map<Long, Set<String>> = emptyMap(),
+        val contactGroupTitles: Map<Long, String> = emptyMap(),
         val canReadContacts: Boolean = false,
         val settings: AppSettingsEntity? = null,
         val reputations: Map<String, CallerReputationEntity> = emptyMap(),
@@ -112,6 +115,7 @@ class PolicySnapshotStore(
         // permission must not prevent refreshed local rules from being applied.
         val canReadContacts = contactUtils.canReadContacts()
         val contacts = if (canReadContacts) safe { contactUtils.getAllPhoneNumbers() }.orEmpty() else emptyList()
+        val contactGroups = if (canReadContacts) safe { contactUtils.getGroupsWithPhoneNumbers() }.orEmpty() else emptyList()
 
         val previous = state.get()
         state.set(
@@ -124,6 +128,10 @@ class PolicySnapshotStore(
                 whitelist = whitelist.map(WhitelistedNumberEntity::normalizedNumber).map(normalizer::normalize),
                 legacyBlocked = legacyBlocked.map(BlockedNumberEntity::normalizedNumber).map(normalizer::normalize),
                 knownContactNumbers = contacts.map(normalizer::normalize),
+                contactGroupNumbers = contactGroups.associate { group ->
+                    group.id to group.phoneNumbers.map(normalizer::normalize).map { it.digitsOnly }.toSet()
+                },
+                contactGroupTitles = contactGroups.associate(ContactGroupSnapshot::id, ContactGroupSnapshot::title),
                 canReadContacts = canReadContacts,
                 settings = settings,
                 reputations = reputations.associateBy { it.normalizedNumber },
