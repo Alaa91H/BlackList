@@ -131,7 +131,7 @@ class PolicySnapshotStore(
                 contactGroupNumbers = contactGroups.associate { group ->
                     group.id to group.phoneNumbers.map(normalizer::normalize).map { it.digitsOnly }.toSet()
                 },
-                contactGroupTitles = contactGroups.associate(ContactGroupSnapshot::id, ContactGroupSnapshot::title),
+                contactGroupTitles = contactGroups.associate { group -> group.id to group.title },
                 canReadContacts = canReadContacts,
                 settings = settings,
                 reputations = reputations.associateBy { it.normalizedNumber },
