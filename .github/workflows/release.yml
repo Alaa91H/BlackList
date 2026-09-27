@@ -30,7 +30,7 @@ env:
 jobs:
   build-and-release:
     name: Build & Publish Release
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     timeout-minutes: 50
 
     steps:
